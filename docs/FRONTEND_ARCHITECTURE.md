@@ -20,6 +20,8 @@ Rewards, payments and contributions now use typed feature API clients backed by 
 
 Price tracking uses the typed `features/prices` boundary. The parent panel distinguishes reliable variation from unavailable comparison, exposes explicit alert/automation controls and shows switch history. Public gift cards request an opaque-token suggestion and display it only when the API has already enforced freshness, identity confidence, availability and user-value ranking; the browser never decides which merchant wins.
 
+Orders use the typed `features/orders` boundary and the static `/dashboard/orders` route. The page consumes backend-protected sections, opens snapshotted merchant links, plans contribution budgets and records only parent-confirmed transitions. It does not infer payment from reservation state and contains no cart robot, purchase automation or merchant credentials.
+
 ## Media
 
 Cover upload requests a signed private-bucket URL, sends the file directly to the configured public storage origin, and verifies/associates it through the API. UI code never receives storage credentials. The stable display URL is constructed centrally by `buildAssetUrl`; pending malware scans fail closed.

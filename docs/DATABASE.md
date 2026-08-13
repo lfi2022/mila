@@ -45,6 +45,12 @@ Migration deployment must run once before replacing application containers. Appl
 
 Product identity keys normalize GTIN/EAN first, then brand+MPN or brand+model, and prevent new duplicate controlled identities. Merchant offers retain source, match method/confidence, delivery, availability and check time. Weak, stale or cross-currency offers are excluded. `gift_offer_switches` is an append-only decision history containing both destinations, prices, savings, confidence and policy reason for every guarded automatic change.
 
+## Order fulfilment invariants
+
+`202608130009_order_fulfilment` extends order groups with a hashed destination key, deterministic merchant/destination/window grouping key, private destination payload, window, delivery cost and real external/tracking references. Items snapshot the chosen title, URL, unit price, quantity and variant. `order_group_status_history` records every lifecycle and allocation decision with its actor; terminal states cannot move backward.
+
+An item contribution amount is a reversible budget plan, not a payment or ledger settlement. Available planning capacity is derived from confirmed `funds_ledger_entries` minus allocations in active groups under serializable isolation. Cancelling a group clears its plans. Only a later authorized provider/merchant payment stage may append an `ORDER_PAYMENT` movement; Stage 15 does not mislabel a parent checklist as a financial settlement.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

@@ -124,4 +124,10 @@ describe("database environment", () => {
       loadConfig({ ...valid, PRICE_REFRESH_MIN_HOURS: "72", PRICE_REFRESH_MAX_HOURS: "24" }),
     ).toThrow(/Minimum price refresh/);
   });
+
+  it("keeps automatic ordering behind the fulfilment flag", () => {
+    expect(() => loadConfig({ ...valid, FEATURE_AUTOMATIC_ORDERS: "true" })).toThrow(
+      /Order fulfilment/,
+    );
+  });
 });

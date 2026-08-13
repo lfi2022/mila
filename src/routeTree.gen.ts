@@ -29,6 +29,7 @@ import { Route as VerificationEmailRouteImport } from './routes/verification-ema
 import { Route as ContribuerGiftTokenRouteImport } from './routes/contribuer.$giftToken'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardRegistryIdRouteImport } from './routes/dashboard.$registryId'
+import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as GoTokenRouteImport } from './routes/go.$token'
 import { Route as InvitationTokenRouteImport } from './routes/invitation.$token'
 import { Route as LSlugRouteImport } from './routes/l.$slug'
@@ -139,6 +140,11 @@ const DashboardRegistryIdRoute = DashboardRegistryIdRouteImport.update({
   path: '/$registryId',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const GoTokenRoute = GoTokenRouteImport.update({
   id: '/go/$token',
   path: '/go/$token',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/verification-email': typeof VerificationEmailRoute
   '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/verification-email': typeof VerificationEmailRoute
   '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/verification-email': typeof VerificationEmailRoute
   '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/verification-email'
     | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
+    | '/dashboard/orders'
     | '/go/$token'
     | '/invitation/$token'
     | '/l/$slug'
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/verification-email'
     | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
+    | '/dashboard/orders'
     | '/go/$token'
     | '/invitation/$token'
     | '/l/$slug'
@@ -361,6 +372,7 @@ export interface FileRouteTypes {
     | '/verification-email'
     | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
+    | '/dashboard/orders'
     | '/go/$token'
     | '/invitation/$token'
     | '/l/$slug'
@@ -545,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRegistryIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/orders': {
+      id: '/dashboard/orders'
+      path: '/orders'
+      fullPath: '/dashboard/orders'
+      preLoaderRoute: typeof DashboardOrdersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/go/$token': {
       id: '/go/$token'
       path: '/go/$token'
@@ -613,11 +632,13 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardRegistryIdRoute: typeof DashboardRegistryIdRoute
+  DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardRegistryIdRoute: DashboardRegistryIdRoute,
+  DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 

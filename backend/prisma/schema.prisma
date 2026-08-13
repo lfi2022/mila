@@ -237,39 +237,40 @@ enum MediaKind {
 }
 
 model User {
-  id                      String                   @id @default(uuid()) @db.Char(36)
-  email                   String                   @unique @db.VarChar(255)
-  passwordHash            String                   @map("password_hash") @db.VarChar(255)
-  displayName             String?                  @map("display_name") @db.VarChar(120)
-  avatarKey               String?                  @map("avatar_key") @db.VarChar(512)
-  emailVerifiedAt         DateTime?                @map("email_verified_at") @db.DateTime(3)
-  onboardingCompleted     Boolean                  @default(false) @map("onboarding_completed")
-  suspendedAt             DateTime?                @map("suspended_at") @db.DateTime(3)
-  deletedAt               DateTime?                @map("deleted_at") @db.DateTime(3)
-  createdAt               DateTime                 @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt               DateTime                 @updatedAt @map("updated_at") @db.DateTime(3)
+  id                      String                    @id @default(uuid()) @db.Char(36)
+  email                   String                    @unique @db.VarChar(255)
+  passwordHash            String                    @map("password_hash") @db.VarChar(255)
+  displayName             String?                   @map("display_name") @db.VarChar(120)
+  avatarKey               String?                   @map("avatar_key") @db.VarChar(512)
+  emailVerifiedAt         DateTime?                 @map("email_verified_at") @db.DateTime(3)
+  onboardingCompleted     Boolean                   @default(false) @map("onboarding_completed")
+  suspendedAt             DateTime?                 @map("suspended_at") @db.DateTime(3)
+  deletedAt               DateTime?                 @map("deleted_at") @db.DateTime(3)
+  createdAt               DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt               DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
   roles                   UserRole[]
   sessions                Session[]
   verificationTokens      EmailVerificationToken[]
   resetTokens             PasswordResetToken[]
-  ownedLists              GiftList[]               @relation("ListOwner")
+  ownedLists              GiftList[]                @relation("ListOwner")
   memberships             ListMember[]
-  sentInvitations         ListInvitation[]         @relation("InvitationSender")
-  acceptedInvitations     ListInvitation[]         @relation("InvitationAccepter")
+  sentInvitations         ListInvitation[]          @relation("InvitationSender")
+  acceptedInvitations     ListInvitation[]          @relation("InvitationAccepter")
   reservations            Reservation[]
   paymentAccounts         PaymentAccount[]
-  requestedPayouts        Payout[]                 @relation("PayoutRequester")
+  requestedPayouts        Payout[]                  @relation("PayoutRequester")
+  orderStatusChanges      OrderGroupStatusHistory[]
   requestedRedemptions    RewardRedemption[]
-  sentReferrals           Referral[]               @relation("Referrer")
-  receivedReferral        Referral?                @relation("Referred")
+  sentReferrals           Referral[]                @relation("Referrer")
+  receivedReferral        Referral?                 @relation("Referred")
   referralCode            ReferralCode?
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
   messages                Message[]
   uploadedMedia           MediaAsset[]
   thankYous               ThankYou[]
-  reports                 Report[]                 @relation("Reporter")
-  auditLogs               AdminAuditLog[]          @relation("AuditActor")
+  reports                 Report[]                  @relation("Reporter")
+  auditLogs               AdminAuditLog[]           @relation("AuditActor")
 
   @@index([createdAt])
   @@map("users")
@@ -1102,23 +1103,32 @@ model FinancialLedgerEntry {
 }
 
 model OrderGroup {
-  id           String           @id @default(uuid()) @db.Char(36)
-  listId       String           @map("list_id") @db.Char(36)
-  merchantId   String           @map("merchant_id") @db.Char(36)
-  status       OrderGroupStatus @default(DRAFT)
-  orderMode    OrderMode        @default(MANUAL_PARENT) @map("order_mode")
-  deliveryMode String?          @map("delivery_mode") @db.VarChar(64)
-  destination  Json?
-  currency     String           @default("EUR") @db.Char(3)
-  submittedAt  DateTime?        @map("submitted_at") @db.DateTime(3)
-  createdAt    DateTime         @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt    DateTime         @updatedAt @map("updated_at") @db.DateTime(3)
-  list         GiftList         @relation(fields: [listId], references: [id], onDelete: Cascade)
-  merchant     Merchant         @relation(fields: [merchantId], references: [id], onDelete: Restrict)
-  items        OrderGroupItem[]
+  id                     String                    @id @default(uuid()) @db.Char(36)
+  listId                 String                    @map("list_id") @db.Char(36)
+  merchantId             String                    @map("merchant_id") @db.Char(36)
+  status                 OrderGroupStatus          @default(DRAFT)
+  orderMode              OrderMode                 @default(MANUAL_PARENT) @map("order_mode")
+  groupingKey            String                    @map("grouping_key") @db.Char(64)
+  deliveryMode           String?                   @map("delivery_mode") @db.VarChar(64)
+  destinationKey         String                    @map("destination_key") @db.Char(64)
+  destination            Json?
+  orderWindowStart       DateTime?                 @map("order_window_start") @db.DateTime(3)
+  orderWindowEnd         DateTime?                 @map("order_window_end") @db.DateTime(3)
+  deliveryMinor          BigInt                    @default(0) @map("delivery_minor")
+  externalOrderReference String?                   @map("external_order_reference") @db.VarChar(255)
+  trackingUrl            String?                   @map("tracking_url") @db.VarChar(2048)
+  currency               String                    @default("EUR") @db.Char(3)
+  submittedAt            DateTime?                 @map("submitted_at") @db.DateTime(3)
+  createdAt              DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt              DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
+  list                   GiftList                  @relation(fields: [listId], references: [id], onDelete: Cascade)
+  merchant               Merchant                  @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  items                  OrderGroupItem[]
+  history                OrderGroupStatusHistory[]
 
   @@index([listId, status])
   @@index([merchantId, status])
+  @@index([listId, groupingKey])
   @@map("order_groups")
 }
 
@@ -1126,9 +1136,12 @@ model OrderGroupItem {
   id                      String     @id @default(uuid()) @db.Char(36)
   orderGroupId            String     @map("order_group_id") @db.Char(36)
   giftId                  String     @map("gift_id") @db.Char(36)
+  titleSnapshot           String     @map("title_snapshot") @db.VarChar(240)
+  urlSnapshot             String?    @map("url_snapshot") @db.VarChar(2048)
   quantity                Int        @default(1) @db.UnsignedSmallInt
   unitPriceMinor          BigInt     @map("unit_price_minor")
   contributionAmountMinor BigInt     @default(0) @map("contribution_amount_minor")
+  deliveryAmountMinor     BigInt     @default(0) @map("delivery_amount_minor")
   selectedVariant         Json?      @map("selected_variant")
   status                  String     @default("READY") @db.VarChar(32)
   createdAt               DateTime   @default(now()) @map("created_at") @db.DateTime(3)
@@ -1139,6 +1152,22 @@ model OrderGroupItem {
   @@unique([orderGroupId, giftId])
   @@index([giftId])
   @@map("order_group_items")
+}
+
+model OrderGroupStatusHistory {
+  id           String            @id @default(uuid()) @db.Char(36)
+  orderGroupId String            @map("order_group_id") @db.Char(36)
+  actorId      String            @map("actor_id") @db.Char(36)
+  fromStatus   OrderGroupStatus? @map("from_status")
+  toStatus     OrderGroupStatus  @map("to_status")
+  reason       String?           @db.VarChar(500)
+  metadata     Json?
+  createdAt    DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  orderGroup   OrderGroup        @relation(fields: [orderGroupId], references: [id], onDelete: Cascade)
+  actor        User              @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([orderGroupId, createdAt])
+  @@map("order_group_status_history")
 }
 
 model Notification {

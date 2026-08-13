@@ -106,6 +106,14 @@ Authorized list editors use `GET /api/v1/lists/:listId/price-tracking` for added
 
 Scheduled refresh runs outside user requests. It leases due gifts atomically, caps each scheduler batch and each merchant share, respects merchant minimum intervals, backs off repeated failures and slows fulfilled gifts. Successful and failed checks both append snapshots. Alerts require both global `FEATURE_PRICE_ALERTS` and the gift's explicit opt-in. Automatic switching additionally requires global comparison, list and gift opt-ins, an available 90%+ identity match, merchant trust, configured minimum savings and an unreserved gift; every switch is recorded before the gift changes. Affiliate eligibility is returned for attribution but never contributes to ranking score.
 
+## Order preparation and fulfilment routes
+
+`GET /api/v1/orders` builds the authenticated parent's cross-list command center: ungrouped candidates, confirmed held funds versus planned allocations, and ready, awaiting-funding, ordered, received and problem sections. `POST /api/v1/lists/:listId/orders/prepare` atomically claims eligible gifts and creates one group per merchant for the same private destination and order window. Item title, URL, price, quantity and selected variant are snapshotted so later gift edits do not rewrite an order checklist.
+
+Before submission, parents can update quantity/variant/inclusion at `PATCH /api/v1/orders/:groupId/items/:itemId`. `PUT .../contribution-allocation` plans confirmed third-party funds without pretending to spend or transfer them; a serializable transaction prevents overlapping plans. Full coverage moves a waiting group to ready. `POST /api/v1/orders/:groupId/status` enforces a forward-only lifecycle, requires a real parent-supplied order reference before `ORDERED`, updates gift fulfilment state and appends actor/reason history.
+
+Manual mode provides merchant links and a checklist. Assisted mode prepares the same structured handoff for a future authorized connector. `AUTOMATIC_PLATFORM` requires its global feature flag plus a trusted merchant connector explicitly marked contract-authorized, and submission still returns `AUTOMATIC_ORDER_BLOCKED_EXTERNAL` because no production ordering connector exists. No endpoint runs browser automation or scraping to purchase products.
+
 ## Error contract
 
 ```json
