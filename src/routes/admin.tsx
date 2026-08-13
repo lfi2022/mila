@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -29,6 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import {
   adminListAuditLog,
+  adminCreatePartner,
+  adminCreatePartnerCampaign,
   adminListLists,
   adminListMerchants,
   adminListPartners,
@@ -39,6 +42,8 @@ import {
   adminReviewRisk,
   adminSaveMerchant,
   adminTestAffiliateLink,
+  adminSetPartnerCampaignActive,
+  adminSetPartnerActive,
   getAdminStats,
 } from "@/features/admin/api";
 
@@ -114,6 +119,29 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
   const reportsQuery = useQuery({ queryKey: ["admin-reports"], queryFn: adminListReports });
   const risksQuery = useQuery({ queryKey: ["admin-risks"], queryFn: adminListRisks });
   const auditQuery = useQuery({ queryKey: ["admin-audit"], queryFn: adminListAuditLog });
+  const [partnerForm, setPartnerForm] = useState({
+    slug: "",
+    name: "",
+    category: "",
+    region: "",
+    summary: "",
+    landingTitle: "",
+    landingBody: "",
+    websiteUrl: "",
+    contractReference: "",
+    reason: "",
+  });
+  const [campaignForm, setCampaignForm] = useState({
+    partnerId: "",
+    code: "",
+    name: "",
+    startsAt: "",
+    endsAt: "",
+    benefitTitle: "",
+    benefitDescription: "",
+    budgetMinor: "",
+    reason: "",
+  });
 
   const refresh = () => {
     for (const key of [
@@ -123,6 +151,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
       "admin-reports",
       "admin-risks",
       "admin-audit",
+      "admin-partners",
     ]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
@@ -138,6 +167,71 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
   });
 
   const s = statsQuery.data;
+  const createPartner = useMutation({
+    mutationFn: () =>
+      adminCreatePartner({
+        slug: partnerForm.slug,
+        name: partnerForm.name,
+        category: partnerForm.category,
+        reason: partnerForm.reason,
+        ...(partnerForm.region ? { region: partnerForm.region } : {}),
+        ...(partnerForm.summary ? { summary: partnerForm.summary } : {}),
+        ...(partnerForm.landingTitle ? { landingTitle: partnerForm.landingTitle } : {}),
+        ...(partnerForm.landingBody ? { landingBody: partnerForm.landingBody } : {}),
+        ...(partnerForm.websiteUrl ? { websiteUrl: partnerForm.websiteUrl } : {}),
+        ...(partnerForm.contractReference
+          ? { contractReference: partnerForm.contractReference }
+          : {}),
+      }),
+    onSuccess: () => {
+      toast.success("Partenaire créé en attente");
+      setPartnerForm({
+        slug: "",
+        name: "",
+        category: "",
+        region: "",
+        summary: "",
+        landingTitle: "",
+        landingBody: "",
+        websiteUrl: "",
+        contractReference: "",
+        reason: "",
+      });
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const createCampaign = useMutation({
+    mutationFn: () =>
+      adminCreatePartnerCampaign({
+        partnerId: campaignForm.partnerId,
+        code: campaignForm.code,
+        name: campaignForm.name,
+        startsAt: new Date(campaignForm.startsAt).toISOString(),
+        endsAt: new Date(campaignForm.endsAt).toISOString(),
+        benefit: { title: campaignForm.benefitTitle, description: campaignForm.benefitDescription },
+        ...(campaignForm.budgetMinor ? { budgetMinor: campaignForm.budgetMinor } : {}),
+        currency: "EUR",
+        reason: campaignForm.reason,
+      }),
+    onSuccess: () => {
+      toast.success("Campagne créée inactive");
+      refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const activateCampaign = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      adminSetPartnerCampaignActive(id, active),
+    onSuccess: () => refresh(),
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const activatePartner = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      adminSetPartnerActive(id, active),
+    onSuccess: () => refresh(),
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -365,6 +459,186 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
           </TabsContent>
 
           <TabsContent value="partners" className="mt-6">
+            {isAdmin ? (
+              <div className="mb-8 grid gap-6 lg:grid-cols-2">
+                <section className="surface-card space-y-3 p-5">
+                  <h2 className="text-lg">Nouveau partenaire réel</h2>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input
+                      aria-label="Nom du partenaire"
+                      placeholder="Nom"
+                      value={partnerForm.name}
+                      onChange={(event) =>
+                        setPartnerForm({ ...partnerForm, name: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Slug du partenaire"
+                      placeholder="slug-public"
+                      value={partnerForm.slug}
+                      onChange={(event) =>
+                        setPartnerForm({ ...partnerForm, slug: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Catégorie du partenaire"
+                      placeholder="Catégorie"
+                      value={partnerForm.category}
+                      onChange={(event) =>
+                        setPartnerForm({ ...partnerForm, category: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Région du partenaire"
+                      placeholder="Région"
+                      value={partnerForm.region}
+                      onChange={(event) =>
+                        setPartnerForm({ ...partnerForm, region: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Référence contractuelle"
+                      placeholder="Référence contrat"
+                      value={partnerForm.contractReference}
+                      onChange={(event) =>
+                        setPartnerForm({ ...partnerForm, contractReference: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Site du partenaire"
+                      placeholder="https://…"
+                      value={partnerForm.websiteUrl}
+                      onChange={(event) =>
+                        setPartnerForm({ ...partnerForm, websiteUrl: event.target.value })
+                      }
+                    />
+                  </div>
+                  <Textarea
+                    aria-label="Présentation du partenaire"
+                    placeholder="Présentation publique"
+                    value={partnerForm.summary}
+                    onChange={(event) =>
+                      setPartnerForm({ ...partnerForm, summary: event.target.value })
+                    }
+                  />
+                  <Input
+                    aria-label="Motif de création"
+                    placeholder="Motif administratif obligatoire"
+                    value={partnerForm.reason}
+                    onChange={(event) =>
+                      setPartnerForm({ ...partnerForm, reason: event.target.value })
+                    }
+                  />
+                  <Button
+                    disabled={createPartner.isPending || partnerForm.reason.length < 3}
+                    onClick={() => createPartner.mutate()}
+                  >
+                    Créer en attente
+                  </Button>
+                </section>
+                <section className="surface-card space-y-3 p-5">
+                  <h2 className="text-lg">Nouvelle campagne</h2>
+                  <select
+                    className="h-10 w-full rounded-md border bg-background px-3"
+                    aria-label="Partenaire de la campagne"
+                    value={campaignForm.partnerId}
+                    onChange={(event) =>
+                      setCampaignForm({ ...campaignForm, partnerId: event.target.value })
+                    }
+                  >
+                    <option value="">Choisir un partenaire</option>
+                    {partnersQuery.data?.map((partner) => (
+                      <option key={partner.id} value={partner.id}>
+                        {partner.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input
+                      aria-label="Code campagne"
+                      placeholder="code-campagne"
+                      value={campaignForm.code}
+                      onChange={(event) =>
+                        setCampaignForm({ ...campaignForm, code: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Nom campagne"
+                      placeholder="Nom"
+                      value={campaignForm.name}
+                      onChange={(event) =>
+                        setCampaignForm({ ...campaignForm, name: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Début campagne"
+                      type="datetime-local"
+                      value={campaignForm.startsAt}
+                      onChange={(event) =>
+                        setCampaignForm({ ...campaignForm, startsAt: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Fin campagne"
+                      type="datetime-local"
+                      value={campaignForm.endsAt}
+                      onChange={(event) =>
+                        setCampaignForm({ ...campaignForm, endsAt: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Titre avantage"
+                      placeholder="Titre avantage"
+                      value={campaignForm.benefitTitle}
+                      onChange={(event) =>
+                        setCampaignForm({ ...campaignForm, benefitTitle: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label="Budget centimes"
+                      inputMode="numeric"
+                      placeholder="Budget en centimes"
+                      value={campaignForm.budgetMinor}
+                      onChange={(event) =>
+                        setCampaignForm({ ...campaignForm, budgetMinor: event.target.value })
+                      }
+                    />
+                  </div>
+                  <Textarea
+                    aria-label="Description avantage"
+                    placeholder="Description et conditions"
+                    value={campaignForm.benefitDescription}
+                    onChange={(event) =>
+                      setCampaignForm({ ...campaignForm, benefitDescription: event.target.value })
+                    }
+                  />
+                  <Input
+                    aria-label="Motif campagne"
+                    placeholder="Motif administratif obligatoire"
+                    value={campaignForm.reason}
+                    onChange={(event) =>
+                      setCampaignForm({ ...campaignForm, reason: event.target.value })
+                    }
+                  />
+                  <Button
+                    disabled={
+                      createCampaign.isPending ||
+                      !campaignForm.partnerId ||
+                      !campaignForm.code ||
+                      !campaignForm.name ||
+                      !campaignForm.startsAt ||
+                      !campaignForm.endsAt ||
+                      !campaignForm.benefitTitle ||
+                      !campaignForm.benefitDescription ||
+                      campaignForm.reason.length < 3
+                    }
+                    onClick={() => createCampaign.mutate()}
+                  >
+                    Créer inactive
+                  </Button>
+                </section>
+              </div>
+            ) : null}
             {!partnersQuery.data?.length ? (
               <p className="text-sm text-muted-foreground">
                 Aucun partenaire contractuel. Mila n’affiche jamais de partenaire fictif.
@@ -387,11 +661,41 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                       <TableCell>{partner.category}</TableCell>
                       <TableCell>{partner.region ?? "—"}</TableCell>
                       <TableCell>
-                        <Badge variant={partner.status === "ACTIVE" ? "default" : "secondary"}>
-                          {partner.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={partner.status === "ACTIVE" ? "default" : "secondary"}>
+                            {partner.status}
+                          </Badge>
+                          {isAdmin ? (
+                            <Switch
+                              aria-label={`${partner.status === "ACTIVE" ? "Désactiver" : "Activer"} ${partner.name}`}
+                              checked={partner.status === "ACTIVE"}
+                              onCheckedChange={(active) =>
+                                activatePartner.mutate({ id: partner.id, active })
+                              }
+                            />
+                          ) : null}
+                        </div>
                       </TableCell>
-                      <TableCell>{partner.campaigns.length}</TableCell>
+                      <TableCell className="space-y-2">
+                        {partner.campaigns.length || "0"}
+                        {partner.campaigns.map((campaign) => (
+                          <div key={campaign.id} className="flex items-center gap-2 text-xs">
+                            <span>
+                              {campaign.name} · {campaign._count.attributions} attributions · coûts{" "}
+                              {campaign.costsMinor} {campaign.currency}
+                            </span>
+                            {isAdmin ? (
+                              <Switch
+                                aria-label={`${campaign.active ? "Désactiver" : "Activer"} ${campaign.name}`}
+                                checked={campaign.active}
+                                onCheckedChange={(active) =>
+                                  activateCampaign.mutate({ id: campaign.id, active })
+                                }
+                              />
+                            ) : null}
+                          </div>
+                        ))}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -175,24 +175,41 @@ export class AdminService {
     });
   }
   async partners(skip: number, take: number) {
-    return this.prisma.partner.findMany({
+    const partners = await this.prisma.partner.findMany({
       skip,
       take,
       include: {
+        _count: { select: { attributions: true } },
         campaigns: {
           select: {
             id: true,
+            code: true,
             name: true,
             active: true,
             startsAt: true,
             endsAt: true,
             budgetMinor: true,
             currency: true,
+            _count: { select: { attributions: true } },
+            ledgerEntries: { select: { kind: true, amountMinor: true, currency: true } },
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
+    return partners.map((partner) => ({
+      ...partner,
+      campaigns: partner.campaigns.map((campaign) => ({
+        ...campaign,
+        costsMinor: campaign.ledgerEntries
+          .filter((entry) => ["BENEFIT_COST", "REWARD_COST"].includes(entry.kind))
+          .reduce((sum, entry) => sum + entry.amountMinor, 0n),
+        revenueMinor: campaign.ledgerEntries
+          .filter((entry) => entry.kind === "REVENUE")
+          .reduce((sum, entry) => sum + entry.amountMinor, 0n),
+        ledgerEntries: undefined,
+      })),
+    }));
   }
   async productAnalytics(days: number) {
     const since = new Date(Date.now() - days * 86_400_000);

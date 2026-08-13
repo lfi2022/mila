@@ -72,25 +72,42 @@ export class ListsService {
     });
   }
 
-  async create(userId: string, input: ListInput) {
+  async create(userId: string, input: ListInput, attributionToken?: string) {
+    this.assertTypeEnabled(input.type);
     const accessCodeHash = await this.accessCodeHash(input.visibility, input.accessCode);
-    return this.prisma.giftList.create({
-      data: {
-        ownerId: userId,
-        ...listData(input),
-        title: input.title.trim(),
-        slug: input.slug.trim().toLowerCase(),
-        type: input.type,
-        visibility: input.visibility,
-        status: input.status,
-        accessCodeHash,
-      },
+    const data = {
+      ownerId: userId,
+      ...listData(input),
+      title: input.title.trim(),
+      slug: input.slug.trim().toLowerCase(),
+      type: input.type,
+      visibility: input.visibility,
+      status: input.status,
+      accessCodeHash,
+    };
+    if (!attributionToken) return this.prisma.giftList.create({ data });
+    return this.prisma.$transaction(async (tx) => {
+      const list = await tx.giftList.create({ data });
+      await tx.partnerAttribution.updateMany({
+        where: {
+          tokenHash: this.sign(attributionToken),
+          listId: null,
+          expiresAt: { gt: new Date() },
+        },
+        data: { userId, listId: list.id, convertedAt: new Date() },
+      });
+      return list;
     });
   }
 
   async update(userId: string, listId: string, input: Partial<ListInput>) {
     await this.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
+    if (input.type) this.assertTypeEnabled(input.type);
+    if (input.status === "ARCHIVED" || input.status === "DELETED")
+      throw new AppError(409, "USE_LIST_LIFECYCLE", "Use the archive lifecycle action");
     const current = await this.prisma.giftList.findUniqueOrThrow({ where: { id: listId } });
+    if (current.status === "ARCHIVED" || current.status === "DELETED")
+      throw new AppError(409, "LIST_LIFECYCLE_INVALID", "Archived lists cannot be edited");
     const visibility = input.visibility ?? current.visibility;
     let accessCodeHash = current.accessCodeHash;
     if (visibility !== "PROTECTED") accessCodeHash = null;
@@ -110,6 +127,119 @@ export class ListsService {
     await this.prisma.giftList.update({
       where: { id: listId },
       data: { deletedAt: new Date(), status: "DELETED", slug: `deleted-${listId}` },
+    });
+  }
+
+  async lifecycleSummary(userId: string, listId: string) {
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
+    const list = await this.prisma.giftList.findUniqueOrThrow({
+      where: { id: listId },
+      select: {
+        id: true,
+        status: true,
+        closedAt: true,
+        archivedAt: true,
+        memoryBook: {
+          select: { id: true, exportPreparedAt: true, _count: { select: { items: true } } },
+        },
+        thankYous: { select: { receivedAt: true, thankedAt: true } },
+        wallet: {
+          select: {
+            transactions: { where: { status: "CONFIRMED" }, select: { amountMinor: true } },
+          },
+        },
+        futureLists: {
+          select: { id: true, title: true, type: true, dueDate: true, status: true },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+    return {
+      status: list.status,
+      closedAt: list.closedAt,
+      archivedAt: list.archivedAt,
+      memoryBook: list.memoryBook,
+      thankYous: {
+        received: list.thankYous.filter((item) => item.receivedAt).length,
+        pending: list.thankYous.filter((item) => item.receivedAt && !item.thankedAt).length,
+      },
+      confirmedRewardMinor: (list.wallet?.transactions ?? [])
+        .reduce((sum, item) => sum + item.amountMinor, 0n)
+        .toString(),
+      futureLists: list.futureLists,
+    };
+  }
+
+  async close(userId: string, listId: string) {
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.giftList.findUniqueOrThrow({ where: { id: listId } });
+      if (current.status === "ARCHIVED" || current.status === "DELETED")
+        throw new AppError(
+          409,
+          "LIST_LIFECYCLE_INVALID",
+          "Archived or deleted lists cannot be closed",
+        );
+      if (current.closedAt) return current;
+      const closedAt = current.closedAt ?? new Date();
+      const list = await tx.giftList.update({ where: { id: listId }, data: { closedAt } });
+      await tx.listLifecycleEvent.create({ data: { listId, actorId: userId, action: "CLOSED" } });
+      return list;
+    });
+  }
+
+  async archive(userId: string, listId: string) {
+    await this.assertRole(userId, listId, ["OWNER"]);
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.giftList.findUniqueOrThrow({ where: { id: listId } });
+      if (current.status === "ARCHIVED") return current;
+      if (current.status === "DELETED")
+        throw new AppError(409, "LIST_LIFECYCLE_INVALID", "Deleted lists cannot be archived");
+      const now = new Date();
+      const list = await tx.giftList.update({
+        where: { id: listId },
+        data: { status: "ARCHIVED", closedAt: current.closedAt ?? now, archivedAt: now },
+      });
+      await tx.listLifecycleEvent.create({ data: { listId, actorId: userId, action: "ARCHIVED" } });
+      return list;
+    });
+  }
+
+  async createFuture(
+    userId: string,
+    listId: string,
+    input: { title: string; slug: string; type: ListType; dueDate?: string | null },
+  ) {
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    this.assertTypeEnabled(input.type);
+    const source = await this.prisma.giftList.findUniqueOrThrow({ where: { id: listId } });
+    return this.prisma.$transaction(async (tx) => {
+      const future = await tx.giftList.create({
+        data: {
+          ownerId: source.ownerId,
+          sourceListId: source.id,
+          title: input.title.trim(),
+          slug: input.slug.trim().toLowerCase(),
+          type: input.type,
+          dueDate: input.dueDate ? new Date(`${input.dueDate}T00:00:00Z`) : null,
+          status: "DRAFT",
+          visibility: "UNLISTED",
+          theme: source.theme,
+          accentColor: source.accentColor,
+          heroStyle: source.heroStyle,
+          fontPair: source.fontPair,
+          layout: source.layout,
+        },
+      });
+      await tx.listLifecycleEvent.create({
+        data: {
+          listId,
+          actorId: userId,
+          action: "FUTURE_CREATED",
+          metadata: { futureListId: future.id, type: future.type },
+        },
+      });
+      return future;
     });
   }
 
@@ -151,6 +281,7 @@ export class ListsService {
         surpriseMode: true,
         hideReservedGifts: true,
         showProgress: true,
+        closedAt: true,
         theme: true,
         accentColor: true,
         accessCodeHash: true,
@@ -262,6 +393,11 @@ export class ListsService {
     if (!code)
       throw new AppError(400, "ACCESS_CODE_REQUIRED", "Protected lists require an access code");
     return argon2.hash(code, { type: argon2.argon2id });
+  }
+
+  private assertTypeEnabled(type: ListType) {
+    if (!this.config.ENABLED_LIST_TYPES.split(",").includes(type))
+      throw new AppError(409, "LIST_TYPE_DISABLED", "This list type is not enabled for launch");
   }
 
   private verifyGrant(listId: string, grant?: string): boolean {

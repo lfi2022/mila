@@ -32,6 +32,23 @@ const config = loadConfig({
 });
 
 describe("ListsService", () => {
+  it("keeps non-launch list types disabled by configuration", async () => {
+    const service = new ListsService({} as PrismaClient, config);
+    await expect(
+      service.create("user-1", {
+        title: "Mariage",
+        slug: "mariage",
+        type: "WEDDING",
+        visibility: "UNLISTED",
+        status: "DRAFT",
+        surpriseMode: false,
+        hideReservedGifts: false,
+        allowIndexing: false,
+        showProgress: true,
+        theme: "default",
+      }),
+    ).rejects.toMatchObject({ code: "LIST_TYPE_DISABLED" });
+  });
   it("hashes protected-list access codes", async () => {
     const create = vi.fn().mockImplementation(({ data }) => Promise.resolve(data));
     const service = new ListsService({ giftList: { create } } as unknown as PrismaClient, config);

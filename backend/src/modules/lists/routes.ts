@@ -68,7 +68,13 @@ export function listRoutes(
     app.post("/lists", async (request, reply) => {
       requireCsrf(request);
       const user = await current(request);
-      const list = await lists.create(user.id, listInput.parse(request.body));
+      const list = await lists.create(
+        user.id,
+        listInput.parse(request.body),
+        request.cookies["mila_partner_attribution"],
+      );
+      if (request.cookies["mila_partner_attribution"])
+        reply.clearCookie("mila_partner_attribution", { path: "/api/v1" });
       return reply.status(201).send({ list });
     });
 
@@ -94,6 +100,45 @@ export function listRoutes(
       const user = await current(request);
       await lists.remove(user.id, idParams.parse(request.params).listId);
       return reply.status(204).send();
+    });
+
+    app.get("/lists/:listId/lifecycle", async (request) => {
+      const user = await current(request);
+      return {
+        lifecycle: await lists.lifecycleSummary(user.id, idParams.parse(request.params).listId),
+      };
+    });
+
+    app.post("/lists/:listId/lifecycle/close", async (request) => {
+      requireCsrf(request);
+      const user = await current(request);
+      return { list: await lists.close(user.id, idParams.parse(request.params).listId) };
+    });
+
+    app.post("/lists/:listId/lifecycle/archive", async (request) => {
+      requireCsrf(request);
+      const user = await current(request);
+      return { list: await lists.archive(user.id, idParams.parse(request.params).listId) };
+    });
+
+    app.post("/lists/:listId/lifecycle/future", async (request, reply) => {
+      requireCsrf(request);
+      const user = await current(request);
+      const input = z
+        .object({
+          title: z.string().trim().min(2).max(180),
+          slug: z
+            .string()
+            .trim()
+            .toLowerCase()
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+            .max(120),
+          type: z.enum(["BIRTH", "BIRTHDAY", "CHRISTENING", "CHRISTMAS", "WEDDING", "OTHER"]),
+          dueDate: z.string().date().nullable().optional(),
+        })
+        .parse(request.body);
+      const list = await lists.createFuture(user.id, idParams.parse(request.params).listId, input);
+      return reply.status(201).send({ list });
     });
 
     app.post("/lists/:listId/invitations", async (request, reply) => {

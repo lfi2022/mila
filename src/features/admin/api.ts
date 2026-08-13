@@ -122,6 +122,7 @@ export const adminListRisks = async () =>
     await apiRequest<{
       risks: Array<{
         id: string;
+        slug: string;
         category: string;
         score: number;
         status: string;
@@ -141,10 +142,68 @@ export const adminListPartners = async () =>
         region: string | null;
         status: string;
         contractReference: string | null;
-        campaigns: Array<{ id: string; name: string; active: boolean }>;
+        campaigns: Array<{
+          id: string;
+          code: string;
+          name: string;
+          active: boolean;
+          budgetMinor: string | null;
+          currency: string;
+          costsMinor: string;
+          revenueMinor: string;
+          _count: { attributions: number };
+        }>;
       }>;
     }>("/admin/partners?limit=100")
   ).partners;
+export const adminCreatePartner = (input: {
+  slug: string;
+  name: string;
+  category: string;
+  region?: string;
+  summary?: string;
+  landingTitle?: string;
+  landingBody?: string;
+  websiteUrl?: string;
+  contractReference?: string;
+  reason: string;
+}) => apiRequest("/admin/partners", { method: "POST", csrf: true, body: JSON.stringify(input) });
+export const adminCreatePartnerCampaign = (input: {
+  partnerId: string;
+  code: string;
+  name: string;
+  startsAt: string;
+  endsAt: string;
+  benefit: { title: string; description: string };
+  budgetMinor?: string;
+  currency: string;
+  reason: string;
+}) =>
+  apiRequest("/admin/partner-campaigns", {
+    method: "POST",
+    csrf: true,
+    body: JSON.stringify(input),
+  });
+export const adminSetPartnerCampaignActive = (campaignId: string, active: boolean) =>
+  apiRequest(`/admin/partner-campaigns/${campaignId}/activation`, {
+    method: "POST",
+    csrf: true,
+    body: JSON.stringify({
+      active,
+      reason: active ? "Activation contractuelle confirmée" : "Désactivation administrative",
+    }),
+  });
+export const adminSetPartnerActive = (partnerId: string, active: boolean) =>
+  apiRequest(`/admin/partners/${partnerId}/status`, {
+    method: "POST",
+    csrf: true,
+    body: JSON.stringify({
+      status: active ? "ACTIVE" : "INACTIVE",
+      reason: active
+        ? "Contrat et publication vérifiés"
+        : "Partenaire désactivé administrativement",
+    }),
+  });
 export const adminReviewRisk = (
   riskId: string,
   status: "RESOLVED" | "DISMISSED",

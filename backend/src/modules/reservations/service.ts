@@ -31,7 +31,7 @@ export class ReservationsService {
             publicToken: input.giftToken,
             deletedAt: null,
             status: { in: ["AVAILABLE", "RESERVED"] },
-            list: { deletedAt: null, status: "ACTIVE" },
+            list: { deletedAt: null, status: "ACTIVE", closedAt: null },
           },
           select: {
             id: true,

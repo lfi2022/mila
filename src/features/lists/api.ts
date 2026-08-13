@@ -99,6 +99,47 @@ export const listApi = {
   },
   removeMember: (id: string, memberId: string) =>
     apiRequest<void>(`/lists/${id}/members/${memberId}`, { method: "DELETE", csrf: true }),
+  lifecycle: (id: string) =>
+    apiRequest<{
+      lifecycle: {
+        status: ListStatus;
+        closedAt: string | null;
+        archivedAt: string | null;
+        memoryBook: {
+          id: string;
+          exportPreparedAt: string | null;
+          _count: { items: number };
+        } | null;
+        thankYous: { received: number; pending: number };
+        confirmedRewardMinor: string;
+        futureLists: Array<{
+          id: string;
+          title: string;
+          type: ListType;
+          dueDate: string | null;
+          status: ListStatus;
+        }>;
+      };
+    }>(`/lists/${id}/lifecycle`).then((result) => result.lifecycle),
+  close: (id: string) =>
+    apiRequest<{ list: MilaList }>(`/lists/${id}/lifecycle/close`, {
+      method: "POST",
+      csrf: true,
+    }).then((result) => result.list),
+  archive: (id: string) =>
+    apiRequest<{ list: MilaList }>(`/lists/${id}/lifecycle/archive`, {
+      method: "POST",
+      csrf: true,
+    }).then((result) => result.list),
+  createFuture: (
+    id: string,
+    input: { title: string; slug: string; type: ListType; dueDate?: string | null },
+  ) =>
+    apiRequest<{ list: MilaList }>(`/lists/${id}/lifecycle/future`, {
+      method: "POST",
+      csrf: true,
+      body: JSON.stringify(input),
+    }).then((result) => result.list),
   coverUrl: (list: Pick<MilaList, "coverMediaKey">) =>
     list.coverMediaKey ? buildAssetUrl("list-cover", list.coverMediaKey) : null,
 };

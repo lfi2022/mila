@@ -46,10 +46,6 @@ export const Route = createFileRoute("/dashboard/")({
 const LIST_TYPES = [
   { value: "BIRTH", label: "Naissance" },
   { value: "BIRTHDAY", label: "Anniversaire" },
-  { value: "CHRISTENING", label: "Baptême" },
-  { value: "WEDDING", label: "Mariage" },
-  { value: "CHRISTMAS", label: "Noël" },
-  { value: "OTHER", label: "Autre occasion" },
 ] as const;
 
 const registrySchema = z.object({

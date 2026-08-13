@@ -286,6 +286,8 @@ model User {
   approvedMessages        Message[]                  @relation("MessageApprover")
   reviewedSecondHandOffers SecondHandOffer[]          @relation("SecondHandReviewer")
   approvedMemoryItems     MemoryBookItem[]            @relation("MemoryItemApprover")
+  partnerAttributions     PartnerAttribution[]
+  listLifecycleEvents     ListLifecycleEvent[]
   privacyConsents         PrivacyConsent[]
   riskReviews             RiskReview[]                @relation("RiskSubject")
   reviewedRisks           RiskReview[]                @relation("RiskReviewer")
@@ -381,6 +383,8 @@ model GiftList {
   autoSuggestBetterOffer   Boolean                @default(true) @map("auto_suggest_better_offer")
   autoSwitchBetterOffer    Boolean                @default(false) @map("auto_switch_better_offer")
   automaticOrderingAllowed Boolean                @default(false) @map("automatic_ordering_allowed")
+  sourceListId             String?                @map("source_list_id") @db.Char(36)
+  closedAt                 DateTime?              @map("closed_at") @db.DateTime(3)
   archivedAt               DateTime?              @map("archived_at") @db.DateTime(3)
   deletedAt                DateTime?              @map("deleted_at") @db.DateTime(3)
   createdAt                DateTime               @default(now()) @map("created_at") @db.DateTime(3)
@@ -407,10 +411,15 @@ model GiftList {
   entitlement              ListEntitlement?
   secondHandOffers         SecondHandOffer[]
   memoryBook               MemoryBook?
+  sourceList               GiftList?              @relation("FutureFamilyEvent", fields: [sourceListId], references: [id], onDelete: SetNull)
+  futureLists              GiftList[]             @relation("FutureFamilyEvent")
+  partnerAttribution       PartnerAttribution?
+  lifecycleEvents          ListLifecycleEvent[]
 
   @@index([ownerId, status])
   @@index([visibility, status])
   @@index([dueDate])
+  @@index([sourceListId, createdAt])
   @@map("lists")
 }
 
@@ -873,8 +882,13 @@ model ReferralCode {
 
 model Partner {
   id                String            @id @default(uuid()) @db.Char(36)
+  slug              String            @unique @db.VarChar(120)
   name              String            @db.VarChar(180)
   category          String            @db.VarChar(120)
+  summary           String?           @db.VarChar(500)
+  websiteUrl        String?           @map("website_url") @db.VarChar(2048)
+  landingTitle      String?           @map("landing_title") @db.VarChar(180)
+  landingBody       String?           @map("landing_body") @db.Text
   contact           Json?
   region            String?           @db.VarChar(120)
   status            String            @default("PENDING") @db.VarChar(32)
@@ -882,6 +896,7 @@ model Partner {
   createdAt         DateTime          @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt         DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
   campaigns         PartnerCampaign[]
+  attributions      PartnerAttribution[]
 
   @@map("partners")
 }
@@ -889,6 +904,7 @@ model Partner {
 model PartnerCampaign {
   id                String   @id @default(uuid()) @db.Char(36)
   partnerId         String   @map("partner_id") @db.Char(36)
+  code              String   @unique @db.VarChar(64)
   name              String   @db.VarChar(180)
   startsAt          DateTime @map("starts_at") @db.DateTime(3)
   endsAt            DateTime @map("ends_at") @db.DateTime(3)
@@ -901,9 +917,65 @@ model PartnerCampaign {
   createdAt         DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.DateTime(3)
   partner           Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  attributions      PartnerAttribution[]
+  ledgerEntries     PartnerCampaignLedgerEntry[]
 
   @@index([active, startsAt, endsAt])
   @@map("partner_campaigns")
+}
+
+model PartnerAttribution {
+  id          String           @id @default(uuid()) @db.Char(36)
+  partnerId   String           @map("partner_id") @db.Char(36)
+  campaignId  String?          @map("campaign_id") @db.Char(36)
+  userId      String?          @map("user_id") @db.Char(36)
+  listId      String?          @unique @map("list_id") @db.Char(36)
+  tokenHash   String           @unique @map("token_hash") @db.Char(64)
+  channel     String           @default("LINK") @db.VarChar(32)
+  expiresAt   DateTime         @map("expires_at") @db.DateTime(3)
+  convertedAt DateTime?        @map("converted_at") @db.DateTime(3)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  partner     Partner          @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  campaign    PartnerCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  user        User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  list        GiftList?        @relation(fields: [listId], references: [id], onDelete: SetNull)
+  ledgerEntries PartnerCampaignLedgerEntry[]
+
+  @@index([partnerId, createdAt])
+  @@index([campaignId, convertedAt])
+  @@index([expiresAt])
+  @@map("partner_attributions")
+}
+
+model PartnerCampaignLedgerEntry {
+  id            String              @id @default(uuid()) @db.Char(36)
+  campaignId    String              @map("campaign_id") @db.Char(36)
+  attributionId String?             @map("attribution_id") @db.Char(36)
+  kind          String              @db.VarChar(32)
+  amountMinor   BigInt              @map("amount_minor")
+  currency      String              @default("EUR") @db.Char(3)
+  idempotencyKey String             @unique @map("idempotency_key") @db.VarChar(255)
+  note          String?             @db.VarChar(500)
+  createdAt     DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  campaign      PartnerCampaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  attribution   PartnerAttribution? @relation(fields: [attributionId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId, kind, createdAt])
+  @@map("partner_campaign_ledger_entries")
+}
+
+model ListLifecycleEvent {
+  id        String   @id @default(uuid()) @db.Char(36)
+  listId    String   @map("list_id") @db.Char(36)
+  actorId   String   @map("actor_id") @db.Char(36)
+  action    String   @db.VarChar(32)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  list      GiftList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  actor     User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([listId, createdAt])
+  @@map("list_lifecycle_events")
 }
 
 model PaymentAccount {

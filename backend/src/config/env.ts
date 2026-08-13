@@ -24,6 +24,12 @@ const envSchema = z
     RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
     REQUEST_BODY_LIMIT_BYTES: z.coerce.number().int().min(1_024).max(5_242_880).default(1_048_576),
     SEO_INDEXING_ENABLED: booleanString,
+    ENABLED_LIST_TYPES: z
+      .string()
+      .regex(
+        /^(BIRTH|BIRTHDAY|CHRISTENING|CHRISTMAS|WEDDING|OTHER)(,(BIRTH|BIRTHDAY|CHRISTENING|CHRISTMAS|WEDDING|OTHER))*$/,
+      )
+      .default("BIRTH,BIRTHDAY"),
     DATABASE_HOST: z.string().trim().min(1),
     DATABASE_PORT: z.coerce.number().int().min(1).max(65_535).default(3306),
     DATABASE_NAME: z.string().trim().min(1),

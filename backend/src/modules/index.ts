@@ -14,5 +14,6 @@ export const MODULE_NAMES = [
   "memories",
   "reports",
   "admin",
+  "partners",
   "webhooks",
 ] as const;

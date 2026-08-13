@@ -54,11 +54,19 @@ export const Route = createFileRoute("/dashboard/$registryId")({
 const LIST_TYPES = [
   { value: "BIRTH", label: "Naissance" },
   { value: "BIRTHDAY", label: "Anniversaire" },
-  { value: "CHRISTENING", label: "Baptême" },
-  { value: "WEDDING", label: "Mariage" },
-  { value: "CHRISTMAS", label: "Noël" },
-  { value: "OTHER", label: "Autre" },
 ] as const;
+
+function slugify(value: string) {
+  return (
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60) || "liste"
+  );
+}
 
 const itemSchema = z.object({
   title: z.string().trim().min(2, "Le nom du cadeau est trop court").max(140),
@@ -109,6 +117,8 @@ function RegistryDetail() {
   const [item, setItem] = useState(emptyItem);
   const [accessCode, setAccessCode] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [futureTitle, setFutureTitle] = useState("");
+  const [futureDate, setFutureDate] = useState("");
   const registry = useQuery({
     queryKey: queryKeys.list(registryId),
     queryFn: async () => {
@@ -128,6 +138,47 @@ function RegistryDetail() {
         price: gift.unitPriceMinor ? Number(gift.unitPriceMinor) / 100 : null,
       }));
     },
+  });
+  const lifecycle = useQuery({
+    queryKey: ["list-lifecycle", registryId],
+    queryFn: () => listApi.lifecycle(registryId),
+  });
+  const refreshLifecycle = () => {
+    void queryClient.invalidateQueries({ queryKey: ["list-lifecycle", registryId] });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.list(registryId) });
+    void queryClient.invalidateQueries({ queryKey: ["lists"] });
+  };
+  const closeList = useMutation({
+    mutationFn: () => listApi.close(registryId),
+    onSuccess: () => {
+      toast.success("Liste clôturée");
+      refreshLifecycle();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const archiveList = useMutation({
+    mutationFn: () => listApi.archive(registryId),
+    onSuccess: () => {
+      toast.success("Liste archivée");
+      refreshLifecycle();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const futureList = useMutation({
+    mutationFn: () =>
+      listApi.createFuture(registryId, {
+        title: futureTitle,
+        slug: `${slugify(futureTitle)}-${Date.now().toString(36)}`,
+        type: "BIRTHDAY",
+        dueDate: futureDate || null,
+      }),
+    onSuccess: () => {
+      setFutureTitle("");
+      setFutureDate("");
+      toast.success("Future liste créée en brouillon");
+      refreshLifecycle();
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const reservations = useQuery({
@@ -354,6 +405,7 @@ function RegistryDetail() {
           <TabsTrigger value="parents">Parents</TabsTrigger>
           <TabsTrigger value="contributions">Contributions</TabsTrigger>
           <TabsTrigger value="prices">Prix</TabsTrigger>
+          <TabsTrigger value="lifecycle">Après l’événement</TabsTrigger>
           <TabsTrigger value="settings">Réglages</TabsTrigger>
         </TabsList>
 
@@ -643,6 +695,105 @@ function RegistryDetail() {
           <PriceTrackingPanel listId={registryId} />
         </TabsContent>
 
+        <TabsContent value="lifecycle" className="mt-6 space-y-6">
+          <section className="surface-card space-y-4 p-6">
+            <h2 className="text-xl">Clôture et souvenirs</h2>
+            <p className="text-sm text-muted-foreground">
+              Clôturer bloque immédiatement les nouvelles réservations, tout en laissant les
+              remerciements, souvenirs et récompenses accessibles. L’archivage masque ensuite la
+              page publique.
+            </p>
+            <div className="grid gap-3 text-sm sm:grid-cols-3">
+              <p>
+                Remerciements en attente : <strong>{lifecycle.data?.thankYous.pending ?? 0}</strong>
+              </p>
+              <p>
+                Souvenirs sélectionnés :{" "}
+                <strong>{lifecycle.data?.memoryBook?._count.items ?? 0}</strong>
+              </p>
+              <p>
+                Récompenses confirmées :{" "}
+                <strong>{lifecycle.data?.confirmedRewardMinor ?? "0"} centimes</strong>
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {!lifecycle.data?.closedAt ? (
+                <Button
+                  variant="secondary"
+                  disabled={closeList.isPending}
+                  onClick={() => closeList.mutate()}
+                >
+                  Clôturer les réservations
+                </Button>
+              ) : (
+                <Badge variant="secondary">Clôturée</Badge>
+              )}
+              {lifecycle.data?.status !== "ARCHIVED" ? (
+                <Button
+                  variant="outline"
+                  disabled={archiveList.isPending}
+                  onClick={() => archiveList.mutate()}
+                >
+                  Archiver la liste
+                </Button>
+              ) : (
+                <Badge variant="outline">Archivée</Badge>
+              )}
+              <Button asChild variant="outline">
+                <Link to="/dashboard/memories">Préparer les souvenirs et remerciements</Link>
+              </Button>
+            </div>
+          </section>
+          <section className="surface-card space-y-4 p-6">
+            <h2 className="text-xl">Prochain anniversaire</h2>
+            <p className="text-sm text-muted-foreground">
+              Créez une nouvelle liste indépendante en brouillon. Aucun cadeau, réservation ou
+              donnée de proche n’est copié.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="future-title">Titre</Label>
+                <Input
+                  id="future-title"
+                  value={futureTitle}
+                  onChange={(event) => setFutureTitle(event.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="future-date">Date</Label>
+                <Input
+                  id="future-date"
+                  type="date"
+                  value={futureDate}
+                  onChange={(event) => setFutureDate(event.target.value)}
+                />
+              </div>
+            </div>
+            <Button
+              disabled={futureTitle.trim().length < 2 || futureList.isPending}
+              onClick={() => futureList.mutate()}
+            >
+              Créer la liste d’anniversaire
+            </Button>
+            {lifecycle.data?.futureLists.length ? (
+              <ul className="space-y-2 text-sm">
+                {lifecycle.data.futureLists.map((future) => (
+                  <li key={future.id}>
+                    <Link
+                      to="/dashboard/$registryId"
+                      params={{ registryId: future.id }}
+                      className="underline"
+                    >
+                      {future.title}
+                    </Link>{" "}
+                    · {future.status}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        </TabsContent>
+
         <TabsContent value="settings" className="mt-6 grid gap-8 lg:grid-cols-2">
           <section className="surface-card space-y-5 p-6">
             <h2 className="text-xl">Informations</h2>
@@ -803,21 +954,6 @@ function RegistryDetail() {
                 checked={list.allow_indexing}
                 disabled={list.visibility !== "PUBLIC"}
                 onCheckedChange={(checked) => updateRegistry.mutate({ allow_indexing: checked })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-4 border-t pt-4">
-              <div>
-                <p className="text-sm font-medium">Archiver la liste</p>
-                <p className="text-xs text-muted-foreground">
-                  La page publique n'est plus accessible.
-                </p>
-              </div>
-              <Switch
-                checked={list.status === "ARCHIVED"}
-                onCheckedChange={(checked) =>
-                  updateRegistry.mutate({ status: checked ? "ARCHIVED" : "ACTIVE" })
-                }
               />
             </div>
           </section>
