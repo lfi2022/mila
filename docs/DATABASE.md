@@ -59,6 +59,12 @@ Media assets retain exact MIME, size, SHA-256 checksum, scan/transcode state, re
 
 `approved_for_memory`, approver and timestamp make message consent explicit. A memory item additionally records the approving parent and has a unique `(book, source type, source ID)` constraint. Source membership and approval are revalidated when adding it. Thank-you draft approval and card creation timestamps are separate from `thanked_at`; saving a changed draft clears approval, and no database state represents an automatic send.
 
+## Compliance and risk invariants
+
+`202608130011_compliance_and_risk` adds purpose/version-specific consent evidence, scored manual risk reviews, an incident register and a processor register. Risk rows contain structured bounded signals rather than raw request bodies or banking data. Sensitive moderation and risk decisions append `admin_audit_logs` in the same transaction as the state change, with actor, request ID, mandatory reason and before/after state. Audit rows are never updated or deleted by application workflows.
+
+Suspension sets `users.suspended_at` and revokes active sessions. Reports remain separate from risk reviews: a user report is evidence to triage, while a risk row records why manual review was requested and its resolution. `security_incidents` and `data_processors` are operational registers, not claims that an external incident process or processor contract has been approved.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

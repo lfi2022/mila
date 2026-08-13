@@ -34,8 +34,9 @@ function LegalPage() {
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-16">
         <h1 className="text-4xl">Mentions légales</h1>
         <p className="rounded-xl border border-dashed border-primary/50 bg-primary/5 p-4 text-sm">
-          Certaines informations ci-dessous doivent être complétées par l'éditeur du site avant une
-          mise en ligne commerciale (raison sociale, adresse, numéro d'immatriculation).
+          `BLOCKED_EXTERNAL` — cette page ne peut pas être publiée comme mentions légales finales
+          avant fourniture et validation de la raison sociale, forme, adresse, immatriculation,
+          numéro TVA, responsable de publication, contact et hébergeur contractuel.
         </p>
 
         <section className="space-y-3">

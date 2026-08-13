@@ -50,6 +50,13 @@ export function merchantRoutes(
     const user = await auth.authenticate(request.cookies[config.COOKIE_NAME]);
     if (!user.roles.some((role) => ["MODERATOR", "ADMIN", "SUPER_ADMIN"].includes(role)))
       throw new AppError(403, "STAFF_REQUIRED", "Staff access required");
+    return user;
+  };
+  const administrator = async (request: FastifyRequest) => {
+    const user = await staff(request);
+    if (!user.roles.some((role) => ["ADMIN", "SUPER_ADMIN"].includes(role)))
+      throw new AppError(403, "ADMIN_REQUIRED", "Administrator access required");
+    return user;
   };
   const csrf = (request: FastifyRequest) => {
     const cookie = request.cookies[`${config.COOKIE_NAME}_csrf`] ?? "";
@@ -85,7 +92,7 @@ export function merchantRoutes(
     });
     app.put("/admin/merchants/:merchantId", async (request) => {
       csrf(request);
-      await staff(request);
+      const actor = await administrator(request);
       const { merchantId } = z.object({ merchantId: z.string().uuid() }).parse(request.params);
       const value = merchantInput.parse(request.body);
       const { domains, affiliateRules, connectorConfig, ...scalar } = value;
@@ -101,14 +108,31 @@ export function merchantRoutes(
       const nested = {
         createMany: { data: domains.map((domain) => ({ domain })) },
       };
-      return {
-        merchant: await prisma.merchant.upsert({
+      return prisma.$transaction(async (transaction) => {
+        const before = await transaction.merchant.findUnique({
+          where: { id: merchantId },
+          include: { domains: true },
+        });
+        const merchant = await transaction.merchant.upsert({
           where: { id: merchantId },
           create: { id: merchantId, ...data, domains: nested },
           update: { ...data, domains: { deleteMany: {}, ...nested } },
           include: { domains: true },
-        }),
-      };
+        });
+        await transaction.adminAuditLog.create({
+          data: {
+            actorId: actor.id,
+            action: before ? "merchant.update" : "merchant.create",
+            targetType: "merchant",
+            targetId: merchant.id,
+            reason: "Configuration marchand confirmée depuis l’administration",
+            before: before ? JSON.parse(JSON.stringify(before)) : undefined,
+            after: JSON.parse(JSON.stringify(merchant)),
+            requestId: request.id,
+          },
+        });
+        return { merchant };
+      });
     });
   };
 }

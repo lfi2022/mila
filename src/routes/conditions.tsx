@@ -26,6 +26,10 @@ function TermsPage() {
       <SiteHeader />
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-12">
         <h1 className="font-display text-4xl">Conditions d'utilisation</h1>
+        <p className="rounded-xl border border-dashed border-primary/50 bg-primary/5 p-4 text-sm">
+          Projet de conditions, non validé juridiquement. Les clauses financières, fiscales,
+          consommateurs et de droit applicable sont bloquées jusqu’à revue professionnelle.
+        </p>
 
         <section className="space-y-3">
           <h2 className="font-display text-2xl">Le service</h2>
@@ -33,6 +37,27 @@ function TermsPage() {
             Mila permet de créer des listes de cadeaux et de les partager. Mila n'est ni un magasin
             ni un intermédiaire de paiement : les achats se font directement chez les marchands,
             sous leurs propres conditions.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-display text-2xl">Premium, Récompenses et contributions</h2>
+          <p className="text-muted-foreground">
+            Les avantages, prix, taxes, règles d’expiration, frais, remboursements et chargebacks
+            affichés dans l’application doivent correspondre aux conditions commerciales finales.
+            Mila ne collectera ni ne versera de fonds pour compte de tiers tant que le modèle
+            réglementaire, le prestataire autorisé et les obligations comptables ne sont pas
+            validés.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-display text-2xl">Signalement, modération et recours</h2>
+          <p className="text-muted-foreground">
+            Les contenus de phishing, liens malveillants, spam, fraude, abus de parrainage ou
+            atteinte aux droits peuvent être masqués et les comptes suspendus. Les décisions
+            sensibles sont motivées et journalisées. La procédure de contestation et les délais
+            définitifs restent à compléter avant lancement.
           </p>
         </section>
 

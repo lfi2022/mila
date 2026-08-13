@@ -124,6 +124,14 @@ Authorized list members use `/api/v1/lists/:listId/thank-yous` to filter purchas
 
 `/api/v1/lists/:listId/memory-book` persists theme, introduction and retention choice. Only parent-approved visible messages and gifts belonging to the same list can become items. Print export produces authenticated A4-ready HTML for browser PDF/printing; clean private media receives short-lived signed links, unscanned media stays unavailable, and gift images must have an allowed usage policy.
 
+## Administration, moderation, and reporting routes
+
+All `/api/v1/admin/*` reads authenticate the session and require moderator/admin/super-admin role in Fastify; browser visibility is never the boundary. Overview, users, lists, reports, risk reviews and immutable audit entries are paginated. Existing protected payment, contribution, reward, affiliation and merchant endpoints complete the operational views. Financial overview derives confirmed commission, reward cost and typed ledger revenue separately; it never labels held parent funds or planned order allocations as Mila revenue.
+
+`POST /api/v1/admin/moderation` requires CSRF, an allowed action, target UUID and a non-empty reason. List/gift/user/report state is read and changed transactionally, user suspension revokes sessions, and the same transaction appends actor, request ID, reason and before/after audit data. Risk decisions have a dedicated reviewed-by/time/resolution workflow and audit event.
+
+The throttled public `POST /api/v1/public/reports` validates a real list/gift/user/message target and controlled reason. Honeypot, implausibly fast submission, link density and high-risk categories feed a bounded score. Medium-risk submissions create a manual risk review; high-risk submissions use the optional HTTPS adaptive-CAPTCHA hook when configured. Shared-IP use alone is never a ban signal.
+
 ## Error contract
 
 ```json

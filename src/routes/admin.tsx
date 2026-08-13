@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -33,8 +32,10 @@ import {
   adminListLists,
   adminListMerchants,
   adminListReports,
+  adminListRisks,
   adminListUsers,
   adminModerate,
+  adminReviewRisk,
   adminSaveMerchant,
   adminTestAffiliateLink,
   getAdminStats,
@@ -104,22 +105,13 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 function AdminContent({ isAdmin }: { isAdmin: boolean }) {
   const queryClient = useQueryClient();
-  const stats = useServerFn(getAdminStats);
-  const lists = useServerFn(adminListLists);
-  const users = useServerFn(adminListUsers);
-  const merchants = useServerFn(adminListMerchants);
-  const reports = useServerFn(adminListReports);
-  const auditLog = useServerFn(adminListAuditLog);
-  const moderate = useServerFn(adminModerate);
-  const saveMerchant = useServerFn(adminSaveMerchant);
-  const testLink = useServerFn(adminTestAffiliateLink);
-
-  const statsQuery = useQuery({ queryKey: ["admin-stats"], queryFn: () => stats() });
-  const listsQuery = useQuery({ queryKey: ["admin-lists"], queryFn: () => lists() });
-  const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: () => users() });
-  const merchantsQuery = useQuery({ queryKey: ["admin-merchants"], queryFn: () => merchants() });
-  const reportsQuery = useQuery({ queryKey: ["admin-reports"], queryFn: () => reports() });
-  const auditQuery = useQuery({ queryKey: ["admin-audit"], queryFn: () => auditLog() });
+  const statsQuery = useQuery({ queryKey: ["admin-stats"], queryFn: getAdminStats });
+  const listsQuery = useQuery({ queryKey: ["admin-lists"], queryFn: adminListLists });
+  const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: adminListUsers });
+  const merchantsQuery = useQuery({ queryKey: ["admin-merchants"], queryFn: adminListMerchants });
+  const reportsQuery = useQuery({ queryKey: ["admin-reports"], queryFn: adminListReports });
+  const risksQuery = useQuery({ queryKey: ["admin-risks"], queryFn: adminListRisks });
+  const auditQuery = useQuery({ queryKey: ["admin-audit"], queryFn: adminListAuditLog });
 
   const refresh = () => {
     for (const key of [
@@ -127,6 +119,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
       "admin-lists",
       "admin-merchants",
       "admin-reports",
+      "admin-risks",
       "admin-audit",
     ]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
@@ -134,8 +127,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
   };
 
   const moderateMutation = useMutation({
-    mutationFn: (input: { action: ModerationAction; targetId: string }) =>
-      moderate({ data: input }),
+    mutationFn: (input: { action: ModerationAction; targetId: string }) => adminModerate(input),
     onSuccess: () => {
       toast.success("Action appliquée");
       refresh();
@@ -211,13 +203,15 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {s.business.clicksByMerchant.map((row) => (
-                      <TableRow key={row.merchant}>
-                        <TableCell>{row.merchant}</TableCell>
-                        <TableCell>{row.clicks}</TableCell>
-                        <TableCell>{row.affiliateClicks}</TableCell>
-                      </TableRow>
-                    ))}
+                    {s.business.clicksByMerchant.map(
+                      (row: { merchant: string; clicks: number; affiliateClicks: number }) => (
+                        <TableRow key={row.merchant}>
+                          <TableCell>{row.merchant}</TableCell>
+                          <TableCell>{row.clicks}</TableCell>
+                          <TableCell>{row.affiliateClicks}</TableCell>
+                        </TableRow>
+                      ),
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -322,7 +316,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                     merchant={merchant}
                     isAdmin={isAdmin}
                     onSave={async (values) => {
-                      await saveMerchant({ data: values });
+                      await adminSaveMerchant(values);
                       toast.success("Marchand mis à jour");
                       refresh();
                     }}
@@ -348,7 +342,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                   apiConfig: "",
                 }}
                 onSave={async (values) => {
-                  await saveMerchant({ data: values });
+                  await adminSaveMerchant(values);
                   toast.success("Marchand enregistré");
                   refresh();
                 }}
@@ -356,7 +350,10 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
             ) : null}
 
             {isAdmin ? (
-              <AffiliateTester merchants={merchantsQuery.data ?? []} testLink={testLink} />
+              <AffiliateTester
+                merchants={merchantsQuery.data ?? []}
+                testLink={adminTestAffiliateLink}
+              />
             ) : null}
           </TabsContent>
 
@@ -369,6 +366,52 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
           </TabsContent>
 
           <TabsContent value="moderation" className="mt-6">
+            {risksQuery.data?.length ? (
+              <section className="mb-8 space-y-3">
+                <h2 className="text-lg">Revue de risque</h2>
+                {risksQuery.data.map((risk) => (
+                  <div
+                    key={risk.id}
+                    className="surface-card flex flex-wrap items-center justify-between gap-3 p-4"
+                  >
+                    <p>
+                      <strong>{risk.category}</strong> · score {risk.score} · {risk.targetType}
+                    </p>
+                    {!["RESOLVED", "DISMISSED"].includes(risk.status) ? (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            void adminReviewRisk(
+                              risk.id,
+                              "RESOLVED",
+                              "Signal vérifié et traité depuis le tableau de bord",
+                            ).then(refresh)
+                          }
+                        >
+                          Traiter
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            void adminReviewRisk(
+                              risk.id,
+                              "DISMISSED",
+                              "Signal écarté après revue manuelle",
+                            ).then(refresh)
+                          }
+                        >
+                          Écarter
+                        </Button>
+                      </div>
+                    ) : (
+                      <Badge variant="secondary">{risk.status}</Badge>
+                    )}
+                  </div>
+                ))}
+              </section>
+            ) : null}
             {reportsQuery.data?.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun signalement.</p>
             ) : (
@@ -768,7 +811,8 @@ function AffiliateTester({
 }: {
   merchants: MerchantRowData[];
   testLink: (opts: {
-    data: { merchantId: string; url: string };
+    merchantId: string;
+    url: string;
   }) => Promise<
     | { ok: false; reason: string }
     | { ok: true; domainMatches: boolean; affiliate: boolean; url: string }
@@ -806,7 +850,7 @@ function AffiliateTester({
         variant="secondary"
         onClick={async () => {
           try {
-            const response = await testLink({ data: { merchantId, url } });
+            const response = await testLink({ merchantId, url });
             setResult(
               response.ok
                 ? `${response.affiliate ? "Affilié" : "Lien direct"} · domaine ${

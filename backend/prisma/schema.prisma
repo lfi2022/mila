@@ -286,6 +286,9 @@ model User {
   approvedMessages        Message[]                  @relation("MessageApprover")
   reviewedSecondHandOffers SecondHandOffer[]          @relation("SecondHandReviewer")
   approvedMemoryItems     MemoryBookItem[]            @relation("MemoryItemApprover")
+  privacyConsents         PrivacyConsent[]
+  riskReviews             RiskReview[]                @relation("RiskSubject")
+  reviewedRisks           RiskReview[]                @relation("RiskReviewer")
   reports                 Report[]                  @relation("Reporter")
   auditLogs               AdminAuditLog[]           @relation("AuditActor")
 
@@ -1377,6 +1380,75 @@ model Report {
   @@index([status, createdAt])
   @@index([targetType, targetId])
   @@map("reports")
+}
+
+model PrivacyConsent {
+  id          String   @id @default(uuid()) @db.Char(36)
+  userId      String?  @map("user_id") @db.Char(36)
+  subjectHash String   @map("subject_hash") @db.Char(64)
+  purpose     String   @db.VarChar(64)
+  policyVersion String @map("policy_version") @db.VarChar(32)
+  granted     Boolean
+  source      String   @db.VarChar(32)
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([subjectHash, purpose, createdAt])
+  @@index([userId, purpose])
+  @@map("privacy_consents")
+}
+
+model RiskReview {
+  id           String   @id @default(uuid()) @db.Char(36)
+  subjectUserId String? @map("subject_user_id") @db.Char(36)
+  targetType   String   @map("target_type") @db.VarChar(64)
+  targetId     String?  @map("target_id") @db.Char(36)
+  category     String   @db.VarChar(64)
+  score        Int      @db.UnsignedTinyInt
+  signals      Json
+  status       String   @default("OPEN") @db.VarChar(32)
+  reviewedById String?  @map("reviewed_by_id") @db.Char(36)
+  resolution   String?  @db.VarChar(1000)
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  reviewedAt   DateTime? @map("reviewed_at") @db.DateTime(3)
+  subjectUser  User?    @relation("RiskSubject", fields: [subjectUserId], references: [id], onDelete: SetNull)
+  reviewedBy   User?    @relation("RiskReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, score, createdAt])
+  @@index([targetType, targetId])
+  @@map("risk_reviews")
+}
+
+model SecurityIncident {
+  id             String   @id @default(uuid()) @db.Char(36)
+  severity       String   @db.VarChar(32)
+  status         String   @default("OPEN") @db.VarChar(32)
+  detectedAt     DateTime @map("detected_at") @db.DateTime(3)
+  summary        String   @db.VarChar(500)
+  personalData   Boolean  @default(false) @map("personal_data")
+  authorityDueAt DateTime? @map("authority_due_at") @db.DateTime(3)
+  resolvedAt     DateTime? @map("resolved_at") @db.DateTime(3)
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@index([status, severity, detectedAt])
+  @@map("security_incidents")
+}
+
+model DataProcessor {
+  id                String   @id @default(uuid()) @db.Char(36)
+  name              String   @db.VarChar(180)
+  purpose           String   @db.VarChar(500)
+  dataCategories    Json     @map("data_categories")
+  region            String   @db.VarChar(64)
+  agreementReference String? @map("agreement_reference") @db.VarChar(255)
+  active            Boolean  @default(true)
+  reviewedAt        DateTime? @map("reviewed_at") @db.DateTime(3)
+  createdAt         DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@index([active, reviewedAt])
+  @@map("data_processors")
 }
 
 model AdminAuditLog {

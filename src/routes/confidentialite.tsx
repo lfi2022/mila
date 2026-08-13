@@ -26,6 +26,11 @@ function PrivacyPage() {
       <SiteHeader />
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-12">
         <h1 className="font-display text-4xl">Confidentialité</h1>
+        <p className="rounded-xl border border-dashed border-primary/50 bg-primary/5 p-4 text-sm">
+          Version produit à faire valider avant lancement par le responsable juridique/DPO. Les
+          coordonnées du responsable de traitement et les durées légales définitives restent à
+          compléter.
+        </p>
 
         <section className="space-y-3">
           <h2 className="font-display text-2xl">Ce que nous collectons</h2>
@@ -33,6 +38,26 @@ function PrivacyPage() {
             Pour les parents : votre email, votre prénom affiché et le contenu de vos listes. Pour
             les visiteurs qui réservent un cadeau : le prénom saisi, un email facultatif (pour vous
             envoyer votre lien de gestion) et le message laissé aux parents.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-display text-2xl">Finalités, destinataires et sécurité</h2>
+          <p className="text-muted-foreground">
+            Nous utilisons les données nécessaires pour fournir et sécuriser les listes,
+            réservations, contributions, paiements, messages et récompenses. L’équipe habilitée et
+            les sous-traitants strictement nécessaires y accèdent selon leur rôle. Les médias sont
+            privés, analysés, transmis par URL temporaire et ne rejoignent un livre souvenir
+            qu’après validation parentale.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-display text-2xl">Données relatives aux enfants</h2>
+          <p className="text-muted-foreground">
+            Le prénom, la date prévue et les photos sont facultatifs. N’ajoutez pas de données de
+            santé, d’identité, d’adresse ou d’autres informations sensibles. Les règles définitives
+            d’autorité parentale et de conservation des médias doivent encore être validées.
           </p>
         </section>
 
@@ -50,15 +75,18 @@ function PrivacyPage() {
           <h2 className="font-display text-2xl">Vos droits</h2>
           <p className="text-muted-foreground">
             Depuis votre profil, vous pouvez exporter l'ensemble de vos données au format JSON et
-            supprimer votre compte ainsi que vos listes, immédiatement et définitivement.
+            demander la correction et supprimer votre compte. Les éléments publics sont retirés et
+            les sessions révoquées immédiatement ; les écritures financières ou de sécurité peuvent
+            devoir être conservées pendant une durée légale à confirmer.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 className="font-display text-2xl">Conservation</h2>
           <p className="text-muted-foreground">
-            Vos listes sont conservées tant que votre compte existe. Les liens de gestion envoyés
-            aux visiteurs expirent automatiquement au bout d'un an.
+            Les liens de gestion expirent automatiquement. Les médias ont une échéance configurable.
+            Le calendrier exact par catégorie, les sous-traitants actifs, les transferts éventuels
+            et le contact de réclamation doivent être finalisés avant production.
           </p>
         </section>
       </main>

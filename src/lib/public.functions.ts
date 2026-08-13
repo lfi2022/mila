@@ -386,28 +386,3 @@ export const updateReservationByToken = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
-
-const reportInput = z.object({
-  targetType: z.enum(["list", "item", "user"]),
-  targetId: z.string().uuid(),
-  reason: z.string().trim().min(3).max(120),
-  details: z.string().trim().max(1000).optional(),
-});
-
-export const submitReport = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => reportInput.parse(data))
-  .handler(async ({ data }) => {
-    const { rateLimit, clientFingerprint } = await import("./server-utils.server");
-    if (!rateLimit(`report:${clientFingerprint()}`, 5, 300_000)) {
-      throw new Error("Trop de signalements envoyés. Réessayez plus tard.");
-    }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("reports").insert({
-      target_type: data.targetType,
-      target_id: data.targetId,
-      reason: data.reason,
-      details: data.details ?? null,
-    });
-    if (error) throw new Error("Le signalement n'a pas pu être envoyé.");
-    return { ok: true };
-  });

@@ -25,6 +25,7 @@ import { LAYOUT_CLASSES, appearanceStyle, getHeroStyle, getLayout } from "@/lib/
 import { getPublicList, reserveGift, type PublicGift } from "@/lib/public.functions";
 import { priceApi } from "@/features/prices/api";
 import { createSecondHandOffer } from "@/features/memories/api";
+import { apiRequest } from "@/services/api/client";
 
 const searchSchema = z.object({ code: z.string().max(64).optional() });
 
@@ -229,7 +230,91 @@ function PublicListPage() {
             ))}
           </ul>
         )}
+        <ReportList listId={list.id} />
       </main>
+    </div>
+  );
+}
+
+function ReportList({ listId }: { listId: string }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("OTHER");
+  const [details, setDetails] = useState("");
+  const [startedAt, setStartedAt] = useState(Date.now());
+  return (
+    <div className="mt-12 border-t pt-6 text-center">
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) setStartedAt(Date.now());
+        }}
+      >
+        <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+          Signaler cette liste
+        </Button>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Signaler un contenu</DialogTitle>
+            <DialogDescription>
+              Utilisez ce formulaire pour le phishing, un lien malveillant, le spam, la fraude, un
+              abus ou une atteinte à la vie privée.
+            </DialogDescription>
+          </DialogHeader>
+          <Label>Motif</Label>
+          <select
+            className="h-10 rounded-md border bg-background px-3"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          >
+            <option value="PHISHING">Phishing</option>
+            <option value="MALICIOUS_LINK">Lien malveillant</option>
+            <option value="SPAM">Spam</option>
+            <option value="FRAUD">Fraude</option>
+            <option value="REFERRAL_ABUSE">Abus de parrainage</option>
+            <option value="ILLEGAL_CONTENT">Contenu illégal</option>
+            <option value="PRIVACY">Vie privée</option>
+            <option value="OTHER">Autre</option>
+          </select>
+          <Label>Détails</Label>
+          <Textarea
+            maxLength={1000}
+            value={details}
+            onChange={(event) => setDetails(event.target.value)}
+          />
+          <input
+            aria-hidden="true"
+            tabIndex={-1}
+            autoComplete="off"
+            className="hidden"
+            name="website"
+          />
+          <DialogFooter>
+            <Button
+              onClick={async () => {
+                try {
+                  await apiRequest("/public/reports", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      targetType: "list",
+                      targetId: listId,
+                      reason,
+                      details,
+                      elapsedMs: Date.now() - startedAt,
+                    }),
+                  });
+                  toast.success("Signalement transmis pour revue");
+                  setOpen(false);
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Signalement impossible");
+                }
+              }}
+            >
+              Envoyer le signalement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
