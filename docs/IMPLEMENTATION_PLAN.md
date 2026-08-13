@@ -59,13 +59,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 05 — Lists, membership, privacy, and sharing
 
-- [ ] Implement list CRUD with name, slug, description, cover, optional due date/name, type, visibility, surprise mode, reservation behavior, theme, and lifecycle status.
-- [ ] Implement `PUBLIC`, `UNLISTED`, and `PROTECTED` lists with hashed access code, throttling, and temporary access cookie.
-- [ ] Enforce `OWNER`, `CO_OWNER`, and `EDITOR` permissions server-side.
-- [ ] Implement secure invitation, acceptance, revocation, and membership history.
-- [ ] Implement cover upload using controlled object storage.
-- [ ] Implement current-domain links, QR codes, WhatsApp, email, Web Share, Open Graph, canonical, and optional indexing.
-- [ ] Implement export/deletion privacy flows and list visibility explanations.
+- [x] Implement list CRUD with name, slug, description, existing cover key, optional due date/name, type, visibility, surprise mode, reservation behavior, theme, and lifecycle status.
+- [x] Implement `PUBLIC`, `UNLISTED`, and `PROTECTED` lists with Argon2id access code, throttling, and signed temporary access cookie.
+- [x] Enforce `OWNER`, `CO_OWNER`, and `EDITOR` permissions server-side.
+- [x] Implement secure opaque invitation, email binding, atomic acceptance, revocation, expiry, and persistent membership history.
+- [ ] Implement cover upload using controlled object storage (the list field and legacy UI exist; signed upload is delivered with MinIO in Stage 08).
+- [x] Preserve current-domain links, QR codes, WhatsApp, email, Web Share, Open Graph, canonical, and optional indexing UI while the public read API enforces visibility.
+- [x] Implement account/list export/deletion privacy flows and list visibility semantics.
 
 ## Stage 06 — Gifts and safe product catalogue
 

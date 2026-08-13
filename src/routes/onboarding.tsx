@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { apiRequest } from "@/services/api/client";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -47,7 +47,7 @@ function slugify(value: string) {
 }
 
 function OnboardingPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState("");
@@ -73,30 +73,31 @@ function OnboardingPage() {
     setBusy(true);
     try {
       if (displayName.trim()) {
-        await supabase
-          .from("profiles")
-          .update({ display_name: displayName.trim() })
-          .eq("id", user.id);
+        await updateProfile(displayName.trim());
       }
       const slug = `${slugify(babyName || displayName || "notre-liste")}-${Math.random().toString(36).slice(2, 7)}`;
-      const { data, error } = await supabase
-        .from("registries")
-        .insert({
-          owner_id: user.id,
+      const { list } = await apiRequest<{ list: { id: string } }>("/lists", {
+        method: "POST",
+        csrf: true,
+        body: JSON.stringify({
           slug,
           title: babyName.trim() ? `La liste de ${babyName.trim()}` : "Notre liste de naissance",
-          baby_name: babyName.trim() || null,
-          due_date: dueDate || null,
-          welcome_message: welcome.trim() || null,
+          childName: babyName.trim() || null,
+          dueDate: dueDate || null,
+          welcomeMessage: welcome.trim() || null,
           type: "BIRTH",
           visibility: "UNLISTED",
-        })
-        .select("id")
-        .maybeSingle();
-      if (error || !data) throw new Error("creation");
-      await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
+          status: "ACTIVE",
+          surpriseMode: false,
+          hideReservedGifts: false,
+          allowIndexing: false,
+          showProgress: true,
+          theme: "default",
+        }),
+      });
+      await apiRequest<void>("/auth/onboarding/complete", { method: "POST", csrf: true });
       toast.success("Votre liste est créée !");
-      void navigate({ to: "/dashboard/$registryId", params: { registryId: data.id } });
+      void navigate({ to: "/dashboard/$registryId", params: { registryId: list.id } });
     } catch {
       toast.error("La liste n'a pas pu être créée.");
     } finally {

@@ -32,6 +32,12 @@ Authentication, users, lists, gifts, reservations, products, merchants, orders, 
 
 Passwords use Argon2id. Session, verification and reset values are random opaque tokens; only keyed SHA-256 hashes are persisted. Session cookies are HttpOnly and environment-secure. State-changing authenticated requests use a separate double-submit CSRF cookie/header. Login, signup and password-reset requests have Redis-backed limits when the production Redis service is connected. Development may return one-time verification/reset tokens to support local testing; staging and production never do.
 
+## List routes
+
+Authenticated list management uses `GET/POST /api/v1/lists`, `GET/PATCH/DELETE /api/v1/lists/:listId`, and invitation endpoints below each list. Writes require the session plus CSRF header. Membership authorization is resolved in MySQL for every operation; frontend ownership claims are ignored.
+
+Public reads use `GET /api/v1/public/lists/:slug`. A `PROTECTED` list first requires the throttled `POST /api/v1/public/lists/:slug/unlock`; a successful Argon2id check issues a one-hour HttpOnly signed access cookie. Stored access-code hashes are never selected into public responses. Invitation acceptance is email-bound, expiring, one-use and transactional at `POST /api/v1/invitations/accept`.
+
 ## Error contract
 
 ```json

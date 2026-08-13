@@ -1,12 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { acceptInvitation } from "@/lib/lists.functions";
+import { apiRequest } from "@/services/api/client";
 
 export const Route = createFileRoute("/invitation/$token")({
   head: () => ({
@@ -30,23 +29,16 @@ function InvitationPage() {
   const { token } = Route.useParams();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const accept = useServerFn(acceptInvitation);
-
   const mutation = useMutation({
-    mutationFn: () => accept({ data: { token } }),
+    mutationFn: () =>
+      apiRequest<{ listId: string }>("/invitations/accept", {
+        method: "POST",
+        csrf: true,
+        body: JSON.stringify({ invitationToken: token }),
+      }),
     onSuccess: (result) => {
-      if (result.state === "joined") {
-        toast.success(`Vous gérez maintenant « ${result.title} »`);
-        void navigate({ to: "/dashboard/$registryId", params: { registryId: result.registryId } });
-      } else {
-        toast.error(
-          result.state === "expired"
-            ? "Cette invitation a expiré."
-            : result.state === "already_used"
-              ? "Cette invitation a déjà été utilisée."
-              : "Invitation invalide.",
-        );
-      }
+      toast.success("Vous gérez maintenant cette liste.");
+      void navigate({ to: "/dashboard/$registryId", params: { registryId: result.listId } });
     },
     onError: (error: Error) => toast.error(error.message),
   });

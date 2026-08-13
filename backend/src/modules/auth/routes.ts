@@ -135,6 +135,13 @@ export function authRoutes(service: AuthService, config: AppConfig): FastifyPlug
       };
     });
 
+    app.post("/onboarding/complete", async (request, reply) => {
+      requireCsrf(request);
+      const user = await service.authenticate(sessionToken(request));
+      await service.completeOnboarding(user.id);
+      return reply.status(204).send();
+    });
+
     app.get("/export", async (request, reply) => {
       const user = await service.authenticate(sessionToken(request));
       reply.header("Content-Disposition", 'attachment; filename="mila-account-export.json"');

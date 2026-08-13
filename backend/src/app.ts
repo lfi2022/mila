@@ -14,6 +14,8 @@ import { allowedOrigins, loadConfig, type AppConfig } from "./config/env.js";
 import { healthRoutes, type ReadinessProbe } from "./modules/health/routes.js";
 import { authRoutes } from "./modules/auth/routes.js";
 import { AuthService } from "./modules/auth/service.js";
+import { listRoutes } from "./modules/lists/routes.js";
+import { ListsService } from "./modules/lists/service.js";
 import { MODULE_NAMES } from "./modules/index.js";
 
 export type AppOptions = {
@@ -105,9 +107,13 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
         { prefix: "/health" },
       );
       if (options.database) {
-        await api.register(authRoutes(new AuthService(options.database.client, config), config), {
+        const auth = new AuthService(options.database.client, config);
+        await api.register(authRoutes(auth, config), {
           prefix: "/auth",
         });
+        await api.register(
+          listRoutes(new ListsService(options.database.client, config), auth, config),
+        );
       }
     },
     { prefix: "/api/v1" },

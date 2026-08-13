@@ -192,3 +192,29 @@ External/transition blockers:
 
 - SMTP/provider credentials and sender-domain DNS are required for production delivery of generated verification/reset links (`BLOCKED_EXTERNAL`);
 - legacy TanStack server functions still use the transitional Supabase auth middleware while their data access is migrated module-by-module in the following stages; the new frontend auth path and Fastify API are independent of it.
+
+## Stage 05 — Lists, membership, privacy, and sharing
+
+Status: CORE_DONE_STORAGE_PENDING
+
+Implemented:
+
+- authenticated list create/read/update/soft-delete and user list collection endpoints;
+- complete list metadata, lifecycle, themes, surprise/reservation display controls and indexing choice;
+- server-side `OWNER`, `CO_OWNER`, and `EDITOR` authorization on every member operation;
+- Argon2id-protected lists, throttled unlock and one-hour signed HttpOnly access grants;
+- public-list projection that never returns access-code hashes;
+- opaque, expiring, email-bound invitations with transactional acceptance and revocation;
+- CSRF protection on all cookie-authenticated list writes;
+- onboarding list creation and invitation acceptance migrated to `/api/v1`;
+- existing domain-aware sharing, QR, Web Share, social metadata and privacy flows retained.
+
+Tests:
+
+- `npm run check`: PASS;
+- frontend tests: 12 PASS;
+- backend tests: 14 PASS, including access-code hashing/redaction and permission rejection.
+
+External/transition blocker:
+
+- cover object upload is completed with the controlled MinIO/S3 storage service in Stage 08; no uncontrolled interim upload endpoint was added.

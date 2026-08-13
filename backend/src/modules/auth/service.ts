@@ -188,6 +188,10 @@ export class AuthService {
     return toAuthUser(user);
   }
 
+  async completeOnboarding(userId: string): Promise<void> {
+    await this.prisma.user.update({ where: { id: userId }, data: { onboardingCompleted: true } });
+  }
+
   async exportAccount(userId: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
