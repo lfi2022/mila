@@ -109,6 +109,20 @@ describe("PaymentsService reconciliation", () => {
       expect.objectContaining({ create: expect.objectContaining({ type: "PREMIUM_REVENUE" }) }),
     );
   });
+
+  it("replays provider reconciliation through stable idempotent upserts", async () => {
+    const update = vi.fn().mockResolvedValue({});
+    const entitlementUpsert = vi.fn().mockResolvedValue({});
+    const ledgerUpsert = vi.fn().mockResolvedValue({});
+    const prisma = prismaMock(update, vi.fn(), entitlementUpsert, ledgerUpsert);
+    const provider = providerMock({ ...remote("paid"), paidAt: new Date().toISOString() });
+    const service = new PaymentsService(prisma, config, {} as ListsService, provider);
+    await service.reconcileExternal("tr_remote");
+    await service.reconcileExternal("tr_remote");
+    expect(ledgerUpsert).toHaveBeenCalledTimes(2);
+    const keys = ledgerUpsert.mock.calls.map((call) => call[0].where.idempotencyKey);
+    expect(new Set(keys)).toEqual(new Set(["payment:payment-id"]));
+  });
 });
 
 function prismaMock(

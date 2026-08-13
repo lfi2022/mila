@@ -24,3 +24,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run migration:audit
+      - run: npm --prefix backend run prisma:validate
+      - run: docker compose config --quiet
+        env:
+          DATABASE_PASSWORD: ci-compose-only
+          MYSQL_ROOT_PASSWORD: ci-compose-root-only
+          STORAGE_ACCESS_KEY: ci-storage-only
+          STORAGE_SECRET_KEY: ci-storage-secret-only

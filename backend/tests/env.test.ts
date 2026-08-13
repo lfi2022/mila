@@ -130,4 +130,32 @@ describe("database environment", () => {
       /Order fulfilment/,
     );
   });
+
+  it.each(["https://dev06.lfinfo.be", "https://mila.example.org"])(
+    "accepts deployment origin %s without source changes",
+    (origin) => {
+      const configured = loadConfig({
+        ...valid,
+        APP_ENV: "production",
+        NODE_ENV: "production",
+        APP_URL: origin,
+        CORS_ALLOWED_ORIGINS: origin,
+        COOKIE_SECURE: "true",
+      });
+      expect(configured.APP_URL).toBe(origin);
+    },
+  );
+
+  it("requires a strong token before exposing operational metrics", () => {
+    expect(() =>
+      loadConfig({ ...valid, OBSERVABILITY_ENABLED: "true", OBSERVABILITY_TOKEN: "short" }),
+    ).toThrow(/OBSERVABILITY_TOKEN/);
+    expect(
+      loadConfig({
+        ...valid,
+        OBSERVABILITY_ENABLED: "true",
+        OBSERVABILITY_TOKEN: "observability-token-at-least-32-characters",
+      }).OBSERVABILITY_ENABLED,
+    ).toBe(true);
+  });
 });

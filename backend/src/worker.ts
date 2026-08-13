@@ -47,6 +47,7 @@ const workers = assignments.map((queue, index) => {
     `stream:${queue}`,
     `${process.pid}-${randomUUID()}`,
     processors[queue] ?? deferredProcessor(queue),
+    5,
   );
 });
 
@@ -57,7 +58,10 @@ const requestStop = () => {
 const runPriceScheduler = () =>
   scheduleDueProductRefreshes(config, database, productRefreshQueue).catch((error: unknown) => {
     process.stderr.write(
-      `${JSON.stringify({ event: "price_scheduler_failed", error: String(error) })}\n`,
+      `${JSON.stringify({
+        event: "price_scheduler_failed",
+        errorType: error instanceof Error ? error.name : "UnknownError",
+      })}\n`,
     );
   });
 const priceScheduler = setInterval(runPriceScheduler, config.PRICE_SCHEDULER_INTERVAL_MS);

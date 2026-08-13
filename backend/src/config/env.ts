@@ -19,6 +19,9 @@ const envSchema = z
     LOG_LEVEL: z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
       .default("info"),
+    OBSERVABILITY_ENABLED: booleanString,
+    OBSERVABILITY_TOKEN: z.string().optional().default(""),
+    WORKER_STALE_AFTER_SECONDS: z.coerce.number().int().min(30).max(86_400).default(300),
     CORS_ALLOWED_ORIGINS: z.string().trim().min(1),
     RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
     RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
@@ -190,6 +193,13 @@ const envSchema = z
         code: "custom",
         path: ["COOKIE_SECURE"],
         message: "COOKIE_SECURE must be true in production",
+      });
+    }
+    if (env.OBSERVABILITY_ENABLED && env.OBSERVABILITY_TOKEN.length < 32) {
+      context.addIssue({
+        code: "custom",
+        path: ["OBSERVABILITY_TOKEN"],
+        message: "OBSERVABILITY_TOKEN must contain at least 32 characters when enabled",
       });
     }
     if (env.AUTH_SECRET === env.SESSION_SECRET) {

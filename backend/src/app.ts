@@ -5,7 +5,7 @@ import rateLimit from "@fastify/rate-limit";
 import formbody from "@fastify/formbody";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { LogController, type FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 
 import { installErrorHandler } from "./common/http/error-handler.js";
@@ -51,6 +51,11 @@ import { reportRoutes } from "./modules/reports/routes.js";
 import { analyticsRoutes } from "./modules/analytics/routes.js";
 import { partnerRoutes } from "./modules/partners/routes.js";
 import { PartnersService } from "./modules/partners/service.js";
+import {
+  installRequestObservability,
+  MetricsRegistry,
+  OperationalMetrics,
+} from "./common/observability/metrics.js";
 
 export type AppOptions = {
   config?: AppConfig;
@@ -64,7 +69,9 @@ export type AppOptions = {
 export async function createApp(options: AppOptions = {}): Promise<FastifyInstance> {
   const config = options.config ?? loadConfig();
   const origins = allowedOrigins(config);
+  const metrics = new MetricsRegistry();
   const app = Fastify({
+    logController: new LogController({ disableRequestLogging: true }),
     logger:
       options.logger === false
         ? false
@@ -74,7 +81,13 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
               paths: [
                 "req.headers.authorization",
                 "req.headers.cookie",
+                "req.headers.x-csrf-token",
                 "res.headers.set-cookie",
+                "config.OBSERVABILITY_TOKEN",
+                "config.MOLLIE_API_KEY",
+                "config.SMTP_PASSWORD",
+                "config.STORAGE_SECRET_KEY",
+                "config.BANK_TRANSFER_IBAN",
                 "password",
                 "token",
                 "*.password",
@@ -87,6 +100,8 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
     bodyLimit: config.REQUEST_BODY_LIMIT_BYTES,
     genReqId: () => randomUUID(),
   });
+
+  installRequestObservability(app, metrics);
 
   await app.register(helmet, { global: true, contentSecurityPolicy: false });
   await app.register(cookie);
@@ -114,7 +129,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
   });
   await app.register(swaggerUi, { routePrefix: "/api/docs" });
 
-  installErrorHandler(app);
+  installErrorHandler(app, metrics);
 
   if (options.database) {
     app.addHook("onClose", () => options.database?.close());
@@ -143,6 +158,9 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
                   ...(options.storage ? { storage: await options.storage.check() } : {}),
                 })
               : async () => ({ application: "up" })),
+          config,
+          metrics,
+          new OperationalMetrics(config, options.database?.client, options.redis),
         ),
         { prefix: "/health" },
       );

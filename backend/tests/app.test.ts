@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../src/app.js";
 import type { DatabaseService } from "../src/common/database/client.js";
 import type { PrismaClient } from "../src/generated/prisma/client.js";
 import { loadConfig } from "../src/config/env.js";
+import type { AppConfig } from "../src/config/env.js";
 
 const config = loadConfig({
   APP_ENV: "test",
@@ -71,6 +72,93 @@ describe("Mila API bootstrap", () => {
       headers: { origin: "https://attacker.example", "access-control-request-method": "GET" },
     });
     expect(response.statusCode).toBeGreaterThanOrEqual(400);
+    await app.close();
+  });
+
+  it("keeps operational metrics hidden and never labels raw query or bearer tokens", async () => {
+    const observabilityConfig = {
+      ...config,
+      OBSERVABILITY_ENABLED: true,
+      OBSERVABILITY_TOKEN: "metrics-test-token-at-least-32-characters",
+    } satisfies AppConfig;
+    const app = await createApp({ config: observabilityConfig, logger: false });
+    const denied = await app.inject({
+      method: "GET",
+      url: "/api/v1/health/metrics?secret=must-not-appear",
+      headers: { authorization: "Bearer incorrect-token" },
+    });
+    expect(denied.statusCode).toBe(404);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/health/metrics?secret=must-not-appear",
+      headers: { authorization: `Bearer ${observabilityConfig.OBSERVABILITY_TOKEN}` },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain("mila_http_requests_total");
+    expect(response.body).not.toContain("must-not-appear");
+    expect(response.body).not.toContain(observabilityConfig.OBSERVABILITY_TOKEN);
+    await app.close();
+  });
+
+  it("rate limits repeated requests at the backend boundary", async () => {
+    const app = await createApp({
+      config: { ...config, RATE_LIMIT_MAX: 2 } satisfies AppConfig,
+      logger: false,
+    });
+    await app.inject({ method: "GET", url: "/api/v1/health/live" });
+    await app.inject({ method: "GET", url: "/api/v1/health/live" });
+    const limited = await app.inject({ method: "GET", url: "/api/v1/health/live" });
+    expect(limited.statusCode).toBe(429);
+    await app.close();
+  });
+
+  it("rejects injection-shaped identifiers before database access", async () => {
+    const count = vi.fn();
+    const database = {
+      client: { giftList: { count } } as unknown as PrismaClient,
+      check: async () => "up" as const,
+      close: async () => undefined,
+    } satisfies DatabaseService;
+    const app = await createApp({ config, database, logger: false });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/public/reports",
+      payload: { targetType: "list", targetId: "' OR 1=1 --", reason: "OTHER" },
+    });
+    expect(response.statusCode).toBe(400);
+    expect(count).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it("does not reflect stored user markup from JSON write responses", async () => {
+    const tx = { report: { create: vi.fn().mockResolvedValue({ id: "report-1" }) } };
+    const database = {
+      client: {
+        giftList: { count: vi.fn().mockResolvedValue(1) },
+        $transaction: vi.fn(async (callback: (client: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+        ),
+      } as unknown as PrismaClient,
+      check: async () => "up" as const,
+      close: async () => undefined,
+    } satisfies DatabaseService;
+    const app = await createApp({ config, database, logger: false });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/public/reports",
+      payload: {
+        targetType: "list",
+        targetId: "00000000-0000-4000-8000-000000000001",
+        reason: "OTHER",
+        details: '<script>alert("xss")</script>',
+        elapsedMs: 2_000,
+      },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(response.headers["content-type"]).toContain("application/json");
+    expect(response.body).not.toContain("<script>");
+    expect(response.headers["x-content-type-options"]).toBe("nosniff");
     await app.close();
   });
 

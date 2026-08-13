@@ -22,6 +22,9 @@ process.once("SIGTERM", () => void shutdown("SIGTERM"));
 try {
   await app.listen({ host: config.HOST, port: config.PORT });
 } catch (error) {
-  app.log.fatal({ err: error }, "Unable to start Mila API");
+  app.log.fatal(
+    { event: "api_start_failed", errorType: error instanceof Error ? error.name : "UnknownError" },
+    "Unable to start Mila API",
+  );
   process.exit(1);
 }

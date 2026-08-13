@@ -148,9 +148,9 @@ export function productRefreshProcessor(
           currency: product.currency,
           availability: product.availability,
           linkHealthy: true,
-        }).catch((error: unknown) => logRefreshSideEffect("price_alert_failed", gift.id, error));
+        }).catch((error: unknown) => logRefreshSideEffect("price_alert_failed", error));
       await maybeAutoSwitch(database, config, gift.id).catch((error: unknown) =>
-        logRefreshSideEffect("price_auto_switch_failed", gift.id, error),
+        logRefreshSideEffect("price_auto_switch_failed", error),
       );
     } catch {
       const failureCount = Math.min(gift.refreshFailureCount + 1, 65_535);
@@ -194,9 +194,7 @@ export function productRefreshProcessor(
           currency: gift.currency,
           availability: gift.lastAvailability,
           linkHealthy: false,
-        }).catch((error: unknown) =>
-          logRefreshSideEffect("dead_link_alert_failed", gift.id, error),
-        );
+        }).catch((error: unknown) => logRefreshSideEffect("dead_link_alert_failed", error));
     }
   };
 }
@@ -412,8 +410,13 @@ function formatMinor(value: bigint, currency: string) {
   );
 }
 
-function logRefreshSideEffect(event: string, giftId: string, error: unknown) {
-  process.stderr.write(`${JSON.stringify({ event, giftId, error: String(error) })}\n`);
+function logRefreshSideEffect(event: string, error: unknown) {
+  process.stderr.write(
+    `${JSON.stringify({
+      event,
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    })}\n`,
+  );
 }
 
 export function cleanupProcessor(database: DatabaseService): StreamProcessor {

@@ -1,0 +1,105 @@
+groups:
+  - name: mila-availability
+    rules:
+      - alert: MilaApiDown
+        expr: up{job="mila-api"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: Mila API is unreachable
+      - alert: MilaDependencyDown
+        expr: mila_dependency_up == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Mila dependency {{ $labels.dependency }} is unavailable"
+      - alert: MilaHighServerErrorRate
+        expr: sum(rate(mila_http_requests_total{status="5xx"}[5m])) / clamp_min(sum(rate(mila_http_requests_total[5m])), 0.001) > 0.02
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: Mila 5xx rate exceeds 2 percent
+      - alert: MilaHighAverageLatency
+        expr: sum(rate(mila_http_request_duration_milliseconds_sum[5m])) / clamp_min(sum(rate(mila_http_requests_total[5m])), 0.001) > 750
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: Mila average API latency exceeds 750 ms
+
+  - name: mila-workers-and-integrations
+    rules:
+      - alert: MilaWorkerStale
+        expr: mila_worker_stale == 1
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Mila worker {{ $labels.queue }} has no fresh heartbeat"
+      - alert: MilaQueueDeadLetters
+        expr: mila_queue_dead_letter_depth > 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Mila queue {{ $labels.queue }} contains dead-letter jobs"
+      - alert: MilaQueueBacklog
+        expr: mila_queue_depth > 1000
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Mila queue {{ $labels.queue }} backlog exceeds 1000"
+      - alert: MilaMollieFailures
+        expr: sum(rate(mila_application_errors_total{code=~"MOLLIE_.*"}[5m])) > 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: Mollie calls or reconciliation are failing
+      - alert: MilaWebhookFailures
+        expr: mila_queue_dead_letter_depth{queue="webhooks"} > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: Webhook processing has dead-letter jobs
+      - alert: MilaEmailFailures
+        expr: mila_queue_dead_letter_depth{queue=~"email|notifications"} > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: Email or notification delivery is failing
+      - alert: MilaExtractionFailures
+        expr: mila_queue_dead_letter_depth{queue=~"product-refresh|prices"} > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: Product extraction or price refresh is failing
+
+  - name: mila-security-and-finance
+    rules:
+      - alert: MilaAuthenticationFailureSpike
+        expr: sum(rate(mila_application_errors_total{code=~"AUTH_.*|INVALID_CREDENTIALS|SESSION_.*"}[5m])) > 0.5
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: Authentication failures exceed the expected threshold
+      - alert: MilaOpenHighRiskReviews
+        expr: mila_open_high_risk_reviews > 0
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: High-score abuse or fraud reviews need attention
+      - alert: MilaPaymentInconsistency
+        expr: mila_payment_inconsistencies > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: Settled Premium payments are missing entitlements
+      - alert: MilaChargebackRecorded
+        expr: mila_recent_chargebacks > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: A chargeback was recorded during the last 24 hours
+      - alert: MilaPayoutAnomaly
+        expr: mila_payout_anomalies > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: A payout record violates the launch safety policy
