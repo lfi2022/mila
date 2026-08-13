@@ -170,12 +170,12 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 17 — Admin, moderation, legal, and privacy
 
-- [ ] Implement backend-protected dashboards for users, lists, gifts, reservations, contributions, payments, rewards, affiliation, merchants, partners, reports, and revenue.
-- [ ] Implement suspension/restoration, moderation, risk review, and immutable sensitive-action audit trail with reason and before/after where appropriate.
-- [ ] Add phishing, malicious-link, spam, fraud, referral-abuse, and bot defenses with adaptive CAPTCHA hook/manual review.
-- [ ] Complete privacy by design: minimization, consent, cookies, access, export, correction, deletion, retention, processors, incidents, and optional child data.
-- [ ] Provide legal-notice, privacy, cookie, terms, Premium, rewards, referral, affiliation, contribution/payment, and reporting pages.
-- [ ] Mark final legal text and financial terms `BLOCKED_EXTERNAL` pending qualified professional review.
+- [x] Implement backend-protected dashboards for users, lists, gifts, reservations, contributions, payments, rewards, affiliation, merchants, partners, reports, and revenue.
+- [x] Implement suspension/restoration, moderation, risk review, and immutable sensitive-action audit trail with reason and before/after where appropriate.
+- [x] Add phishing, malicious-link, spam, fraud, referral-abuse, and bot defenses with adaptive CAPTCHA hook/manual review.
+- [x] Complete privacy by design: minimization, consent, cookies, access, export, correction, deletion, retention, processors, incidents, and optional child data.
+- [x] Provide legal-notice, privacy, cookie, terms, Premium, rewards, referral, affiliation, contribution/payment, and reporting pages.
+- [x] Mark final legal text and financial terms `BLOCKED_EXTERNAL` pending qualified professional review.
 
 ## Stage 18 — SEO, analytics, performance, accessibility, and PWA
 

@@ -597,3 +597,41 @@ External configuration:
 - optional production transcoding remains disabled until an approved transcoder, codecs, queue capacity and cost/retention policy are configured;
 - physical book printing is export/print-ready only and requires a commercial printer contract, proofs, fulfilment and returns policy;
 - retention duration, parental consent copy and child-media privacy handling require final legal/DPO approval before production activation.
+
+## Stage 17 — Admin, moderation, legal, and privacy
+
+Status: DONE_WITH_LEGAL_AND_PROVIDER_REVIEW_BLOCKED_EXTERNAL
+
+Commits: `d8bb250`, `e2641c7`
+
+Implemented:
+
+- role-protected Fastify administration for real users, lists, gifts/reservations, contributions, payments, rewards, affiliation, merchants, reports, risk reviews and typed revenue;
+- removal of the transitional Supabase administration functions and a typed frontend admin API;
+- transactional list/gift/user/report moderation, user session revocation, mandatory reasons and immutable before/after/request-ID audit entries;
+- scored phishing, malicious-link, spam, fraud, referral-abuse and bot signals with throttling, target validation, manual review and an optional HTTPS CAPTCHA verification hook;
+- explicit consent-evidence, risk-review, incident and processor registers plus a documented minimization/rights/retention/child-data workflow;
+- public reporting, expanded privacy/terms/legal pages and explicit draft/blocker notices for unapproved professional text;
+- separate real revenue, confirmed commission and reward-cost reporting that never treats parent funds or order budgets as Mila revenue.
+
+Migration: `202608130011_compliance_and_risk`.
+
+Validation:
+
+- `npm run check`: PASS;
+- frontend tests: 14 PASS;
+- backend tests: 66 PASS, including adaptive report-risk behavior;
+- frontend and backend production builds: PASS;
+- Prisma validation, legacy migration audit and Docker Compose configuration: PASS;
+- lint: PASS with 8 pre-existing Fast Refresh warnings.
+
+Environment variables:
+
+- `FEATURE_ADAPTIVE_CAPTCHA`, `CAPTCHA_VERIFY_URL`, `CAPTCHA_SECRET`.
+
+External blockers:
+
+- final legal notice, privacy policy, cookie policy and terms require verified entity/provider details and qualified Belgian legal/DPO review;
+- Premium, rewards, referrals, affiliation, contributions, payment, tax/accounting and third-party-funds terms remain `BLOCKED_EXTERNAL` pending professional approval;
+- production CAPTCHA activation requires an approved processor, credentials, privacy review and accessibility fallback;
+- incident ownership, notification contacts, processor contracts and the final retention/child-media schedule require named operators and professional approval.
