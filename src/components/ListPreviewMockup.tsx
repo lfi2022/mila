@@ -106,7 +106,7 @@ export function ListPreviewMockup() {
           </ul>
 
           <p className="px-4 pb-4 text-center text-[11px] text-muted-foreground">
-            2 cadeaux sur 4 ont déjà trouvé quelqu'un ❤️
+            1 cadeaux sur 4 ont déjà été réservés ❤️
           </p>
         </div>
       </div>

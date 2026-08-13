@@ -14,6 +14,7 @@ import type { StreamJob, StreamProcessor } from "./stream-worker.js";
 import { safeFetchImage } from "../common/security/external-url.js";
 import type { StorageService } from "../common/storage/service.js";
 import { createHash } from "node:crypto";
+import { renderNotificationEmail } from "../common/email/template.js";
 
 export function notificationProcessor(
   config: AppConfig,
@@ -41,7 +42,7 @@ export function notificationProcessor(
         })
       )?.email;
     if (!email) return;
-    const message = renderEmail(config.APP_URL, job);
+    const message = renderNotificationEmail(config.APP_URL, job);
     if (config.EMAIL_PROVIDER === "console") {
       process.stdout.write(`${JSON.stringify({ event: "email_preview", type: job.type })}\n`);
       return;
@@ -622,50 +623,4 @@ function required(values: Record<string, string>, key: string): string {
   const value = values[key];
   if (!value) throw new Error(`Missing job field: ${key}`);
   return value;
-}
-
-function renderEmail(appUrl: string, job: NotificationJob) {
-  const token = typeof job.payload?.["token"] === "string" ? job.payload["token"] : undefined;
-  const definitions: Record<string, { subject: string; path?: string; text: string }> = {
-    WELCOME: { subject: "Bienvenue sur Mila", text: "Votre compte Mila est prêt." },
-    EMAIL_VERIFICATION: {
-      subject: "Confirmez votre adresse e-mail",
-      path: "/verification-email",
-      text: "Confirmez votre adresse e-mail pour activer votre compte.",
-    },
-    PASSWORD_RESET: {
-      subject: "Réinitialisez votre mot de passe",
-      path: "/reinitialiser-mot-de-passe",
-      text: "Une réinitialisation de mot de passe a été demandée.",
-    },
-    LIST_INVITATION: {
-      subject: "Invitation à rejoindre une liste Mila",
-      path: "/invitation/{token}",
-      text: "Vous avez reçu une invitation Mila.",
-    },
-    PRICE_DROP: { subject: "Un prix a baissé sur Mila", text: "Un cadeau a baissé de prix." },
-    STOCK_UNAVAILABLE: {
-      subject: "Un cadeau est indisponible",
-      text: "Un cadeau de votre liste semble indisponible.",
-    },
-    DEAD_LINK: {
-      subject: "Un lien cadeau est à vérifier",
-      text: "Un lien de votre liste ne répond plus correctement.",
-    },
-  };
-  const definition = definitions[job.type] ?? {
-    subject: "Nouvelle notification Mila",
-    text: "Une nouvelle activité est disponible dans Mila.",
-  };
-  const link =
-    definition.path && token
-      ? new URL(
-          definition.path.includes("{token}")
-            ? definition.path.replace("{token}", encodeURIComponent(token))
-            : `${definition.path}?token=${encodeURIComponent(token)}`,
-          appUrl,
-        ).toString()
-      : appUrl;
-  const payloadText = typeof job.payload?.["body"] === "string" ? job.payload["body"] : null;
-  return { subject: definition.subject, text: `${payloadText ?? definition.text}\n\n${link}` };
 }
