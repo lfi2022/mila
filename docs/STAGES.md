@@ -253,6 +253,8 @@ External configuration:
 
 Status: DONE_EMAIL_DELIVERY_EXTERNAL
 
+Commit: `53067f9`
+
 Implemented:
 
 - guest reservation creation with minimal identity fields and opaque hashed management tokens;
