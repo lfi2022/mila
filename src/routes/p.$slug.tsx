@@ -2,12 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import { toast } from "sonner";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { buildPublicUrl } from "@/config/runtime";
 import { partnerApi } from "@/features/partners/api";
+import { openCookieManager, readCookieConsent } from "@/features/privacy/cookie-consent";
 
 export const Route = createFileRoute("/p/$slug")({
   validateSearch: z.object({
@@ -100,6 +102,13 @@ function PartnerPage() {
               <Button
                 disabled={isStarting}
                 onClick={() => {
+                  if (!readCookieConsent()?.choices.marketing) {
+                    openCookieManager();
+                    toast.info(
+                      "Autorisez la catégorie marketing pour enregistrer l’attribution partenaire, puis réessayez.",
+                    );
+                    return;
+                  }
                   setIsStarting(true);
                   void partnerApi
                     .startAttribution(slug, landing.data.campaign?.code, search.channel ?? "LINK")

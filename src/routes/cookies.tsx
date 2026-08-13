@@ -1,30 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-
-import { buildPublicUrl } from "@/config/runtime";
-
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import source from "../../docs/politique-cookies.md?raw";
 import { Button } from "@/components/ui/button";
-import { getAnalyticsConsent, setAnalyticsConsent } from "@/lib/analytics";
+import { buildPublicUrl } from "@/config/runtime";
+import { getLegalConfig } from "@/features/legal/api";
+import { LegalDocument } from "@/features/legal/LegalDocument";
+import { openCookieManager } from "@/features/privacy/cookie-consent";
 
 export const Route = createFileRoute("/cookies")({
+  loader: getLegalConfig,
   head: () => ({
     meta: [
-      { title: "Cookies et mesure d'audience — Mila" },
+      { title: "Politique relative aux cookies — Mila" },
       {
         name: "description",
         content:
-          "Quels cookies et quelles mesures Mila utilise : strictement nécessaires par défaut, mesure d'audience uniquement avec votre consentement.",
+          "Inventaire des cookies et traceurs Mila, leurs finalités et la gestion de votre consentement.",
       },
-      { property: "og:title", content: "Cookies et mesure d'audience — Mila" },
-      {
-        property: "og:description",
-        content: "Mila n'active aucun traceur non essentiel sans votre consentement.",
-      },
-      { property: "og:type", content: "website" },
+      { property: "og:title", content: "Politique relative aux cookies — Mila" },
+      { property: "og:type", content: "article" },
       { property: "og:url", content: buildPublicUrl("/cookies") },
-      { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: buildPublicUrl("/cookies") }],
   }),
@@ -32,73 +26,13 @@ export const Route = createFileRoute("/cookies")({
 });
 
 function CookiesPage() {
-  const [analytics, setAnalytics] = useState<"granted" | "denied" | "unset">("unset");
-  useEffect(() => setAnalytics(getAnalyticsConsent()), []);
-  const choose = (granted: boolean) => {
-    setAnalyticsConsent(granted);
-    setAnalytics(granted ? "granted" : "denied");
-  };
+  const config = Route.useLoaderData();
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <main className="mx-auto max-w-3xl space-y-8 px-4 py-16">
-        <h1 className="text-4xl">Cookies et mesure d'audience</h1>
-
-        <section className="space-y-3">
-          <h2 className="text-2xl">Strictement nécessaires</h2>
-          <p className="text-sm text-muted-foreground">
-            Nous conservons dans votre navigateur les éléments indispensables au service : votre
-            session de connexion, le jeton qui vous permet de retrouver une réservation faite sans
-            compte, et vos préférences d'affichage. Ces éléments ne servent pas à vous suivre sur
-            d'autres sites.
-          </p>
-          <div className="flex flex-wrap gap-3" aria-label="Préférence de mesure d’audience">
-            <Button
-              type="button"
-              variant={analytics === "granted" ? "default" : "outline"}
-              onClick={() => choose(true)}
-            >
-              Autoriser la mesure
-            </Button>
-            <Button
-              type="button"
-              variant={analytics === "denied" ? "default" : "outline"}
-              onClick={() => choose(false)}
-            >
-              Refuser la mesure
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground" aria-live="polite">
-            Choix actuel :{" "}
-            {analytics === "granted"
-              ? "autorisée"
-              : analytics === "denied"
-                ? "refusée"
-                : "non défini"}
-            .
-          </p>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="text-2xl">Mesure d'audience</h2>
-          <p className="text-sm text-muted-foreground">
-            Nous mesurons des étapes agrégées du parcours (visite de la page d'accueil, création
-            d'une liste, premier cadeau ajouté, partage) pour améliorer le service. Aucun traceur
-            externe n'est chargé et aucun événement n'est transmis tant que vous n'avez pas donné
-            votre consentement.
-          </p>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="text-2xl">Liens vers les boutiques</h2>
-          <p className="text-sm text-muted-foreground">
-            Lorsqu'un proche clique sur un cadeau, il est redirigé vers le site du marchand. Ce
-            marchand applique alors sa propre politique de cookies, sur laquelle Mila n'a pas la
-            main.
-          </p>
-        </section>
-      </main>
-      <SiteFooter />
-    </div>
+    <>
+      <LegalDocument markdown={source} config={config} />
+      <div className="fixed bottom-4 left-4 z-40">
+        <Button onClick={openCookieManager}>Gérer mes cookies</Button>
+      </div>
+    </>
   );
 }

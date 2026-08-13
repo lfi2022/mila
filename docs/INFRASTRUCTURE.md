@@ -28,6 +28,8 @@ Stable `/assets/list-cover/<key>` and `/assets/product-image/<key>` reads additi
 
 `backend/src/worker.ts` is an independently deployable process. `WORKER_QUEUES` selects streams per deployment and `WORKER_CONCURRENCY` creates separate blocking Redis connections. The available entry-point names are `product-refresh`, `prices`, `email`, `notifications`, `webhooks`, `affiliation`, `rewards`, `media-scan`, `token-cleanup`, `expiration`, `retry`, `analytics`, and the combined `cleanup` stream.
 
+Transactional email is consumed from `stream:notifications`; `WORKER_QUEUES` must therefore contain `notifications`. Port 587 normally uses `SMTP_SECURE=false` (STARTTLS), while port 465 uses `true`. Keep `SMTP_TLS_REJECT_UNAUTHORIZED=true` with a trusted certificate. An internal server using a private/self-signed certificate may temporarily require `false`, but its CA should preferably be installed in the container trust store. Delivery results are logged as `email_sent` or `email_send_failed` without logging recipients or credentials; failed jobs retry five times and then move to `stream:notifications:dead-letter`.
+
 Stage 08 processors deliver notification email, refresh product metadata/prices, expire reservations safely and clean expired auth tokens. Domain processors belonging to later roadmap stages remain disabled and dead-letter if a producer emits work prematurely. Every failed job is retried at most five times and then copied to `<stream>:dead-letter`; raw token values and email addresses are not written to worker logs.
 
 Redis also provides distributed API rate limiting plus namespaced cache, ownership-token locks and idempotency-result primitives. MySQL remains the only source of financial and reservation truth.

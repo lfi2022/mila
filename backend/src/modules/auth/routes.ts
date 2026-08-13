@@ -10,11 +10,29 @@ const credentials = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(12).max(128),
 });
-const signup = credentials.extend({ displayName: z.string().trim().min(1).max(120).optional() });
+const signup = credentials.extend({
+  displayName: z.string().trim().min(1).max(120).optional(),
+  termsAccepted: z.literal(true),
+  termsVersion: z.string().max(32),
+  marketingConsent: z.boolean().default(false),
+});
 const tokenBody = z.object({ token: z.string().min(32).max(256) });
 const resetBody = tokenBody.extend({ password: z.string().min(12).max(128) });
 const profileBody = z.object({ displayName: z.string().trim().min(1).max(120).nullable() });
 const deleteBody = z.object({ confirmation: z.literal("DELETE") });
+const consentBody = z.object({ granted: z.boolean() });
+const privacyRequestBody = z.object({
+  type: z.enum([
+    "ACCESS",
+    "RECTIFICATION",
+    "ERASURE",
+    "RESTRICTION",
+    "OBJECTION",
+    "PORTABILITY",
+    "OTHER",
+  ]),
+  details: z.string().trim().max(2000).optional(),
+});
 
 export function authRoutes(service: AuthService, config: AppConfig): FastifyPluginAsync {
   const csrfCookieName = `${config.COOKIE_NAME}_csrf`;
@@ -60,7 +78,7 @@ export function authRoutes(service: AuthService, config: AppConfig): FastifyPlug
       { config: { rateLimit: { max: 5, timeWindow: 60_000 } } },
       async (request, reply) => {
         const input = signup.parse(request.body);
-        const result = await service.signup(input);
+        const result = await service.signup(input, identity(request), request.id);
         return reply.status(201).send({
           user: result.user,
           verificationRequired: true,
@@ -120,6 +138,16 @@ export function authRoutes(service: AuthService, config: AppConfig): FastifyPlug
       },
     );
 
+    app.post(
+      "/resend-verification",
+      { config: { rateLimit: { max: 3, timeWindow: 60_000 } } },
+      async (request, reply) => {
+        const { email } = credentials.pick({ email: true }).parse(request.body);
+        await service.resendVerification(email);
+        return reply.status(202).send({ accepted: true });
+      },
+    );
+
     app.post("/reset-password", async (request, reply) => {
       const input = resetBody.parse(request.body);
       await service.resetPassword(input.token, input.password);
@@ -133,6 +161,61 @@ export function authRoutes(service: AuthService, config: AppConfig): FastifyPlug
       return {
         user: await service.updateProfile(user.id, profileBody.parse(request.body).displayName),
       };
+    });
+
+    app.get("/consents", async (request) => {
+      const user = await service.authenticate(sessionToken(request));
+      return {
+        consents: await service.consents(user.id),
+        currentTermsVersion: config.LEGAL_TERMS_VERSION,
+      };
+    });
+
+    app.post("/consents/marketing", async (request, reply) => {
+      requireCsrf(request);
+      const user = await service.authenticate(sessionToken(request));
+      const { granted } = consentBody.parse(request.body);
+      await service.recordConsent(
+        user,
+        "marketing",
+        config.LEGAL_PRIVACY_VERSION,
+        granted,
+        "account",
+        identity(request),
+        request.id,
+      );
+      return reply.status(204).send();
+    });
+
+    app.post("/consents/terms", async (request, reply) => {
+      requireCsrf(request);
+      const user = await service.authenticate(sessionToken(request));
+      z.object({ accepted: z.literal(true), version: z.literal(config.LEGAL_TERMS_VERSION) }).parse(
+        request.body,
+      );
+      await service.recordConsent(
+        user,
+        "terms",
+        config.LEGAL_TERMS_VERSION,
+        true,
+        "account",
+        identity(request),
+        request.id,
+      );
+      return reply.status(204).send();
+    });
+
+    app.get("/privacy-requests", async (request) => {
+      const user = await service.authenticate(sessionToken(request));
+      return { requests: await service.privacyRequests(user.id) };
+    });
+
+    app.post("/privacy-requests", async (request, reply) => {
+      requireCsrf(request);
+      const user = await service.authenticate(sessionToken(request));
+      return reply.status(201).send({
+        request: await service.createPrivacyRequest(user, privacyRequestBody.parse(request.body)),
+      });
     });
 
     app.post("/onboarding/complete", async (request, reply) => {

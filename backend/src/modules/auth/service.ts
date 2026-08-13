@@ -38,8 +38,26 @@ export class AuthService {
     private readonly notifications?: NotificationQueue,
   ) {}
 
-  async signup(input: { email: string; password: string; displayName?: string }) {
+  async signup(
+    input: {
+      email: string;
+      password: string;
+      displayName?: string;
+      termsAccepted: true;
+      termsVersion: string;
+      marketingConsent: boolean;
+    },
+    identity: RequestIdentity,
+    requestId: string,
+  ) {
     const email = normalizeEmail(input.email);
+    if (input.termsVersion !== this.config.LEGAL_TERMS_VERSION) {
+      throw new AppError(
+        409,
+        "TERMS_VERSION_CHANGED",
+        "The terms have changed; review the current version",
+      );
+    }
     const existing = await this.prisma.user.findUnique({ where: { email }, select: { id: true } });
     if (existing)
       throw new AppError(409, "EMAIL_ALREADY_REGISTERED", "This email is already registered");
@@ -55,6 +73,26 @@ export class AuthService {
         roles: { create: { role: "USER" } },
         verificationTokens: {
           create: { tokenHash: this.hashToken(verificationToken), expiresAt },
+        },
+        privacyConsents: {
+          create: [
+            {
+              subjectHash: this.hashIdentity(email),
+              purpose: "terms",
+              policyVersion: input.termsVersion,
+              granted: true,
+              source: "signup",
+              evidence: this.consentEvidence(identity, requestId),
+            },
+            {
+              subjectHash: this.hashIdentity(email),
+              purpose: "marketing",
+              policyVersion: this.config.LEGAL_PRIVACY_VERSION,
+              granted: input.marketingConsent,
+              source: "signup",
+              evidence: this.consentEvidence(identity, requestId),
+            },
+          ],
         },
       },
       select: userWithRoles,
@@ -181,6 +219,30 @@ export class AuthService {
     return token;
   }
 
+  async resendVerification(emailInput: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizeEmail(emailInput) },
+      select: { id: true, email: true, emailVerifiedAt: true, deletedAt: true, suspendedAt: true },
+    });
+    if (!user || user.emailVerifiedAt || user.deletedAt || user.suspendedAt) return;
+    const token = createOpaqueToken();
+    await this.prisma.emailVerificationToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: this.hashToken(token),
+        expiresAt: addSeconds(this.config.EMAIL_VERIFICATION_TTL_SECONDS),
+      },
+    });
+    await this.notifications
+      ?.enqueue({
+        type: "EMAIL_VERIFICATION",
+        userId: user.id,
+        email: user.email,
+        payload: { token },
+      })
+      .catch(() => undefined);
+  }
+
   async resetPassword(token: string, password: string): Promise<void> {
     const record = await this.prisma.passwordResetToken.findUnique({
       where: { tokenHash: this.hashToken(token) },
@@ -211,6 +273,75 @@ export class AuthService {
     return toAuthUser(user);
   }
 
+  async recordConsent(
+    user: AuthUser,
+    purpose: string,
+    policyVersion: string,
+    granted: boolean,
+    source: string,
+    identity: RequestIdentity,
+    requestId: string,
+  ) {
+    await this.prisma.privacyConsent.create({
+      data: {
+        userId: user.id,
+        subjectHash: this.hashIdentity(user.email),
+        purpose,
+        policyVersion,
+        granted,
+        source,
+        evidence: this.consentEvidence(identity, requestId),
+      },
+    });
+  }
+
+  async consents(userId: string) {
+    const rows = await this.prisma.privacyConsent.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+    const latest = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) if (!latest.has(row.purpose)) latest.set(row.purpose, row);
+    return [...latest.values()].map(({ purpose, policyVersion, granted, source, createdAt }) => ({
+      purpose,
+      policyVersion,
+      granted,
+      source,
+      createdAt,
+    }));
+  }
+
+  async privacyRequests(userId: string) {
+    return this.prisma.dataSubjectRequest.findMany({
+      where: { requesterUserId: userId },
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        details: true,
+        resolution: true,
+        dueAt: true,
+        completedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async createPrivacyRequest(user: AuthUser, input: { type: string; details?: string }) {
+    return this.prisma.dataSubjectRequest.create({
+      data: {
+        requesterUserId: user.id,
+        subjectEmail: user.email,
+        type: input.type,
+        details: input.details || null,
+        dueAt: new Date(Date.now() + 30 * 86_400_000),
+      },
+      select: { id: true, type: true, status: true, details: true, dueAt: true, createdAt: true },
+    });
+  }
+
   async completeOnboarding(userId: string): Promise<void> {
     await this.prisma.user.update({ where: { id: userId }, data: { onboardingCompleted: true } });
   }
@@ -232,6 +363,27 @@ export class AuthService {
         reservations: true,
         notifications: true,
         messages: true,
+        privacyConsents: {
+          select: {
+            purpose: true,
+            policyVersion: true,
+            granted: true,
+            source: true,
+            createdAt: true,
+          },
+        },
+        privacyRequests: {
+          select: {
+            id: true,
+            type: true,
+            status: true,
+            details: true,
+            resolution: true,
+            dueAt: true,
+            completedAt: true,
+            createdAt: true,
+          },
+        },
       },
     });
   }
@@ -242,6 +394,10 @@ export class AuthService {
       this.prisma.session.updateMany({
         where: { userId, revokedAt: null },
         data: { revokedAt: now },
+      }),
+      this.prisma.giftList.updateMany({
+        where: { ownerId: userId, deletedAt: null },
+        data: { status: "DELETED", deletedAt: now },
       }),
       this.prisma.user.update({
         where: { id: userId },
@@ -286,6 +442,14 @@ export class AuthService {
 
   private hashIdentity(value: string): string {
     return createHmac("sha256", this.config.AUTH_SECRET).update(value).digest("hex");
+  }
+
+  private consentEvidence(identity: RequestIdentity, requestId: string) {
+    return {
+      requestId,
+      ipHash: this.hashIdentity(identity.ip),
+      userAgentHash: this.hashIdentity(identity.userAgent ?? "unknown"),
+    };
   }
 
   private assertActive(user: { suspendedAt: Date | null; deletedAt: Date | null }): void {

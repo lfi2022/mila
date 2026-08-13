@@ -51,17 +51,27 @@ describe("AuthService", () => {
     const prisma = { user: { findUnique, create } } as unknown as PrismaClient;
     const service = new AuthService(prisma, config);
 
-    const result = await service.signup({
-      email: "  Parent@Example.COM ",
-      password: "a secure password",
-      displayName: "Parent",
-    });
+    const result = await service.signup(
+      {
+        email: "  Parent@Example.COM ",
+        password: "a secure password",
+        displayName: "Parent",
+        termsAccepted: true,
+        termsVersion: config.LEGAL_TERMS_VERSION,
+        marketingConsent: false,
+      },
+      { ip: "127.0.0.1", userAgent: "vitest" },
+      "request-1",
+    );
 
     const call = create.mock.calls[0]?.[0] as {
       data: {
         email: string;
         passwordHash: string;
         verificationTokens: { create: { tokenHash: string } };
+        privacyConsents: {
+          create: Array<{ purpose: string; granted: boolean; policyVersion: string }>;
+        };
       };
     };
     expect(call.data.email).toBe("parent@example.com");
@@ -69,6 +79,16 @@ describe("AuthService", () => {
     expect(await argon2.verify(call.data.passwordHash, "a secure password")).toBe(true);
     expect(call.data.verificationTokens.create.tokenHash).toMatch(/^[a-f0-9]{64}$/);
     expect(call.data.verificationTokens.create.tokenHash).not.toBe(result.verificationToken);
+    expect(call.data.privacyConsents.create).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          purpose: "terms",
+          granted: true,
+          policyVersion: config.LEGAL_TERMS_VERSION,
+        }),
+        expect.objectContaining({ purpose: "marketing", granted: false }),
+      ]),
+    );
   });
 
   it("does not reveal whether an email exists during password reset", async () => {
@@ -77,6 +97,26 @@ describe("AuthService", () => {
     } as unknown as PrismaClient;
     const service = new AuthService(prisma, config);
     await expect(service.requestPasswordReset("unknown@example.com")).resolves.toBeNull();
+  });
+
+  it("rejects a stale terms version before creating an account", async () => {
+    const create = vi.fn();
+    const prisma = { user: { findUnique: vi.fn(), create } } as unknown as PrismaClient;
+    const service = new AuthService(prisma, config);
+    await expect(
+      service.signup(
+        {
+          email: "parent@example.com",
+          password: "a secure password",
+          termsAccepted: true,
+          termsVersion: "2025-01-01",
+          marketingConsent: false,
+        },
+        { ip: "127.0.0.1" },
+        "request-2",
+      ),
+    ).rejects.toMatchObject({ code: "TERMS_VERSION_CHANGED", statusCode: 409 });
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("enforces backend roles", () => {

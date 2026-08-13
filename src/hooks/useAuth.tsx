@@ -9,7 +9,13 @@ type AuthContextValue = {
   session: { user: MilaUser } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<boolean>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string | undefined,
+    termsVersion: string,
+    marketingConsent: boolean,
+  ) => Promise<boolean>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   updateProfile: (displayName: string | null) => Promise<void>;
@@ -55,8 +61,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signIn(email, password) {
         setUser(await authApi.login(email, password));
       },
-      async signUp(email, password, displayName) {
-        const response = await authApi.signup(email, password, displayName);
+      async signUp(email, password, displayName, termsVersion, marketingConsent) {
+        const response = await authApi.signup(
+          email,
+          password,
+          displayName,
+          termsVersion,
+          marketingConsent,
+        );
         return response.verificationRequired;
       },
       async signOut() {

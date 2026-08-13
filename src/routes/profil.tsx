@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { formatCents } from "@/lib/money";
 import { getMyReferral, refreshMyReferrals } from "@/features/rewards/api";
+import { authApi, type PrivacyRequest } from "@/features/auth/api";
+import { openCookieManager } from "@/features/privacy/cookie-consent";
 
 export const Route = createFileRoute("/profil")({
   head: () => ({
@@ -120,14 +122,17 @@ function ProfilePage() {
           </Button>
         </section>
 
+        <PrivacyControls />
+
         <ReferralSection />
 
         <section className="surface-card space-y-4 border-destructive/40 p-6">
           <div>
             <h2 className="text-lg">Supprimer mon compte</h2>
             <p className="text-sm text-muted-foreground">
-              Vos listes, cadeaux et réservations seront définitivement effacés. Cette action est
-              irréversible.
+              Le compte sera désactivé et anonymisé, et vos listes ne seront plus publiques. Les
+              données soumises à une obligation légale peuvent être conservées pendant la durée
+              strictement nécessaire.
             </p>
           </div>
           <Button
@@ -147,6 +152,111 @@ function ProfilePage() {
         </section>
       </main>
     </div>
+  );
+}
+
+function PrivacyControls() {
+  const [marketing, setMarketing] = useState(false);
+  const [requests, setRequests] = useState<PrivacyRequest[]>([]);
+  const [type, setType] = useState<PrivacyRequest["type"]>("ACCESS");
+  const [details, setDetails] = useState("");
+  const reload = () => {
+    void authApi
+      .consents()
+      .then(({ consents }) =>
+        setMarketing(consents.find((entry) => entry.purpose === "marketing")?.granted ?? false),
+      );
+    void authApi.privacyRequests().then((value) => setRequests(value.requests));
+  };
+  useEffect(reload, []);
+  return (
+    <section className="surface-card space-y-6 p-6">
+      <div>
+        <h2 className="text-lg">Consentements et droits RGPD</h2>
+        <p className="text-sm text-muted-foreground">
+          Modifiez vos choix ou adressez une demande traçable à l’équipe Mila.
+        </p>
+      </div>
+      <label className="flex items-start justify-between gap-4 text-sm">
+        <span>
+          Actualités et offres Mila par e-mail{" "}
+          <span className="text-muted-foreground">(facultatif)</span>
+        </span>
+        <input
+          type="checkbox"
+          className="h-5 w-5 accent-primary"
+          checked={marketing}
+          onChange={async (event) => {
+            const granted = event.target.checked;
+            setMarketing(granted);
+            try {
+              await authApi.setMarketingConsent(granted);
+              toast.success("Préférence enregistrée");
+            } catch {
+              setMarketing(!granted);
+              toast.error("Enregistrement impossible");
+            }
+          }}
+        />
+      </label>
+      <Button type="button" variant="outline" onClick={openCookieManager}>
+        Gérer mes cookies
+      </Button>
+      <div className="space-y-3 border-t pt-5">
+        <Label htmlFor="privacy-request-type">Nouvelle demande relative à mes données</Label>
+        <select
+          id="privacy-request-type"
+          className="min-h-10 w-full rounded-md border bg-background px-3 text-sm"
+          value={type}
+          onChange={(event) => setType(event.target.value as PrivacyRequest["type"])}
+        >
+          <option value="ACCESS">Accès</option>
+          <option value="RECTIFICATION">Rectification</option>
+          <option value="ERASURE">Effacement</option>
+          <option value="RESTRICTION">Limitation</option>
+          <option value="OBJECTION">Opposition</option>
+          <option value="PORTABILITY">Portabilité</option>
+          <option value="OTHER">Autre</option>
+        </select>
+        <textarea
+          className="min-h-24 w-full rounded-md border bg-background p-3 text-sm"
+          maxLength={2000}
+          placeholder="Précisez votre demande (facultatif)"
+          value={details}
+          onChange={(event) => setDetails(event.target.value)}
+        />
+        <Button
+          type="button"
+          onClick={async () => {
+            try {
+              await authApi.createPrivacyRequest(type, details.trim() || undefined);
+              setDetails("");
+              reload();
+              toast.success("Demande enregistrée");
+            } catch {
+              toast.error("Demande impossible");
+            }
+          }}
+        >
+          Envoyer la demande
+        </Button>
+      </div>
+      {requests.length > 0 && (
+        <ul className="space-y-2 border-t pt-5 text-sm">
+          {requests.map((request) => (
+            <li key={request.id} className="rounded-lg bg-muted/60 p-3">
+              <strong>{request.type}</strong> — {request.status}
+              <br />
+              <span className="text-xs text-muted-foreground">
+                Créée le {new Date(request.createdAt).toLocaleDateString("fr-BE")} · échéance{" "}
+                {new Date(request.dueAt).toLocaleDateString("fr-BE")}
+              </span>
+              {request.resolution ? <p className="mt-1">{request.resolution}</p> : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

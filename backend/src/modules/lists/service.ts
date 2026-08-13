@@ -332,6 +332,10 @@ export class ListsService {
     }));
     return {
       ...safe,
+      // A due date can reveal pregnancy information and is never required by visitors.
+      // A child's first name is withheld from indexable public lists by default.
+      dueDate: null,
+      childName: list.visibility === "PUBLIC" ? null : list.childName,
       gifts: safe.hideReservedGifts ? publicGifts.filter((gift) => !gift.isReserved) : publicGifts,
       totals: {
         items: publicGifts.length,

@@ -48,7 +48,7 @@ export const Route = createFileRoute("/l/$slug")({
     const description =
       list.description ??
       list.welcome_message ??
-      `Découvrez la liste de naissance de ${list.baby_name ?? list.title} et réservez un cadeau en quelques secondes.`;
+      "Découvrez cette liste de naissance Mila et réservez un cadeau en quelques secondes.";
     const meta: Array<Record<string, string>> = [
       { title },
       { name: "description", content: description.slice(0, 155) },

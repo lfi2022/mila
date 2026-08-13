@@ -132,6 +132,30 @@ export const adminListRisks = async () =>
       }>;
     }>("/admin/risk-reviews?limit=100")
   ).risks;
+export type AdminPrivacyRequest = {
+  id: string;
+  subjectEmail: string;
+  type: string;
+  status: string;
+  details: string | null;
+  resolution: string | null;
+  dueAt: string;
+  completedAt: string | null;
+  createdAt: string;
+};
+export const adminListPrivacyRequests = async () =>
+  (await apiRequest<{ requests: AdminPrivacyRequest[] }>("/admin/privacy-requests?limit=200"))
+    .requests;
+export const adminUpdatePrivacyRequest = (
+  id: string,
+  status: "OPEN" | "IN_PROGRESS" | "COMPLETED" | "REJECTED",
+  resolution: string,
+) =>
+  apiRequest(`/admin/privacy-requests/${id}`, {
+    method: "PATCH",
+    csrf: true,
+    body: JSON.stringify({ status, resolution }),
+  });
 export const adminListPartners = async () =>
   (
     await apiRequest<{

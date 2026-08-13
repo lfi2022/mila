@@ -118,6 +118,15 @@ export function SiteFooter() {
                   Contact
                 </Link>
               </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new Event("mila:open-cookie-manager"))}
+                  className="hover:text-foreground"
+                >
+                  Gérer mes cookies
+                </button>
+              </li>
             </ul>
           </nav>
         </div>

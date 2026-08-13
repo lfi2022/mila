@@ -71,6 +71,39 @@ async function runWizard() {
       API_INTERNAL_URL: useDocker ? "http://backend:3000/api/v1" : `${origin}/api/v1`,
     });
 
+    if (!local) {
+      set(values, {
+        LEGAL_OPERATOR_NAME: await ask(rl, "Nom de l'éditeur personne physique", "", {
+          required: true,
+        }),
+        LEGAL_BUSINESS_NAME: await ask(rl, "Dénomination de l'entreprise", "", { required: true }),
+        LEGAL_TRADE_NAME: await ask(rl, "Nom commercial", "Mila / Avec Mila", { required: true }),
+        LEGAL_BUSINESS_NUMBER: await ask(rl, "Numéro BCE/TVA", "", { required: true }),
+        LEGAL_REGISTERED_ADDRESS: await ask(rl, "Adresse professionnelle publiée", "", {
+          required: true,
+        }),
+        LEGAL_COUNTRY: await ask(rl, "Pays", "Belgique", { required: true }),
+        LEGAL_GENERAL_EMAIL: await ask(rl, "E-mail général", `contact@${domain}`, {
+          required: true,
+        }),
+        LEGAL_PRIVACY_EMAIL: await ask(rl, "E-mail vie privée", `privacy@${domain}`, {
+          required: true,
+        }),
+        LEGAL_SUPPORT_EMAIL: await ask(rl, "E-mail support", `support@${domain}`, {
+          required: true,
+        }),
+        LEGAL_REPORT_EMAIL: await ask(rl, "E-mail signalements juridiques", `legal@${domain}`, {
+          required: true,
+        }),
+        LEGAL_HOSTING_PROVIDER: await ask(rl, "Hébergeur physique / fournisseur", "", {
+          required: true,
+        }),
+        LEGAL_PUBLICATION_DIRECTOR: await ask(rl, "Responsable de publication", "", {
+          required: true,
+        }),
+      });
+    }
+
     const database = useDocker
       ? {
           host: "mysql",
@@ -142,6 +175,9 @@ async function runWizard() {
         SMTP_USER: await ask(rl, "Utilisateur SMTP", "mila", { required: true }),
         SMTP_PASSWORD: await askSecret(rl, "Mot de passe SMTP", { required: true }),
         SMTP_SECURE: String(await confirm(rl, "TLS SMTP implicite (souvent port 465) ?", false)),
+        SMTP_TLS_REJECT_UNAUTHORIZED: String(
+          !(await confirm(rl, "Le serveur SMTP local utilise un certificat auto-signé ?", false)),
+        ),
       });
     } else {
       set(values, {

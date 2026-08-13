@@ -67,6 +67,31 @@ export function adminRoutes(
       const value = page(request);
       return jsonSafe({ entries: await service.audit(value.skip, value.take) });
     });
+    app.get("/admin/privacy-requests", async (request) => {
+      const user = await staff(request);
+      if (!user.roles.some((role) => ["ADMIN", "SUPER_ADMIN"].includes(role)))
+        throw new AppError(403, "ADMIN_REQUIRED", "Administrator access required");
+      const value = page(request);
+      return jsonSafe({ requests: await service.privacyRequests(value.skip, value.take) });
+    });
+    app.patch("/admin/privacy-requests/:privacyRequestId", async (request) => {
+      csrf(request);
+      const user = await staff(request);
+      if (!user.roles.some((role) => ["ADMIN", "SUPER_ADMIN"].includes(role)))
+        throw new AppError(403, "ADMIN_REQUIRED", "Administrator access required");
+      const { privacyRequestId } = z
+        .object({ privacyRequestId: z.string().uuid() })
+        .parse(request.params);
+      const input = z
+        .object({
+          status: z.enum(["OPEN", "IN_PROGRESS", "COMPLETED", "REJECTED"]),
+          resolution: z.string().trim().min(3).max(2000),
+        })
+        .parse(request.body);
+      return {
+        request: await service.updatePrivacyRequest(user.id, request.id, privacyRequestId, input),
+      };
+    });
     app.get("/admin/risk-reviews", async (request) => {
       await staff(request);
       const value = page(request);

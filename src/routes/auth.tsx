@@ -11,8 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
 import { registerReferral } from "@/features/rewards/api";
+import { authApi } from "@/features/auth/api";
+import { getLegalConfig } from "@/features/legal/api";
 
 export const Route = createFileRoute("/auth")({
+  loader: getLegalConfig,
   head: () => ({
     meta: [
       { title: "Connexion parents — Mila" },
@@ -38,6 +41,7 @@ const credentials = z.object({
 });
 
 function AuthPage() {
+  const legalConfig = Route.useLoaderData();
   const navigate = useNavigate();
   const { user, loading, signIn: authenticate, signUp: register } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -45,6 +49,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [sent, setSent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   // A referral code arriving as ?parrain=CODE is kept until the account exists,
   // then registered server-side. It never credits anything by itself.
@@ -97,9 +103,19 @@ function AuthPage() {
     track("signup_started");
     const data = validate(true);
     if (!data) return;
+    if (!termsAccepted) {
+      toast.error("Vous devez accepter les conditions générales pour créer un compte.");
+      return;
+    }
     setBusy(true);
     try {
-      await register(data.email, data.password, data.name);
+      await register(
+        data.email,
+        data.password,
+        data.name,
+        legalConfig.versions.terms,
+        marketingConsent,
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Inscription impossible.");
       return;
@@ -122,10 +138,21 @@ function AuthPage() {
 
         <div className="surface-card mt-8 p-6">
           {sent ? (
-            <p className="text-sm text-muted-foreground">
-              Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre
-              compte, puis revenez vous connecter.
-            </p>
+            <div className="space-y-4 text-sm text-muted-foreground">
+              <p>
+                Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre
+                compte, puis revenez vous connecter.
+              </p>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  await authApi.resendVerification(email);
+                  toast.success("Si le compte est éligible, un nouvel e-mail a été mis en file.");
+                }}
+              >
+                Renvoyer l’e-mail
+              </Button>
+            </div>
           ) : (
             <Tabs defaultValue="signin">
               <TabsList className="grid w-full grid-cols-2">
@@ -160,6 +187,33 @@ function AuthPage() {
                   onChange={setPassword}
                   type="password"
                 />
+                <label className="flex items-start gap-3 text-sm">
+                  <input
+                    className="mt-1 h-4 w-4 accent-primary"
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(event) => setTermsAccepted(event.target.checked)}
+                  />
+                  <span>
+                    J’accepte les{" "}
+                    <Link to="/conditions" target="_blank" className="text-primary underline">
+                      conditions générales
+                    </Link>{" "}
+                    (version {legalConfig.versions.terms}). <strong>Obligatoire.</strong>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <input
+                    className="mt-1 h-4 w-4 accent-primary"
+                    type="checkbox"
+                    checked={marketingConsent}
+                    onChange={(event) => setMarketingConsent(event.target.checked)}
+                  />
+                  <span>
+                    Je souhaite recevoir les actualités et offres Mila par e-mail. Facultatif et
+                    révocable.
+                  </span>
+                </label>
                 <Button className="w-full" disabled={busy} onClick={signUp}>
                   Créer mon compte
                 </Button>

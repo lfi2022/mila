@@ -26,6 +26,8 @@ npm run config
 
 It selects the local, staging, or production template; configures URLs and infrastructure; optionally enables SMTP, observability, and Mollie; generates independent secrets; checks dependencies; and writes `.env` atomically. Existing `.env` files are preserved unless overwrite is explicitly confirmed. Sensitive answers are masked.
 
+Production setup also asks for the public legal identity/contact values used by the four legal pages. Privacy implementation decisions, detected storage and regulatory blockers are documented in [`docs/legal/IMPLEMENTATION.md`](docs/legal/IMPLEMENTATION.md).
+
 Validate the current file at any time:
 
 ```sh

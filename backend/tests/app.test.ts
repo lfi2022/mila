@@ -193,6 +193,9 @@ describe("Mila API bootstrap", () => {
         email: "parent@example.com",
         password: "a secure password",
         displayName: "Parent",
+        termsAccepted: true,
+        termsVersion: config.LEGAL_TERMS_VERSION,
+        marketingConsent: false,
       },
     });
 

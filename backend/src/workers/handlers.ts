@@ -20,6 +20,7 @@ export function notificationProcessor(
           port: config.SMTP_PORT,
           secure: config.SMTP_SECURE,
           auth: { user: config.SMTP_USER, pass: config.SMTP_PASSWORD },
+          tls: { rejectUnauthorized: config.SMTP_TLS_REJECT_UNAUTHORIZED },
         })
       : null;
   return async ({ values }) => {
@@ -39,7 +40,26 @@ export function notificationProcessor(
       process.stdout.write(`${JSON.stringify({ event: "email_preview", type: job.type })}\n`);
       return;
     }
-    await transport?.sendMail({ from: config.EMAIL_FROM, to: email, ...message });
+    try {
+      const result = await transport?.sendMail({ from: config.EMAIL_FROM, to: email, ...message });
+      process.stdout.write(
+        `${JSON.stringify({ event: "email_sent", type: job.type, messageId: result?.messageId })}\n`,
+      );
+    } catch (error) {
+      const smtpError = error as Error & { code?: string; command?: string; responseCode?: number };
+      process.stderr.write(
+        `${JSON.stringify({
+          event: "email_send_failed",
+          type: job.type,
+          errorType: smtpError.name,
+          code: smtpError.code,
+          command: smtpError.command,
+          responseCode: smtpError.responseCode,
+          message: smtpError.message.slice(0, 300),
+        })}\n`,
+      );
+      throw error;
+    }
   };
 }
 
@@ -501,17 +521,17 @@ function renderEmail(appUrl: string, job: NotificationJob) {
     WELCOME: { subject: "Bienvenue sur Mila", text: "Votre compte Mila est prêt." },
     EMAIL_VERIFICATION: {
       subject: "Confirmez votre adresse e-mail",
-      path: "/verify-email",
+      path: "/verification-email",
       text: "Confirmez votre adresse e-mail pour activer votre compte.",
     },
     PASSWORD_RESET: {
       subject: "Réinitialisez votre mot de passe",
-      path: "/reset-password",
+      path: "/reinitialiser-mot-de-passe",
       text: "Une réinitialisation de mot de passe a été demandée.",
     },
     LIST_INVITATION: {
       subject: "Invitation à rejoindre une liste Mila",
-      path: "/invitations/accept",
+      path: "/invitation/{token}",
       text: "Vous avez reçu une invitation Mila.",
     },
     PRICE_DROP: { subject: "Un prix a baissé sur Mila", text: "Un cadeau a baissé de prix." },
@@ -530,7 +550,12 @@ function renderEmail(appUrl: string, job: NotificationJob) {
   };
   const link =
     definition.path && token
-      ? new URL(`${definition.path}?token=${encodeURIComponent(token)}`, appUrl).toString()
+      ? new URL(
+          definition.path.includes("{token}")
+            ? definition.path.replace("{token}", encodeURIComponent(token))
+            : `${definition.path}?token=${encodeURIComponent(token)}`,
+          appUrl,
+        ).toString()
       : appUrl;
   const payloadText = typeof job.payload?.["body"] === "string" ? job.payload["body"] : null;
   return { subject: definition.subject, text: `${payloadText ?? definition.text}\n\n${link}` };

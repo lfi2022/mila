@@ -34,8 +34,11 @@ export function setAnalyticsConsent(granted: boolean) {
 export function getAnalyticsConsent(): "granted" | "denied" | "unset" {
   if (typeof window === "undefined") return "unset";
   try {
-    const value = window.localStorage.getItem(CONSENT_KEY);
-    return value === "granted" || value === "denied" ? value : "unset";
+    const consent = JSON.parse(window.localStorage.getItem("mila.cookie-consent") ?? "null") as {
+      choices?: { analytics?: boolean };
+    } | null;
+    if (typeof consent?.choices?.analytics !== "boolean") return "unset";
+    return consent.choices.analytics ? "granted" : "denied";
   } catch {
     return "unset";
   }

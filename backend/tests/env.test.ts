@@ -141,6 +141,16 @@ describe("database environment", () => {
         APP_URL: origin,
         CORS_ALLOWED_ORIGINS: origin,
         COOKIE_SECURE: "true",
+        LEGAL_OPERATOR_NAME: "Test Operator",
+        LEGAL_BUSINESS_NAME: "Test Business",
+        LEGAL_BUSINESS_NUMBER: "BE0000000000",
+        LEGAL_REGISTERED_ADDRESS: "Test Address",
+        LEGAL_GENERAL_EMAIL: "contact@test.invalid",
+        LEGAL_PRIVACY_EMAIL: "privacy@test.invalid",
+        LEGAL_SUPPORT_EMAIL: "support@test.invalid",
+        LEGAL_REPORT_EMAIL: "legal@test.invalid",
+        LEGAL_HOSTING_PROVIDER: "Test Host",
+        LEGAL_PUBLICATION_DIRECTOR: "Test Director",
       });
       expect(configured.APP_URL).toBe(origin);
     },

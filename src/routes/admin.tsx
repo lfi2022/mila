@@ -35,6 +35,7 @@ import {
   adminListLists,
   adminListMerchants,
   adminListPartners,
+  adminListPrivacyRequests,
   adminListReports,
   adminListRisks,
   adminListUsers,
@@ -44,6 +45,7 @@ import {
   adminTestAffiliateLink,
   adminSetPartnerCampaignActive,
   adminSetPartnerActive,
+  adminUpdatePrivacyRequest,
   getAdminStats,
 } from "@/features/admin/api";
 
@@ -119,6 +121,11 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
   const reportsQuery = useQuery({ queryKey: ["admin-reports"], queryFn: adminListReports });
   const risksQuery = useQuery({ queryKey: ["admin-risks"], queryFn: adminListRisks });
   const auditQuery = useQuery({ queryKey: ["admin-audit"], queryFn: adminListAuditLog });
+  const privacyQuery = useQuery({
+    queryKey: ["admin-privacy"],
+    queryFn: adminListPrivacyRequests,
+    enabled: isAdmin,
+  });
   const [partnerForm, setPartnerForm] = useState({
     slug: "",
     name: "",
@@ -152,6 +159,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
       "admin-risks",
       "admin-audit",
       "admin-partners",
+      "admin-privacy",
     ]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
@@ -253,6 +261,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
             <TabsTrigger value="rewards">Récompenses</TabsTrigger>
             <TabsTrigger value="payments">Paiements</TabsTrigger>
             <TabsTrigger value="moderation">Modération</TabsTrigger>
+            {isAdmin ? <TabsTrigger value="privacy">RGPD</TabsTrigger> : null}
             <TabsTrigger value="audit">Journal</TabsTrigger>
           </TabsList>
 
@@ -823,6 +832,72 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
               </ul>
             )}
           </TabsContent>
+
+          {isAdmin ? (
+            <TabsContent value="privacy" className="mt-6">
+              <div className="space-y-3">
+                <h2 className="text-lg">Demandes d’exercice de droits</h2>
+                <p className="text-sm text-muted-foreground">
+                  Chaque changement de statut et son motif sont inscrits dans le journal d’audit.
+                </p>
+                {privacyQuery.data?.map((request) => (
+                  <article key={request.id} className="surface-card p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <strong>{request.type}</strong> · {request.subjectEmail}
+                        <p className="text-xs text-muted-foreground">
+                          Reçue le {new Date(request.createdAt).toLocaleDateString("fr-BE")} ·
+                          échéance {new Date(request.dueAt).toLocaleDateString("fr-BE")}
+                        </p>
+                      </div>
+                      <Badge variant={request.status === "OPEN" ? "default" : "secondary"}>
+                        {request.status}
+                      </Badge>
+                    </div>
+                    {request.details ? <p className="mt-3 text-sm">{request.details}</p> : null}
+                    {!request.completedAt ? (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const resolution = window.prompt("Note de traitement obligatoire");
+                            if (resolution && resolution.trim().length >= 3)
+                              void adminUpdatePrivacyRequest(
+                                request.id,
+                                "IN_PROGRESS",
+                                resolution,
+                              ).then(refresh);
+                          }}
+                        >
+                          Prendre en charge
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const resolution = window.prompt(
+                              "Résolution communiquée à la personne",
+                            );
+                            if (resolution && resolution.trim().length >= 3)
+                              void adminUpdatePrivacyRequest(
+                                request.id,
+                                "COMPLETED",
+                                resolution,
+                              ).then(refresh);
+                          }}
+                        >
+                          Clôturer
+                        </Button>
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+                {privacyQuery.data?.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucune demande.</p>
+                ) : null}
+              </div>
+            </TabsContent>
+          ) : null}
 
           <TabsContent value="audit" className="mt-6">
             <Table>

@@ -33,6 +33,30 @@ const envSchema = z
         /^(BIRTH|BIRTHDAY|CHRISTENING|CHRISTMAS|WEDDING|OTHER)(,(BIRTH|BIRTHDAY|CHRISTENING|CHRISTMAS|WEDDING|OTHER))*$/,
       )
       .default("BIRTH,BIRTHDAY"),
+    LEGAL_OPERATOR_NAME: z.string().trim().optional().default(""),
+    LEGAL_BUSINESS_NAME: z.string().trim().optional().default(""),
+    LEGAL_TRADE_NAME: z.string().trim().optional().default(""),
+    LEGAL_BUSINESS_NUMBER: z.string().trim().optional().default(""),
+    LEGAL_REGISTERED_ADDRESS: z.string().trim().optional().default(""),
+    LEGAL_COUNTRY: z.string().trim().optional().default("Belgique"),
+    LEGAL_GENERAL_EMAIL: z.string().email().optional().or(z.literal("")).default(""),
+    LEGAL_PRIVACY_EMAIL: z.string().email().optional().or(z.literal("")).default(""),
+    LEGAL_SUPPORT_EMAIL: z.string().email().optional().or(z.literal("")).default(""),
+    LEGAL_REPORT_EMAIL: z.string().email().optional().or(z.literal("")).default(""),
+    LEGAL_HOSTING_PROVIDER: z.string().trim().optional().default(""),
+    LEGAL_PUBLICATION_DIRECTOR: z.string().trim().optional().default(""),
+    LEGAL_TERMS_VERSION: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .default("2026-08-13"),
+    LEGAL_PRIVACY_VERSION: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .default("2026-08-13"),
+    LEGAL_COOKIE_POLICY_VERSION: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .default("2026-08-13"),
     DATABASE_HOST: z.string().trim().min(1),
     DATABASE_PORT: z.coerce.number().int().min(1).max(65_535).default(3306),
     DATABASE_NAME: z.string().trim().min(1),
@@ -152,6 +176,10 @@ const envSchema = z
     SMTP_USER: z.string().trim().optional().default(""),
     SMTP_PASSWORD: z.string().optional().default(""),
     SMTP_SECURE: booleanString,
+    SMTP_TLS_REJECT_UNAUTHORIZED: z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((value) => value === "true"),
     WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(50).default(5),
     WORKER_QUEUES: z
       .string()
@@ -194,6 +222,28 @@ const envSchema = z
         path: ["COOKIE_SECURE"],
         message: "COOKIE_SECURE must be true in production",
       });
+    }
+    if (env.APP_ENV === "production") {
+      for (const key of [
+        "LEGAL_OPERATOR_NAME",
+        "LEGAL_BUSINESS_NAME",
+        "LEGAL_BUSINESS_NUMBER",
+        "LEGAL_REGISTERED_ADDRESS",
+        "LEGAL_GENERAL_EMAIL",
+        "LEGAL_PRIVACY_EMAIL",
+        "LEGAL_SUPPORT_EMAIL",
+        "LEGAL_REPORT_EMAIL",
+        "LEGAL_HOSTING_PROVIDER",
+        "LEGAL_PUBLICATION_DIRECTOR",
+      ] as const) {
+        if (!env[key] || /A_REMPLIR|À_COMPLÉTER/i.test(env[key])) {
+          context.addIssue({
+            code: "custom",
+            path: [key],
+            message: `${key} is required in production`,
+          });
+        }
+      }
     }
     if (env.OBSERVABILITY_ENABLED && env.OBSERVABILITY_TOKEN.length < 32) {
       context.addIssue({

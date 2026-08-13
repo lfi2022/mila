@@ -50,6 +50,7 @@ import { adminRoutes } from "./modules/admin/routes.js";
 import { reportRoutes } from "./modules/reports/routes.js";
 import { analyticsRoutes } from "./modules/analytics/routes.js";
 import { partnerRoutes } from "./modules/partners/routes.js";
+import { privacyRoutes } from "./modules/privacy/routes.js";
 import { PartnersService } from "./modules/partners/service.js";
 import {
   installRequestObservability,
@@ -167,6 +168,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
       if (options.database) {
         const notifications = options.redis ? new NotificationQueue(options.redis) : undefined;
         const auth = new AuthService(options.database.client, config, notifications);
+        await api.register(privacyRoutes(options.database.client, config));
         await api.register(authRoutes(auth, config), {
           prefix: "/auth",
         });

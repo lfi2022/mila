@@ -289,6 +289,8 @@ model User {
   partnerAttributions     PartnerAttribution[]
   listLifecycleEvents     ListLifecycleEvent[]
   privacyConsents         PrivacyConsent[]
+  privacyRequests         DataSubjectRequest[]          @relation("PrivacyRequester")
+  assignedPrivacyRequests DataSubjectRequest[]          @relation("PrivacyAssignee")
   riskReviews             RiskReview[]                @relation("RiskSubject")
   reviewedRisks           RiskReview[]                @relation("RiskReviewer")
   reports                 Report[]                  @relation("Reporter")
@@ -1462,12 +1464,35 @@ model PrivacyConsent {
   policyVersion String @map("policy_version") @db.VarChar(32)
   granted     Boolean
   source      String   @db.VarChar(32)
+  evidence    Json?
   createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([subjectHash, purpose, createdAt])
   @@index([userId, purpose])
   @@map("privacy_consents")
+}
+
+model DataSubjectRequest {
+  id              String    @id @default(uuid()) @db.Char(36)
+  requesterUserId String?   @map("requester_user_id") @db.Char(36)
+  subjectEmail    String    @map("subject_email") @db.VarChar(255)
+  type            String    @db.VarChar(32)
+  status          String    @default("OPEN") @db.VarChar(32)
+  details         String?   @db.VarChar(2000)
+  resolution      String?   @db.VarChar(2000)
+  assignedToId    String?   @map("assigned_to_id") @db.Char(36)
+  dueAt           DateTime  @map("due_at") @db.DateTime(3)
+  completedAt     DateTime? @map("completed_at") @db.DateTime(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  requester       User?     @relation("PrivacyRequester", fields: [requesterUserId], references: [id], onDelete: SetNull)
+  assignedTo      User?     @relation("PrivacyAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([status, dueAt])
+  @@index([requesterUserId, createdAt])
+  @@index([subjectEmail, createdAt])
+  @@map("data_subject_requests")
 }
 
 model RiskReview {

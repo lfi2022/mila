@@ -127,6 +127,65 @@ export class AdminService {
       },
     };
   }
+  async privacyRequests(skip: number, take: number) {
+    return this.prisma.dataSubjectRequest.findMany({
+      skip,
+      take,
+      select: {
+        id: true,
+        subjectEmail: true,
+        type: true,
+        status: true,
+        details: true,
+        resolution: true,
+        dueAt: true,
+        completedAt: true,
+        createdAt: true,
+        assignedTo: { select: { id: true, displayName: true } },
+      },
+      orderBy: [{ status: "asc" }, { dueAt: "asc" }],
+    });
+  }
+
+  async updatePrivacyRequest(
+    actorId: string,
+    requestId: string,
+    privacyRequestId: string,
+    input: { status: string; resolution: string },
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const before = await tx.dataSubjectRequest.findUnique({
+        where: { id: privacyRequestId },
+        select: { status: true, resolution: true, assignedToId: true, completedAt: true },
+      });
+      if (!before)
+        throw new AppError(404, "PRIVACY_REQUEST_NOT_FOUND", "Privacy request not found");
+      const completed = ["COMPLETED", "REJECTED"].includes(input.status);
+      const after = await tx.dataSubjectRequest.update({
+        where: { id: privacyRequestId },
+        data: {
+          status: input.status,
+          resolution: input.resolution,
+          assignedToId: actorId,
+          completedAt: completed ? new Date() : null,
+        },
+        select: { id: true, status: true, resolution: true, assignedToId: true, completedAt: true },
+      });
+      await tx.adminAuditLog.create({
+        data: {
+          actorId,
+          action: "privacy_request.update",
+          targetType: "data_subject_request",
+          targetId: privacyRequestId,
+          reason: input.resolution.slice(0, 500),
+          before,
+          after,
+          requestId,
+        },
+      });
+      return after;
+    });
+  }
 
   async lists(skip: number, take: number) {
     return this.prisma.giftList.findMany({
