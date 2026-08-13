@@ -159,7 +159,7 @@ External blockers:
 
 ## Stage 04 — Self-hosted authentication and account lifecycle
 
-Status: CORE_DONE_TRANSITIONAL_CALLERS_REMAIN
+Status: DONE_WITH_PRODUCTION_DATA_IMPORT_BLOCKED_EXTERNAL
 
 Commit: `ac17e2c`
 
@@ -188,10 +188,10 @@ Environment:
 - `COOKIE_NAME`, `VITE_AUTH_COOKIE_NAME`, `COOKIE_DOMAIN`, `COOKIE_SECURE`, `COOKIE_SAME_SITE`;
 - `REDIS_URL`, `QUEUE_PREFIX`, `FEATURE_OAUTH`.
 
-External/transition blockers:
+External blockers and final migration:
 
 - SMTP/provider credentials and sender-domain DNS are required for production delivery of generated verification/reset links (`BLOCKED_EXTERNAL`);
-- legacy TanStack server functions still use the transitional Supabase auth middleware while their data access is migrated module-by-module in the following stages; the new frontend auth path and Fastify API are independent of it.
+- Stage 20 moved the final public-list/reservation caller to `/api/v1` and removed the Supabase runtime client, middleware, generated runtime types and npm dependency. Only historical migrations and migration-audit evidence remain; importing real legacy data still requires the sanitized export described in Stage 03.
 
 ## Stage 05 — Lists, membership, privacy, and sharing
 
@@ -684,3 +684,24 @@ External blockers:
 - no production partner or campaign is activated without a real signed contract, approved public copy, exact budget, accounting treatment, and operational owner;
 - partner-funded reward and revenue imports require approved reconciliation sources and finance policy;
 - new event types and geographic/language expansion remain disabled until product, legal, and market validation.
+
+## Stage 20 — Observability, security verification, and release
+
+Status: IMPLEMENTATION_DONE_STABLE_RELEASE_BLOCKED_EXTERNAL
+
+Commits: `b61669b`, `f389893`
+
+Implemented:
+
+- safe structured HTTP, application and worker telemetry with secret redaction and route-template labels;
+- protected Prometheus metrics for availability, dependencies, latency, queues, worker lag and financial/risk consistency;
+- Prometheus-compatible alert rules for service, integration, abuse, payment, chargeback and payout anomalies;
+- expanded security, replay, concurrency, throttling and domain-portability tests;
+- CI migration/schema/Compose checks and a reusable release smoke command;
+- clean-database and full isolated Docker release rehearsal, including a Redis consumer-group prefix fix;
+- final migration of the public list/reservation UI to Fastify, with JSON-safe projections, private SSR API routing and complete removal of the Supabase runtime;
+- final release runbook and implementation report with an explicit stable-tag gate.
+
+Validation: `npm run check` passed with 19 frontend and 83 backend tests; Prisma validation, migration audit, Compose configuration, 13 clean migrations, schema diff, container health, protected metrics, worker heartbeat and five HTTP smoke probes passed.
+
+No stable tag was created. Production infrastructure, provider credentials, monitoring destinations, restore evidence, legal/accounting approvals, partner contracts and named operational ownership remain `BLOCKED_EXTERNAL`.

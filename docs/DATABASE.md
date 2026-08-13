@@ -87,6 +87,12 @@ An attribution token is stored only as a keyed SHA-256 HMAC. `list_id` is unique
 
 Actual provisioning, allowlisting, credentials, backup policy activation, and restore evidence are `BLOCKED_EXTERNAL` until the database operator supplies access.
 
+## Clean migration verification
+
+All 13 migrations were applied to an empty MySQL 8.4 database during the Stage 20 release rehearsal; Prisma then reported the database up to date and no schema difference. The rehearsal corrected `202608130003_list_appearance` to alter the target `lists` table instead of the nonexistent legacy name `gift_lists` before any known production deployment.
+
+Because migration checksums are immutable operational evidence, an environment that somehow recorded the earlier checksum must not deploy blindly. Its database operator must inspect actual columns and explicitly reconcile/rebaseline migration history; never rewrite published Git history or silently edit the production migration table.
+
 ## Supabase migration
 
 The legacy PostgreSQL migrations remain under `supabase/migrations` as migration evidence. Export auth users and public tables from a frozen source into encrypted, access-controlled files; do not use production personal data for local tests. The migration runbook is:

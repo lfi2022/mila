@@ -39,3 +39,9 @@ Redis also provides distributed API rate limiting plus namespaced cache, ownersh
 The checked-in Caddyfile serves plain HTTP for local/container operation and proxies `storage.localhost` to otherwise-unpublished MinIO. At the public edge, terminate HTTPS in the platform load balancer or replace the local hosts with the real application/storage hostnames and enable Caddy automatic HTTPS. Preserve forwarded headers, set `TRUST_PROXY=true`, `COOKIE_SECURE=true`, an exact `CORS_ALLOWED_ORIGINS`, and keep MinIO/Redis ports private.
 
 The frontend image receives the public origin and SEO switch as Vite build arguments and again as runtime variables. Local/staging builds keep both switches false; a production rebuild may enable them only for the approved canonical domain. The frontend server produces `robots.txt` and `sitemap.xml` dynamically, gives hashed `/_app/` files immutable caching, and forces the PWA manifest/service worker to revalidate. Caddy compresses responses with zstd/gzip.
+
+## Observability and release operations
+
+Structured request logs contain route templates and request IDs, not URL tokens, query values or bodies. Enable the protected Prometheus endpoint with `OBSERVABILITY_ENABLED=true` and a random `OBSERVABILITY_TOKEN` of at least 32 characters. `infra/prometheus-alerts.yml` supplies the baseline alert rules; provider wiring, destinations and on-call ownership remain external deployment work.
+
+Run `npm run release:smoke` with `SMOKE_APP_URL` and `SMOKE_API_URL` after migrations and every deployment. The complete metric catalogue, alert expectations, release commands and stable-tag criteria are in `docs/OBSERVABILITY_AND_RELEASE.md`.

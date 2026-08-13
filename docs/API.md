@@ -159,6 +159,12 @@ Authenticated members read the post-event handoff at `GET /api/v1/lists/:listId/
 
 Unexpected errors are logged server-side with the request ID and return a generic message. Authorization headers, cookies, passwords, and tokens are redacted from structured logs.
 
+## Health and metrics routes
+
+`GET /api/v1/health/live` reports process liveness. `GET /api/v1/health/ready` reports MySQL, Redis and storage dependency state and returns 503 when any configured dependency is unavailable.
+
+`GET /api/v1/health/metrics` is intentionally undiscoverable unless observability is enabled and the request supplies the configured Bearer token. It returns Prometheus text metrics with no-store caching and uses bounded route templates/non-identifying codes as labels; tokens, UUID path values and query values are never labels.
+
 ## Compatibility policy
 
 Additive endpoints and optional response fields remain in `v1`. A future `v2` is reserved for breaking semantics or response/authentication changes. Shared business services must stay outside versioned controllers so versions can coexist during a documented migration window.

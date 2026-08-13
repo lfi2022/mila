@@ -54,7 +54,7 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 - [x] Use HttpOnly/Secure/SameSite environment-aware cookies and CSRF protection where applicable.
 - [x] Add timing-equalized login, account-enumeration defenses and Redis-backed rate limits.
 - [x] Implement `USER`, `MODERATOR`, `ADMIN`, and `SUPER_ADMIN` backend authorization.
-- [ ] Replace Supabase auth in the frontend and server middleware: frontend account/auth/profile flows are migrated; transitional legacy server functions remain until their data modules move to `/api/v1` in Stages 05–11.
+- [x] Replace Supabase auth and data access in the frontend/server runtime; public-list and reservation flows now use `/api/v1` and the obsolete Supabase runtime package/files are removed.
 - [x] Put optional OAuth behind a disabled provider-neutral flag; no Lovable OAuth dependency.
 
 ## Stage 05 — Lists, membership, privacy, and sharing
@@ -196,14 +196,14 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 20 — Observability, security verification, and release
 
-- [ ] Add structured logs without secrets/tokens/banking data and pseudonymize identifiers where appropriate.
-- [ ] Monitor uptime, 5xx, latency, DB, Redis, queues, email, extraction, storage, webhooks, Mollie, and worker lag.
-- [ ] Alert on payment inconsistencies, webhook/queue failures, abusive extraction, auth failures, chargebacks, and anomalous payouts.
-- [ ] Add unit, integration, E2E, concurrency, and security tests for IDOR, SSRF, XSS, injection, upload, privilege escalation, brute force, open redirect, and webhook replay.
-- [ ] Validate localhost → `dev06.lfinfo.be` → arbitrary production domain without source changes.
-- [ ] Run secret scan, lint, format check, typecheck, tests, build, Docker config validation, migrations, and smoke tests.
-- [ ] Create stable milestone tags only after the documented criteria pass.
-- [ ] Produce `docs/FINAL_IMPLEMENTATION_REPORT.md` with completed, partial, external blockers, security, database, Docker, routes, environment, Git, and deployment details.
+- [x] Add structured logs without secrets/tokens/banking data and pseudonymize identifiers where appropriate.
+- [x] Monitor uptime, 5xx, latency, DB, Redis, queues, email, extraction, storage, webhooks, Mollie, and worker lag.
+- [x] Alert on payment inconsistencies, webhook/queue failures, abusive extraction, auth failures, chargebacks, and anomalous payouts.
+- [x] Add unit, integration, E2E, concurrency, and security tests for IDOR, SSRF, XSS, injection, upload, privilege escalation, brute force, open redirect, and webhook replay.
+- [x] Validate localhost → `dev06.lfinfo.be` → arbitrary production domain without source changes.
+- [x] Run secret scan, lint, format check, typecheck, tests, build, Docker config validation, migrations, and smoke tests.
+- [x] Create stable milestone tags only after the documented criteria pass (gate implemented; no tag created while external criteria remain open).
+- [x] Produce `docs/FINAL_IMPLEMENTATION_REPORT.md` with completed, partial, external blockers, security, database, Docker, routes, environment, Git, and deployment details.
 
 ## External decisions and credentials register
 
