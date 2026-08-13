@@ -16,6 +16,21 @@ dist-ssr
 .nitro
 *.local
 
+# Environment and credentials (templates ending in .example stay tracked)
+.env
+.env.local
+.env.development
+.env.test
+.env.staging
+.env.production
+.env.*.local
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
