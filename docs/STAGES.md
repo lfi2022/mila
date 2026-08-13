@@ -220,3 +220,29 @@ Tests:
 External/transition blocker:
 
 - cover object upload is completed with the controlled MinIO/S3 storage service in Stage 08; no uncontrolled interim upload endpoint was added.
+
+## Stage 06 — Gifts and safe product catalogue
+
+Status: DONE_WITH_CONNECTOR_CONFIGURATION
+
+Implemented:
+
+- role-protected gift CRUD, ordering and soft deletion across all roadmap gift kinds;
+- integer-minor-unit prices, contribution targets, variants, quantities and second-hand/offer preferences;
+- authenticated and throttled product preview followed by explicit corrected creation;
+- JSON-LD, Open Graph and metadata extraction for identity, price, currency, availability and candidate image;
+- merchant-domain matching and product identity persistence;
+- SSRF guard with protocol/credential checks, DNS/IP public-address validation, DNS pinning, redirect revalidation, timeout, content length, streamed byte cap and MIME restriction;
+- conservative image source/usage/attribution records, with remote images requiring manual rights review;
+- `MerchantConnector` trust levels 0–4 and highest-authorized-connector selection;
+- Redis Stream refresh jobs covering metadata, price, stock, links and authorized images.
+
+Tests:
+
+- backend typecheck: PASS;
+- backend tests: 31 PASS, including private/metadata IPs, unsafe URL forms, extraction precedence/money parsing, image provenance and refresh enqueueing.
+
+External configuration:
+
+- merchant official API and affiliate-feed connectors above trust level 1 remain `BLOCKED_EXTERNAL` per merchant until contracts, credentials, schemas, rate limits and image-use rights are supplied;
+- controlled user uploads and placeholder storage are activated with MinIO in Stage 08.

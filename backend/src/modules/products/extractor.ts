@@ -18,19 +18,23 @@ export type ProductPreview = {
 
 export async function extractProduct(rawUrl: string, config: AppConfig): Promise<ProductPreview> {
   const page = await safeFetchHtml(rawUrl, config);
-  const jsonLd = extractJsonLd(page.body);
-  const meta = extractMeta(page.body);
+  return extractProductHtml(page.body, page.url);
+}
+
+export function extractProductHtml(html: string, pageUrl: string): ProductPreview {
+  const jsonLd = extractJsonLd(html);
+  const meta = extractMeta(html);
   const product = findProduct(jsonLd);
   const price = stringValue(product?.["offers"], "price") ?? meta["product:price:amount"];
-  const canonical = meta["canonical"] ? new URL(meta["canonical"], page.url).toString() : page.url;
+  const canonical = meta["canonical"] ? new URL(meta["canonical"], pageUrl).toString() : pageUrl;
   return {
-    url: page.url,
+    url: pageUrl,
     canonicalUrl: canonical,
     title: clean(stringValue(product, "name") ?? meta["og:title"] ?? meta["title"]),
     description: clean(
       stringValue(product, "description") ?? meta["og:description"] ?? meta["description"],
     ),
-    imageUrl: absoluteImage(imageValue(product?.["image"]) ?? meta["og:image"], page.url),
+    imageUrl: absoluteImage(imageValue(product?.["image"]) ?? meta["og:image"], pageUrl),
     priceMinor: toMinor(price),
     currency: (
       stringValue(product?.["offers"], "priceCurrency") ??

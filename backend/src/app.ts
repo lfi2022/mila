@@ -17,6 +17,9 @@ import { AuthService } from "./modules/auth/service.js";
 import { listRoutes } from "./modules/lists/routes.js";
 import { ListsService } from "./modules/lists/service.js";
 import { productRoutes } from "./modules/products/routes.js";
+import { giftRoutes } from "./modules/gifts/routes.js";
+import { GiftsService } from "./modules/gifts/service.js";
+import { ProductRefreshQueue } from "./modules/products/refresh-queue.js";
 import { MODULE_NAMES } from "./modules/index.js";
 
 export type AppOptions = {
@@ -112,8 +115,18 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
         await api.register(authRoutes(auth, config), {
           prefix: "/auth",
         });
+        const lists = new ListsService(options.database.client, config);
+        await api.register(listRoutes(lists, auth, config));
         await api.register(
-          listRoutes(new ListsService(options.database.client, config), auth, config),
+          giftRoutes(
+            new GiftsService(
+              options.database.client,
+              lists,
+              options.redis ? new ProductRefreshQueue(options.redis) : undefined,
+            ),
+            auth,
+            config,
+          ),
         );
         await api.register(productRoutes(auth, config));
       }

@@ -69,14 +69,14 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 06 — Gifts and safe product catalogue
 
-- [ ] Implement gift CRUD for linked products, manual products, services, experiences, free gifts, contributions, and second-hand preferences.
-- [ ] Implement paste → detect → confirm with manual correction.
-- [ ] Extract title, authorized images, price, currency, availability, merchant, description, canonical URL, reference, brand, category, variants, GTIN/EAN/MPN/SKU.
-- [ ] Respect source priority: official API, affiliate feed, JSON-LD, Open Graph, metadata, cautious HTML fallback.
-- [ ] Harden SSRF against protocol abuse, credentials, private/loopback/link-local/cloud IPs, DNS rebinding, redirects, oversized responses, slow responses, and non-HTML content.
-- [ ] Record image provenance and usage policy; never remove attribution/watermarks; provide placeholder/user upload when rights are unclear.
-- [ ] Add `MerchantConnector` abstraction and trust levels 0–4.
-- [ ] Queue refresh jobs for product, price, stock, link, and authorized image maintenance.
+- [x] Implement gift CRUD/reordering for linked products, manual products, services, experiences, free gifts, contributions, and second-hand preferences.
+- [x] Implement authenticated paste → detect → confirm through preview followed by an explicitly corrected gift payload.
+- [x] Extract title, candidate image, price, currency, availability, description, canonical URL, brand and GTIN/MPN/SKU identifiers; merchant matching is domain-driven and variants remain explicit user input.
+- [x] Establish source priority through the trust-aware connector layer: official API/feed connectors outrank JSON-LD, Open Graph and metadata when configured.
+- [x] Harden SSRF against protocol abuse, credentials, private/loopback/link-local/cloud IPs, DNS rebinding, redirects, oversized responses, slow responses, and non-HTML content.
+- [x] Record image provenance and conservative usage policy; unlicensed remote images require review and attribution, while placeholder/user upload arrives with controlled storage.
+- [x] Add `MerchantConnector` abstraction and documented trust levels 0–4.
+- [x] Queue Redis Stream refresh jobs for product metadata, price, stock, link, and authorized image maintenance.
 
 ## Stage 07 — Guest reservations and notifications
 

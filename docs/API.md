@@ -38,6 +38,12 @@ Authenticated list management uses `GET/POST /api/v1/lists`, `GET/PATCH/DELETE /
 
 Public reads use `GET /api/v1/public/lists/:slug`. A `PROTECTED` list first requires the throttled `POST /api/v1/public/lists/:slug/unlock`; a successful Argon2id check issues a one-hour HttpOnly signed access cookie. Stored access-code hashes are never selected into public responses. Invitation acceptance is email-bound, expiring, one-use and transactional at `POST /api/v1/invitations/accept`.
 
+## Gift and product routes
+
+Gift CRUD is nested below `/api/v1/lists/:listId/gifts`; updates, deletion and ordering enforce list roles and CSRF. Money crosses HTTP as integer-minor-unit strings and is persisted as `BIGINT`. Linked gift creation records the original/canonical URL, merchant match, product identity and image provenance, then appends refresh work to a Redis Stream.
+
+`POST /api/v1/products/preview` is authenticated and throttled. It pins DNS resolution to the prevalidated public addresses and revalidates every redirect, with protocol/credential/private-network blocks, timeout, byte limit and HTML-only responses. JSON-LD is preferred over Open Graph and generic metadata. Returned content is only a candidate: creating the gift is the explicit confirmation step.
+
 ## Error contract
 
 ```json
