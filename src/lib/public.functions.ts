@@ -42,7 +42,6 @@ export type PublicList = {
   show_progress: boolean;
   /** "SHOW" keeps reserved gifts visible (default), "HIDE" removes them from the public page. */
   reserved_display: "SHOW" | "HIDE";
-
 };
 
 export type PublicListResult =
@@ -81,7 +80,9 @@ export const getPublicList = createServerFn({ method: "GET" })
 
     if (list.visibility === "PROTECTED") {
       const provided = data.code?.trim();
-      const matches = Boolean(provided && accessCodeHash && (await sha256Hex(provided)) === accessCodeHash);
+      const matches = Boolean(
+        provided && accessCodeHash && (await sha256Hex(provided)) === accessCodeHash,
+      );
       if (!matches) {
         return {
           state: "locked",
@@ -113,7 +114,9 @@ export const getPublicList = createServerFn({ method: "GET" })
 
     const totals = {
       items: allItems?.length ?? 0,
-      taken: (allItems ?? []).filter((i) => i.status !== "AVAILABLE" || i.reserved_qty >= i.quantity).length,
+      taken: (allItems ?? []).filter(
+        (i) => i.status !== "AVAILABLE" || i.reserved_qty >= i.quantity,
+      ).length,
     };
 
     const hideReserved = list.reserved_display === "HIDE";
@@ -130,7 +133,6 @@ export const getPublicList = createServerFn({ method: "GET" })
     }
 
     return { state: "ok", list: publicFields as PublicList, gifts: visible, totals };
-
   });
 
 const reserveInput = z.object({
@@ -155,7 +157,8 @@ const ERROR_MESSAGES: Record<string, string> = {
 export const reserveGift = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => reserveInput.parse(data))
   .handler(async ({ data }) => {
-    const { createPublicSupabase, rateLimit, clientFingerprint, appOrigin } = await import("./server-utils.server");
+    const { createPublicSupabase, rateLimit, clientFingerprint, appOrigin } =
+      await import("./server-utils.server");
 
     if (!rateLimit(`reserve:${clientFingerprint()}`, 8, 60_000)) {
       throw new Error("Trop de réservations d'affilée. Réessayez dans une minute.");
@@ -278,7 +281,14 @@ async function notifyReservation(params: {
   }
 }
 
-const tokenInput = z.object({ token: z.string().trim().min(32).max(128).regex(/^[a-f0-9]+$/i) });
+const tokenInput = z.object({
+  token: z
+    .string()
+    .trim()
+    .min(32)
+    .max(128)
+    .regex(/^[a-f0-9]+$/i),
+});
 
 export const getReservationByToken = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => tokenInput.parse(data))
@@ -294,7 +304,12 @@ export const getReservationByToken = createServerFn({ method: "GET" })
   });
 
 const updateInput = z.object({
-  token: z.string().trim().min(32).max(128).regex(/^[a-f0-9]+$/i),
+  token: z
+    .string()
+    .trim()
+    .min(32)
+    .max(128)
+    .regex(/^[a-f0-9]+$/i),
   action: z.enum(["message", "purchased", "cancel"]),
   message: z.string().trim().max(800).optional(),
 });
@@ -302,13 +317,16 @@ const updateInput = z.object({
 export const updateReservationByToken = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => updateInput.parse(data))
   .handler(async ({ data }) => {
-    const { createPublicSupabase, rateLimit, clientFingerprint } = await import("./server-utils.server");
+    const { createPublicSupabase, rateLimit, clientFingerprint } =
+      await import("./server-utils.server");
     if (!rateLimit(`res-update:${clientFingerprint()}`, 20, 60_000)) {
       throw new Error("Trop de requêtes, patientez un instant.");
     }
 
     const supabasePublic = createPublicSupabase();
-    const { data: rows } = await supabasePublic.rpc("get_reservation_by_token", { _token: data.token });
+    const { data: rows } = await supabasePublic.rpc("get_reservation_by_token", {
+      _token: data.token,
+    });
     const before = Array.isArray(rows) ? rows[0] : null;
 
     const { error } = await supabasePublic.rpc("update_reservation_by_token", {
@@ -345,7 +363,9 @@ export const updateReservationByToken = createServerFn({ method: "POST" })
               .select("user_id")
               .eq("registry_id", list.id);
             for (const member of (members ?? []).slice(0, 5)) {
-              const { data: userResult } = await supabaseAdmin.auth.admin.getUserById(member.user_id);
+              const { data: userResult } = await supabaseAdmin.auth.admin.getUserById(
+                member.user_id,
+              );
               if (!userResult?.user?.email) continue;
               await sendEmail({
                 to: userResult.user.email,

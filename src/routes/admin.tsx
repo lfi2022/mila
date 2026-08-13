@@ -17,7 +17,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { RewardsAdmin } from "@/components/admin/RewardsAdmin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,7 +45,10 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Administration — Mila" },
-      { name: "description", content: "Pilotage de la plateforme Mila : statistiques, marchands et modération." },
+      {
+        name: "description",
+        content: "Pilotage de la plateforme Mila : statistiques, marchands et modération.",
+      },
       { property: "og:title", content: "Administration — Mila" },
       { property: "og:description", content: "Espace interne de pilotage de la plateforme." },
       { property: "og:type", content: "website" },
@@ -117,13 +127,20 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
   const auditQuery = useQuery({ queryKey: ["admin-audit"], queryFn: () => auditLog() });
 
   const refresh = () => {
-    for (const key of ["admin-stats", "admin-lists", "admin-merchants", "admin-reports", "admin-audit"]) {
+    for (const key of [
+      "admin-stats",
+      "admin-lists",
+      "admin-merchants",
+      "admin-reports",
+      "admin-audit",
+    ]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
   };
 
   const moderateMutation = useMutation({
-    mutationFn: (input: { action: ModerationAction; targetId: string }) => moderate({ data: input }),
+    mutationFn: (input: { action: ModerationAction; targetId: string }) =>
+      moderate({ data: input }),
     onSuccess: () => {
       toast.success("Action appliquée");
       refresh();
@@ -139,8 +156,8 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
       <main className="mx-auto max-w-6xl px-4 py-12">
         <h1 className="text-3xl">Administration</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Données réelles issues de la base. Les indicateurs financiers restent vides tant qu'aucun paiement ni
-          rapport d'affiliation n'est connecté.
+          Données réelles issues de la base. Les indicateurs financiers restent vides tant qu'aucun
+          paiement ni rapport d'affiliation n'est connecté.
         </p>
 
         <Tabs defaultValue="overview" className="mt-8">
@@ -159,15 +176,27 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
               <p className="text-sm text-muted-foreground">Chargement des statistiques…</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Stat label="Comptes" value={s.users.total} hint={`+${s.users.newLast30Days} sur 30 jours`} />
-                <Stat label="Listes actives" value={s.lists.active} hint={`${s.lists.total} au total`} />
+                <Stat
+                  label="Comptes"
+                  value={s.users.total}
+                  hint={`+${s.users.newLast30Days} sur 30 jours`}
+                />
+                <Stat
+                  label="Listes actives"
+                  value={s.lists.active}
+                  hint={`${s.lists.total} au total`}
+                />
                 <Stat label="Cadeaux" value={s.gifts.total} hint={`${s.gifts.reserved} réservés`} />
                 <Stat
                   label="Clics marchands"
                   value={s.business.merchantClicks}
                   hint={`${s.business.affiliateClicks} affiliés · ${s.business.clicksLast7Days} sur 7 jours`}
                 />
-                <Stat label="Listes publiques" value={s.lists.public} hint={`${s.lists.private} privées`} />
+                <Stat
+                  label="Listes publiques"
+                  value={s.lists.public}
+                  hint={`${s.lists.private} privées`}
+                />
                 <Stat label="Cadeaux achetés" value={s.gifts.purchased} />
                 <Stat label="Signalements ouverts" value={s.moderation.openReports} />
                 <Stat label="Listes premium" value={s.lists.premium} hint="Revenus non connectés" />
@@ -214,12 +243,19 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                 {listsQuery.data?.map((list) => (
                   <TableRow key={list.id}>
                     <TableCell>
-                      <a href={`/l/${list.slug}`} target="_blank" rel="noreferrer" className="underline">
+                      <a
+                        href={`/l/${list.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline"
+                      >
                         {list.title}
                       </a>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={list.status === "ACTIVE" ? "default" : "secondary"}>{list.status}</Badge>
+                      <Badge variant={list.status === "ACTIVE" ? "default" : "secondary"}>
+                        {list.status}
+                      </Badge>
                     </TableCell>
                     <TableCell>{list.visibility}</TableCell>
                     <TableCell>{list.view_count}</TableCell>
@@ -256,14 +292,19 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                 {usersQuery.data?.map((profile) => (
                   <TableRow key={profile.id}>
                     <TableCell>{profile.display_name ?? "—"}</TableCell>
-                    <TableCell>{profile.roles.length ? profile.roles.join(", ") : "USER"}</TableCell>
-                    <TableCell>{new Date(profile.created_at).toLocaleDateString("fr-FR")}</TableCell>
+                    <TableCell>
+                      {profile.roles.length ? profile.roles.join(", ") : "USER"}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(profile.created_at).toLocaleDateString("fr-FR")}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
             <p className="mt-3 text-xs text-muted-foreground">
-              Les emails ne sont pas affichés ici pour limiter l'exposition des données personnelles.
+              Les emails ne sont pas affichés ici pour limiter l'exposition des données
+              personnelles.
             </p>
           </TabsContent>
 
@@ -318,7 +359,9 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
               />
             ) : null}
 
-            {isAdmin ? <AffiliateTester merchants={merchantsQuery.data ?? []} testLink={testLink} /> : null}
+            {isAdmin ? (
+              <AffiliateTester merchants={merchantsQuery.data ?? []} testLink={testLink} />
+            ) : null}
           </TabsContent>
 
           <TabsContent value="rewards" className="mt-6">
@@ -336,15 +379,24 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                       <p className="font-medium">
                         {report.target_type} · {report.reason}
                       </p>
-                      <Badge variant={report.status === "OPEN" ? "default" : "secondary"}>{report.status}</Badge>
+                      <Badge variant={report.status === "OPEN" ? "default" : "secondary"}>
+                        {report.status}
+                      </Badge>
                     </div>
-                    {report.details ? <p className="mt-2 text-sm text-muted-foreground">{report.details}</p> : null}
+                    {report.details ? (
+                      <p className="mt-2 text-sm text-muted-foreground">{report.details}</p>
+                    ) : null}
                     <div className="mt-3 flex flex-wrap gap-2">
                       {report.target_type === "list" ? (
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => moderateMutation.mutate({ action: "suspend_list", targetId: report.target_id })}
+                          onClick={() =>
+                            moderateMutation.mutate({
+                              action: "suspend_list",
+                              targetId: report.target_id,
+                            })
+                          }
                         >
                           Suspendre la liste
                         </Button>
@@ -353,21 +405,30 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => moderateMutation.mutate({ action: "hide_item", targetId: report.target_id })}
+                          onClick={() =>
+                            moderateMutation.mutate({
+                              action: "hide_item",
+                              targetId: report.target_id,
+                            })
+                          }
                         >
                           Masquer le cadeau
                         </Button>
                       ) : null}
                       <Button
                         size="sm"
-                        onClick={() => moderateMutation.mutate({ action: "resolve_report", targetId: report.id })}
+                        onClick={() =>
+                          moderateMutation.mutate({ action: "resolve_report", targetId: report.id })
+                        }
                       >
                         Résoudre
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => moderateMutation.mutate({ action: "dismiss_report", targetId: report.id })}
+                        onClick={() =>
+                          moderateMutation.mutate({ action: "dismiss_report", targetId: report.id })
+                        }
                       >
                         Rejeter
                       </Button>
@@ -407,12 +468,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
 }
 
 type ModerationAction =
-  | "suspend_list"
-  | "restore_list"
-  | "hide_item"
-  | "show_item"
-  | "resolve_report"
-  | "dismiss_report";
+  "suspend_list" | "restore_list" | "hide_item" | "show_item" | "resolve_report" | "dismiss_report";
 
 function Stat({ label, value, hint }: { label: string; value: number; hint?: string }) {
   return (
@@ -499,7 +555,9 @@ function MerchantRow({
         />
       </TableCell>
       <TableCell className="text-xs text-muted-foreground">
-        {merchant.link_mode === "API" ? `API${merchant.has_api_key ? " · clé ok" : " · clé manquante"}` : merchant.link_mode}
+        {merchant.link_mode === "API"
+          ? `API${merchant.has_api_key ? " · clé ok" : " · clé manquante"}`
+          : merchant.link_mode}
         {merchant.affiliate_network ? ` · ${merchant.affiliate_network}` : ""}
       </TableCell>
       <TableCell className="text-right">
@@ -569,7 +627,11 @@ function MerchantEditor({
               <Switch checked={values.enabled} onCheckedChange={(v) => set("enabled", v)} /> Actif
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <Switch checked={values.affiliateEnabled} onCheckedChange={(v) => set("affiliateEnabled", v)} /> Affiliation
+              <Switch
+                checked={values.affiliateEnabled}
+                onCheckedChange={(v) => set("affiliateEnabled", v)}
+              />{" "}
+              Affiliation
             </label>
           </div>
 
@@ -599,7 +661,11 @@ function MerchantEditor({
             </div>
             <div className="space-y-2">
               <Label htmlFor="m-affid">Identifiant affilié</Label>
-              <Input id="m-affid" value={values.affiliateId} onChange={(e) => set("affiliateId", e.target.value)} />
+              <Input
+                id="m-affid"
+                value={values.affiliateId}
+                onChange={(e) => set("affiliateId", e.target.value)}
+              />
             </div>
           </div>
 
@@ -636,7 +702,11 @@ function MerchantEditor({
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={initial.id ? "Laisser vide pour conserver la clé actuelle" : "Clé fournie par le réseau"}
+                  placeholder={
+                    initial.id
+                      ? "Laisser vide pour conserver la clé actuelle"
+                      : "Clé fournie par le réseau"
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   Saisir « - » pour effacer la clé. La clé n'est jamais renvoyée au navigateur.
@@ -651,13 +721,15 @@ function MerchantEditor({
                   placeholder='{"header":"X-Api-Key","scheme":"","site_id":"12345"}'
                 />
                 <p className="text-xs text-muted-foreground">
-                  Envoyé dans le corps de la requête. « header » et « scheme » personnalisent l'en-tête d'authentification.
+                  Envoyé dans le corps de la requête. « header » et « scheme » personnalisent
+                  l'en-tête d'authentification.
                 </p>
               </div>
               <p className="rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">
-                L'API reçoit {"{ url, destination_url, affiliate_id, network, … }"} et doit renvoyer le lien converti
-                (champ <code>url</code>, <code>link</code>, <code>deeplink</code> ou <code>tracking_url</code>). En cas
-                d'échec, le visiteur est redirigé vers le lien d'origine.
+                L'API reçoit {"{ url, destination_url, affiliate_id, network, … }"} et doit renvoyer
+                le lien converti (champ <code>url</code>, <code>link</code>, <code>deeplink</code>{" "}
+                ou <code>tracking_url</code>). En cas d'échec, le visiteur est redirigé vers le lien
+                d'origine.
               </p>
             </>
           ) : null}
@@ -695,8 +767,11 @@ function AffiliateTester({
   testLink,
 }: {
   merchants: MerchantRowData[];
-  testLink: (opts: { data: { merchantId: string; url: string } }) => Promise<
-    { ok: false; reason: string } | { ok: true; domainMatches: boolean; affiliate: boolean; url: string }
+  testLink: (opts: {
+    data: { merchantId: string; url: string };
+  }) => Promise<
+    | { ok: false; reason: string }
+    | { ok: true; domainMatches: boolean; affiliate: boolean; url: string }
   >;
 }) {
   const [merchantId, setMerchantId] = useState(merchants[0]?.id ?? "");

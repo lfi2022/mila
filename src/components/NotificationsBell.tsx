@@ -42,7 +42,12 @@ export function NotificationsBell() {
       .channel("notifications-bell")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
         () => queryClient.invalidateQueries({ queryKey: ["notifications", user.id] }),
       )
       .subscribe();
@@ -102,9 +107,14 @@ export function NotificationsBell() {
                     <p className="text-sm font-medium leading-snug">{item.title}</p>
                     {!item.read_at ? <Badge className="shrink-0">Nouveau</Badge> : null}
                   </div>
-                  {item.body ? <p className="mt-1 text-xs text-muted-foreground">{item.body}</p> : null}
+                  {item.body ? (
+                    <p className="mt-1 text-xs text-muted-foreground">{item.body}</p>
+                  ) : null}
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {new Date(item.created_at).toLocaleString("fr-BE", { dateStyle: "medium", timeStyle: "short" })}
+                    {new Date(item.created_at).toLocaleString("fr-BE", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
                   </p>
                 </li>
               ))}

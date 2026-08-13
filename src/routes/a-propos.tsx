@@ -1,5 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
+import { buildPublicUrl } from "@/config/runtime";
+
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -16,13 +18,14 @@ export const Route = createFileRoute("/a-propos")({
       { property: "og:title", content: "À propos de Mila" },
       {
         property: "og:description",
-        content: "L'histoire de Mila : une liste de naissance douce, universelle et respectueuse de vos données.",
+        content:
+          "L'histoire de Mila : une liste de naissance douce, universelle et respectueuse de vos données.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://parent-gift-hub.lovable.app/a-propos" },
+      { property: "og:url", content: buildPublicUrl("/a-propos") },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://parent-gift-hub.lovable.app/a-propos" }],
+    links: [{ rel: "canonical", href: buildPublicUrl("/a-propos") }],
   }),
   component: AboutPage,
 });
@@ -34,8 +37,9 @@ function AboutPage() {
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-16">
         <h1 className="text-4xl">Mila, la liste qui vous ressemble</h1>
         <p className="text-lg text-muted-foreground">
-          La plupart des listes de naissance obligent à choisir un seul magasin. Or une chambre de bébé se construit
-          rarement dans une seule enseigne : la poussette ici, le mobilier là, un doudou cousu à la main ailleurs.
+          La plupart des listes de naissance obligent à choisir un seul magasin. Or une chambre de
+          bébé se construit rarement dans une seule enseigne : la poussette ici, le mobilier là, un
+          doudou cousu à la main ailleurs.
         </p>
 
         <section className="space-y-3">
@@ -51,9 +55,10 @@ function AboutPage() {
         <section className="space-y-3">
           <h2 className="text-2xl">Comment Mila se finance</h2>
           <p className="text-sm text-muted-foreground">
-            Créer une liste est gratuit. Lorsqu'un proche passe par un lien de votre liste vers certaines boutiques
-            partenaires des réseaux d'affiliation, Mila peut recevoir une commission — sans que le prix payé change.
-            Une partie de cette commission peut être reversée aux parents via les{" "}
+            Créer une liste est gratuit. Lorsqu'un proche passe par un lien de votre liste vers
+            certaines boutiques partenaires des réseaux d'affiliation, Mila peut recevoir une
+            commission — sans que le prix payé change. Une partie de cette commission peut être
+            reversée aux parents via les{" "}
             <Link to="/recompenses" className="underline">
               Récompenses Mila
             </Link>

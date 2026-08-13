@@ -17,7 +17,10 @@ export const Route = createFileRoute("/profil")({
   head: () => ({
     meta: [
       { title: "Mon profil — Mila" },
-      { name: "description", content: "Gérez votre prénom, exportez vos données ou supprimez votre compte Mila." },
+      {
+        name: "description",
+        content: "Gérez votre prénom, exportez vos données ou supprimez votre compte Mila.",
+      },
       { property: "og:title", content: "Mon profil — Mila" },
       { property: "og:description", content: "Vos informations et vos droits sur vos données." },
       { property: "og:type", content: "website" },
@@ -54,7 +57,9 @@ function ProfilePage() {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
-        <p className="mx-auto max-w-2xl px-4 py-20 text-sm text-muted-foreground">Chargement de votre profil…</p>
+        <p className="mx-auto max-w-2xl px-4 py-20 text-sm text-muted-foreground">
+          Chargement de votre profil…
+        </p>
       </div>
     );
   }
@@ -71,7 +76,12 @@ function ProfilePage() {
         <section className="surface-card space-y-4 p-6">
           <div className="space-y-2">
             <Label htmlFor="display-name">Prénom affiché</Label>
-            <Input id="display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={80} />
+            <Input
+              id="display-name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={80}
+            />
           </div>
           <Button
             disabled={saving}
@@ -102,7 +112,9 @@ function ProfilePage() {
             onClick={async () => {
               try {
                 const data = await exportData();
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                const blob = new Blob([JSON.stringify(data, null, 2)], {
+                  type: "application/json",
+                });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
@@ -124,7 +136,8 @@ function ProfilePage() {
           <div>
             <h2 className="text-lg">Supprimer mon compte</h2>
             <p className="text-sm text-muted-foreground">
-              Vos listes, cadeaux et réservations seront définitivement effacés. Cette action est irréversible.
+              Vos listes, cadeaux et réservations seront définitivement effacés. Cette action est
+              irréversible.
             </p>
           </div>
           <Button
@@ -168,8 +181,8 @@ function ReferralSection() {
         <h2 className="text-lg">Parrainage</h2>
         <p className="text-sm text-muted-foreground">
           Invitez d'autres parents. Dès qu'un parent créé sa liste et l'utilise vraiment,{" "}
-          {formatCents(state.bonusCents)} sont ajoutés à vos Récompenses Mila. Les invitations non abouties ne
-          rapportent rien.
+          {formatCents(state.bonusCents)} sont ajoutés à vos Récompenses Mila. Les invitations non
+          abouties ne rapportent rien.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">

@@ -31,7 +31,10 @@ function decodeEntities(value: string): string {
     .replace(/&apos;/g, "'")
     .replace(/&nbsp;/g, " ")
     .replace(/&#x?([0-9a-fA-F]+);/g, (_m, code: string) => {
-      const num = code.startsWith("x") || code.startsWith("X") ? parseInt(code.slice(1), 16) : parseInt(code, 10);
+      const num =
+        code.startsWith("x") || code.startsWith("X")
+          ? parseInt(code.slice(1), 16)
+          : parseInt(code, 10);
       return Number.isFinite(num) ? String.fromCodePoint(num) : "";
     })
     .trim();
@@ -59,7 +62,10 @@ function metaContent(html: string, key: string): string | null {
 function parsePrice(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value !== "string") return null;
-  const normalized = value.replace(/[^\d,.\-]/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", ".");
+  const normalized = value
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\.(?=\d{3}\b)/g, "")
+    .replace(",", ".");
   const num = Number.parseFloat(normalized);
   return Number.isFinite(num) && num >= 0 && num < 1_000_000 ? num : null;
 }
@@ -94,7 +100,8 @@ function collectJsonLd(html: string): JsonRecord[] {
 function typeIncludes(node: JsonRecord, wanted: string): boolean {
   const type = node["@type"];
   if (typeof type === "string") return type.toLowerCase() === wanted;
-  if (Array.isArray(type)) return type.some((t) => typeof t === "string" && t.toLowerCase() === wanted);
+  if (Array.isArray(type))
+    return type.some((t) => typeof t === "string" && t.toLowerCase() === wanted);
   return false;
 }
 
@@ -122,7 +129,7 @@ async function safeFetch(startUrl: string): Promise<{ html: string; finalUrl: st
         redirect: "manual",
         signal: controller.signal,
         headers: {
-          "user-agent": "MilaBot/1.0 (+https://mila.be) metadata-preview",
+          "user-agent": process.env["PRODUCT_FETCH_USER_AGENT"] ?? "MilaBot/1.0 metadata-preview",
           accept: "text/html,application/xhtml+xml",
           "accept-language": "fr,en;q=0.8",
         },
@@ -198,21 +205,31 @@ export async function extractProductMetadata(rawUrl: string): Promise<ProductMet
 
   let title = clean(metaContent(html, "og:title") ?? metaContent(html, "twitter:title"), 180);
   let description = clean(
-    metaContent(html, "og:description") ?? metaContent(html, "twitter:description") ?? metaContent(html, "description"),
+    metaContent(html, "og:description") ??
+      metaContent(html, "twitter:description") ??
+      metaContent(html, "description"),
     500,
   );
   let imageUrl = clean(
-    metaContent(html, "og:image:secure_url") ?? metaContent(html, "og:image") ?? metaContent(html, "twitter:image"),
+    metaContent(html, "og:image:secure_url") ??
+      metaContent(html, "og:image") ??
+      metaContent(html, "twitter:image"),
     1000,
   );
-  let price = parsePrice(metaContent(html, "product:price:amount") ?? metaContent(html, "og:price:amount"));
-  let currency = clean(metaContent(html, "product:price:currency") ?? metaContent(html, "og:price:currency"), 8);
+  let price = parsePrice(
+    metaContent(html, "product:price:amount") ?? metaContent(html, "og:price:amount"),
+  );
+  let currency = clean(
+    metaContent(html, "product:price:currency") ?? metaContent(html, "og:price:currency"),
+    8,
+  );
   const siteName = clean(metaContent(html, "og:site_name"), 80);
 
   for (const node of collectJsonLd(html)) {
     if (!typeIncludes(node, "product")) continue;
     if (!title && typeof node["name"] === "string") title = clean(node["name"], 180);
-    if (!description && typeof node["description"] === "string") description = clean(node["description"], 500);
+    if (!description && typeof node["description"] === "string")
+      description = clean(node["description"], 500);
     if (!imageUrl) imageUrl = clean(firstImage(node["image"]), 1000);
     const offers = node["offers"];
     const offerList = Array.isArray(offers) ? offers : offers ? [offers] : [];
@@ -220,7 +237,8 @@ export async function extractProductMetadata(rawUrl: string): Promise<ProductMet
       if (!offer || typeof offer !== "object") continue;
       const record = offer as JsonRecord;
       if (price === null) price = parsePrice(record["price"] ?? record["lowPrice"]);
-      if (!currency && typeof record["priceCurrency"] === "string") currency = clean(record["priceCurrency"], 8);
+      if (!currency && typeof record["priceCurrency"] === "string")
+        currency = clean(record["priceCurrency"], 8);
     }
     break;
   }

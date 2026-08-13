@@ -5,12 +5,18 @@ import heroImage from "@/assets/hero-nursery.jpg";
 import { ListPreviewMockup } from "@/components/ListPreviewMockup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
 import { FAQ_ENTRIES } from "@/lib/faq-content";
+import { buildPublicUrl } from "@/config/runtime";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,17 +27,20 @@ export const Route = createFileRoute("/")({
         content:
           "Créez une liste de naissance universelle et gratuite : ajoutez les cadeaux de tous vos magasins, partagez un seul lien et évitez les doublons.",
       },
-      { property: "og:title", content: "Mila — liste de naissance en ligne, gratuite et multi-magasins" },
+      {
+        property: "og:title",
+        content: "Mila — liste de naissance en ligne, gratuite et multi-magasins",
+      },
       {
         property: "og:description",
         content:
           "Tous les magasins. Une seule liste. Vos proches réservent en un clic, sans créer de compte.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://parent-gift-hub.lovable.app/" },
+      { property: "og:url", content: buildPublicUrl("/") },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://parent-gift-hub.lovable.app/" }],
+    links: [{ rel: "canonical", href: buildPublicUrl("/") }],
     scripts: [
       {
         type: "application/ld+json",
@@ -70,7 +79,11 @@ const STEPS = [
 
 const ADVANTAGES = [
   { icon: "🛍️", title: "Tous vos magasins", body: "Ne soyez plus limité à une seule enseigne." },
-  { icon: "🎁", title: "Fini les doublons", body: "Les cadeaux réservés sont immédiatement indiqués." },
+  {
+    icon: "🎁",
+    title: "Fini les doublons",
+    body: "Les cadeaux réservés sont immédiatement indiqués.",
+  },
   {
     icon: "👨‍👩‍👧",
     title: "Simple pour toute la famille",
@@ -105,13 +118,15 @@ function Index() {
         {/* 1 — Hero */}
         <section className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-primary">Liste de naissance en ligne</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-primary">
+              Liste de naissance en ligne
+            </p>
             <h1 className="mt-5 text-5xl leading-[1.05] text-balance-pretty">
               Tous les magasins. Une seule liste. Pour un moment unique. ❤️
             </h1>
             <p className="mt-6 max-w-lg text-balance-pretty text-lg text-muted-foreground">
-              Ajoutez les cadeaux de vos magasins préférés, partagez une seule liste avec vos proches et évitez les
-              cadeaux en double.
+              Ajoutez les cadeaux de vos magasins préférés, partagez une seule liste avec vos
+              proches et évitez les cadeaux en double.
             </p>
             <p className="mt-3 max-w-lg text-sm text-muted-foreground">
               Amazon, IKEA, Vertbaudet, petites boutiques… Mila rassemble tout au même endroit.
@@ -148,7 +163,10 @@ function Index() {
         </section>
 
         {/* 3 — Comment ça marche */}
-        <section id="comment-ca-marche" className="scroll-mt-20 border-y border-border/70 bg-cream/60">
+        <section
+          id="comment-ca-marche"
+          className="scroll-mt-20 border-y border-border/70 bg-cream/60"
+        >
           <div className="mx-auto max-w-6xl px-4 py-16">
             <h2 className="text-3xl">Comment ça marche</h2>
             <p className="mt-3 max-w-xl text-muted-foreground">
@@ -169,8 +187,8 @@ function Index() {
             <p className="mt-8 max-w-2xl text-sm text-muted-foreground">
               Collez simplement le lien d'un produit. Mila s'occupe du reste.{" "}
               <span className="text-xs">
-                Lorsque c'est possible, Mila récupère automatiquement le nom, l'image et le prix du produit. Vous pouvez
-                ensuite tout modifier.
+                Lorsque c'est possible, Mila récupère automatiquement le nom, l'image et le prix du
+                produit. Vous pouvez ensuite tout modifier.
               </span>
             </p>
           </div>
@@ -182,19 +200,28 @@ function Index() {
             <div>
               <h2 className="text-3xl">Une liste vraiment universelle</h2>
               <p className="mt-5 text-muted-foreground text-balance-pretty">
-                La poussette chez Amazon, le mobilier chez IKEA, un doudou dans une petite boutique et une création
-                artisanale ailleurs ? Aucun problème. Tout peut vivre dans la même liste Mila.
+                La poussette chez Amazon, le mobilier chez IKEA, un doudou dans une petite boutique
+                et une création artisanale ailleurs ? Aucun problème. Tout peut vivre dans la même
+                liste Mila.
               </p>
               <p className="font-display mt-6 text-2xl text-accent">Un lien. Tous vos cadeaux.</p>
               <div className="mt-6 flex flex-wrap gap-2">
-                {["Amazon", "IKEA", "Vertbaudet", "H&M", "Petites boutiques", "Cadeau fait main"].map((store) => (
+                {[
+                  "Amazon",
+                  "IKEA",
+                  "Vertbaudet",
+                  "H&M",
+                  "Petites boutiques",
+                  "Cadeau fait main",
+                ].map((store) => (
                   <Badge key={store} variant="secondary" className="text-xs">
                     {store}
                   </Badge>
                 ))}
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
-                Marques citées à titre d'exemple : Mila n'est pas affilié officiellement à ces enseignes.
+                Marques citées à titre d'exemple : Mila n'est pas affilié officiellement à ces
+                enseignes.
               </p>
             </div>
             <div className="relative">
@@ -236,10 +263,13 @@ function Index() {
         <section className="mx-auto max-w-6xl px-4 py-16">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div>
-              <h2 className="text-3xl text-balance-pretty">Vos cadeaux peuvent aussi vous faire des cadeaux. ❤️</h2>
+              <h2 className="text-3xl text-balance-pretty">
+                Vos cadeaux peuvent aussi vous faire des cadeaux. ❤️
+              </h2>
               <p className="mt-5 text-muted-foreground">
-                Certains achats éligibles réalisés depuis votre liste peuvent générer des Récompenses Mila. Lorsque Mila
-                reçoit une commission sur un achat éligible, une partie peut être ajoutée à vos récompenses.
+                Certains achats éligibles réalisés depuis votre liste peuvent générer des
+                Récompenses Mila. Lorsque Mila reçoit une commission sur un achat éligible, une
+                partie peut être ajoutée à vos récompenses.
               </p>
               <Button
                 asChild
@@ -265,7 +295,9 @@ function Index() {
                   <span className="font-medium">+3,00 €</span>
                 </li>
               </ul>
-              <p className="mt-4 text-xs text-muted-foreground">Exemple visuel — montants fictifs.</p>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Exemple visuel — montants fictifs.
+              </p>
             </div>
           </div>
         </section>
@@ -308,8 +340,12 @@ function Index() {
           <Accordion type="single" collapsible className="mt-6">
             {FAQ_ENTRIES.slice(0, 6).map((entry) => (
               <AccordionItem key={entry.question} value={entry.question}>
-                <AccordionTrigger className="text-left text-base">{entry.question}</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">{entry.answer}</AccordionContent>
+                <AccordionTrigger className="text-left text-base">
+                  {entry.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  {entry.answer}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>

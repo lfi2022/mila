@@ -26,7 +26,9 @@ export function ListPreviewMockup() {
         <div className="mx-auto mb-3 h-1.5 w-16 rounded-full bg-border" />
         <div className="overflow-hidden rounded-[1.75rem] bg-background">
           <div className="bg-secondary/70 px-5 py-5 text-center">
-            <p className="text-xs uppercase tracking-[0.25em] text-primary/70">Liste de naissance</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-primary/70">
+              Liste de naissance
+            </p>
             <p className="font-display mt-1 text-xl">Liste de naissance de Mila</p>
             <p className="mt-1 text-xs text-muted-foreground">Arrivée prévue en novembre ❤️</p>
           </div>

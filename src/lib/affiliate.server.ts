@@ -24,7 +24,15 @@ export type ResolvedLink = {
 };
 
 const API_TIMEOUT_MS = 4000;
-const RESPONSE_KEYS = ["url", "link", "deeplink", "tracking_url", "trackingUrl", "short_url", "shortUrl"];
+const RESPONSE_KEYS = [
+  "url",
+  "link",
+  "deeplink",
+  "tracking_url",
+  "trackingUrl",
+  "short_url",
+  "shortUrl",
+];
 
 function pickUrl(payload: unknown): string | null {
   if (typeof payload === "string") return payload;
@@ -59,14 +67,17 @@ async function convertThroughApi(
   if (!endpointCheck.ok) return null;
 
   const extra =
-    merchant.api_config && typeof merchant.api_config === "object" && !Array.isArray(merchant.api_config)
+    merchant.api_config &&
+    typeof merchant.api_config === "object" &&
+    !Array.isArray(merchant.api_config)
       ? (merchant.api_config as Record<string, unknown>)
       : {};
 
   const headers = new Headers({ "content-type": "application/json", accept: "application/json" });
   const apiKey = (merchant.api_key ?? "").trim();
   if (apiKey) {
-    const headerName = typeof extra["header"] === "string" ? (extra["header"] as string) : "Authorization";
+    const headerName =
+      typeof extra["header"] === "string" ? (extra["header"] as string) : "Authorization";
     const scheme = typeof extra["scheme"] === "string" ? (extra["scheme"] as string) : "Bearer";
     headers.set(headerName, scheme ? `${scheme} ${apiKey}` : apiKey);
   }

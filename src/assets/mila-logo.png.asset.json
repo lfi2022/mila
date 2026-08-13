@@ -1,11 +1,4 @@
 {
   "version": 1,
-  "asset_id": "14945014-6b65-4309-bb66-4ee6ea794030",
-  "project_id": "30db8850-be43-407a-8063-90765fe76acc",
-  "url": "/__l5e/assets-v1/14945014-6b65-4309-bb66-4ee6ea794030/mila-logo.png",
-  "r2_key": "a/v1/30db8850-be43-407a-8063-90765fe76acc/14945014-6b65-4309-bb66-4ee6ea794030/mila-logo.png",
-  "original_filename": "mila-logo.png",
-  "size": 381610,
-  "content_type": "image/png",
-  "created_at": "2026-08-12T20:25:51Z"
+  "url": "/favicon.png"
 }

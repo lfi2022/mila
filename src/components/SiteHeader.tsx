@@ -62,7 +62,11 @@ export function SiteHeader() {
               <Button asChild variant="ghost" size="sm">
                 <Link to="/auth">Se connecter</Link>
               </Button>
-              <Button asChild size="sm" onClick={() => track("signup_cta_clicked", { location: "header" })}>
+              <Button
+                asChild
+                size="sm"
+                onClick={() => track("signup_cta_clicked", { location: "header" })}
+              >
                 <Link to="/auth">Créer ma liste</Link>
               </Button>
             </>
@@ -71,7 +75,11 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2 md:hidden">
           {user ? <NotificationsBell /> : null}
-          <Button asChild size="sm" onClick={() => track("signup_cta_clicked", { location: "header_mobile" })}>
+          <Button
+            asChild
+            size="sm"
+            onClick={() => track("signup_cta_clicked", { location: "header_mobile" })}
+          >
             <Link to={user ? "/dashboard" : "/auth"}>{user ? "Mon espace" : "Créer ma liste"}</Link>
           </Button>
           <Sheet open={open} onOpenChange={setOpen}>

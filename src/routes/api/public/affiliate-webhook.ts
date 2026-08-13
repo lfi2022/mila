@@ -37,10 +37,14 @@ async function verifySignature(secret: string, body: string, signature: string):
   const expected = Array.from(new Uint8Array(mac))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  const provided = signature.trim().toLowerCase().replace(/^sha256=/, "");
+  const provided = signature
+    .trim()
+    .toLowerCase()
+    .replace(/^sha256=/, "");
   if (provided.length !== expected.length) return false;
   let diff = 0;
-  for (let i = 0; i < expected.length; i += 1) diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
+  for (let i = 0; i < expected.length; i += 1)
+    diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
   return diff === 0;
 }
 

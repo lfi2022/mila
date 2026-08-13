@@ -1,25 +1,38 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 /**
  * Every admin server function re-checks the caller's role server-side.
  * Hiding the UI is never the security boundary.
  */
-async function assertStaff(context: { supabase: { rpc: Function }; userId: string }, requireAdmin = false) {
-  const { data: isStaff } = await (context.supabase as any).rpc("is_staff", { _user_id: context.userId });
+async function assertStaff(
+  context: { supabase: SupabaseClient<Database>; userId: string },
+  requireAdmin = false,
+) {
+  const { data: isStaff } = await context.supabase.rpc("is_staff", {
+    _user_id: context.userId,
+  });
   if (!isStaff) throw new Error("Accès refusé.");
   if (requireAdmin) {
     const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
-      (context.supabase as any).rpc("has_role", { _user_id: context.userId, _role: "ADMIN" }),
-      (context.supabase as any).rpc("has_role", { _user_id: context.userId, _role: "SUPER_ADMIN" }),
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "ADMIN" }),
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "SUPER_ADMIN" }),
     ]);
     if (!isAdmin && !isSuper) throw new Error("Accès réservé aux administrateurs.");
   }
 }
 
-async function audit(actorId: string, action: string, targetType: string, targetId: string | null, metadata: Record<string, unknown> = {}) {
+async function audit(
+  actorId: string,
+  action: string,
+  targetType: string,
+  targetId: string | null,
+  metadata: Record<string, unknown> = {},
+) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.from("admin_audit_log").insert({
     actor_id: actorId,
@@ -33,7 +46,10 @@ async function audit(actorId: string, action: string, targetType: string, target
 export const getMyAdminRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const { data } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
     const roles = (data ?? []).map((r) => r.role);
     return {
       roles,
@@ -52,19 +68,35 @@ export const getAdminStats = createServerFn({ method: "GET" })
     const since30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
     const since7 = new Date(Date.now() - 7 * 86_400_000).toISOString();
 
-    const [profiles, newProfiles, lists, items, reservations, clicks, recentClicks, entitlements, reports, merchants] =
-      await Promise.all([
-        supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
-        supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", since30),
-        supabaseAdmin.from("registries").select("id, status, visibility, created_at"),
-        supabaseAdmin.from("items").select("id, status"),
-        supabaseAdmin.from("reservations").select("id, status, created_at"),
-        supabaseAdmin.from("click_events").select("id, affiliate, merchant_id, created_at"),
-        supabaseAdmin.from("click_events").select("id", { count: "exact", head: true }).gte("created_at", since7),
-        supabaseAdmin.from("list_entitlements").select("plan"),
-        supabaseAdmin.from("reports").select("id, status"),
-        supabaseAdmin.from("merchants").select("id, name, enabled, affiliate_enabled"),
-      ]);
+    const [
+      profiles,
+      newProfiles,
+      lists,
+      items,
+      reservations,
+      clicks,
+      recentClicks,
+      entitlements,
+      reports,
+      merchants,
+    ] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
+      supabaseAdmin
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", since30),
+      supabaseAdmin.from("registries").select("id, status, visibility, created_at"),
+      supabaseAdmin.from("items").select("id, status"),
+      supabaseAdmin.from("reservations").select("id, status, created_at"),
+      supabaseAdmin.from("click_events").select("id, affiliate, merchant_id, created_at"),
+      supabaseAdmin
+        .from("click_events")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", since7),
+      supabaseAdmin.from("list_entitlements").select("plan"),
+      supabaseAdmin.from("reports").select("id, status"),
+      supabaseAdmin.from("merchants").select("id, name, enabled, affiliate_enabled"),
+    ]);
 
     const listRows = lists.data ?? [];
     const itemRows = items.data ?? [];
@@ -138,7 +170,11 @@ export const adminListUsers = createServerFn({ method: "GET" })
     await assertStaff(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabaseAdmin.from("profiles").select("id, display_name, created_at").order("created_at", { ascending: false }).limit(200),
+      supabaseAdmin
+        .from("profiles")
+        .select("id, display_name, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
       supabaseAdmin.from("user_roles").select("user_id, role"),
     ]);
     return (profiles ?? []).map((profile) => ({
@@ -215,9 +251,15 @@ export const adminSaveMerchant = createServerFn({ method: "POST" })
     else if (data.apiKey) payload["api_key"] = data.apiKey;
 
     if (data.id) {
-      const { error } = await supabaseAdmin.from("merchants").update(payload as never).eq("id", data.id);
+      const { error } = await supabaseAdmin
+        .from("merchants")
+        .update(payload as never)
+        .eq("id", data.id);
       if (error) throw new Error("Le marchand n'a pas pu être mis à jour.");
-      await audit(context.userId, "merchant.update", "merchant", data.id, { name: data.name, mode: data.linkMode });
+      await audit(context.userId, "merchant.update", "merchant", data.id, {
+        name: data.name,
+        mode: data.linkMode,
+      });
       return { id: data.id };
     }
 
@@ -246,7 +288,11 @@ export const adminTestAffiliateLink = createServerFn({ method: "POST" })
     const validated = validateExternalUrl(data.url);
     if (!validated.ok) return { ok: false as const, reason: validated.reason };
 
-    const { data: merchant } = await supabaseAdmin.from("merchants").select("*").eq("id", data.merchantId).maybeSingle();
+    const { data: merchant } = await supabaseAdmin
+      .from("merchants")
+      .select("*")
+      .eq("id", data.merchantId)
+      .maybeSingle();
     if (!merchant) return { ok: false as const, reason: "Marchand introuvable." };
 
     const matches = domainMatches(validated.hostname, merchant.domains);
@@ -291,7 +337,14 @@ export const adminModerate = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z
       .object({
-        action: z.enum(["suspend_list", "restore_list", "hide_item", "show_item", "resolve_report", "dismiss_report"]),
+        action: z.enum([
+          "suspend_list",
+          "restore_list",
+          "hide_item",
+          "show_item",
+          "resolve_report",
+          "dismiss_report",
+        ]),
         targetId: z.string().uuid(),
         notes: z.string().trim().max(1000).optional(),
       })
@@ -303,16 +356,25 @@ export const adminModerate = createServerFn({ method: "POST" })
 
     switch (data.action) {
       case "suspend_list":
-        await supabaseAdmin.from("registries").update({ status: "SUSPENDED" }).eq("id", data.targetId);
+        await supabaseAdmin
+          .from("registries")
+          .update({ status: "SUSPENDED" })
+          .eq("id", data.targetId);
         break;
       case "restore_list":
         await supabaseAdmin.from("registries").update({ status: "ACTIVE" }).eq("id", data.targetId);
         break;
       case "hide_item":
-        await supabaseAdmin.from("items").update({ hidden_by_moderator: true }).eq("id", data.targetId);
+        await supabaseAdmin
+          .from("items")
+          .update({ hidden_by_moderator: true })
+          .eq("id", data.targetId);
         break;
       case "show_item":
-        await supabaseAdmin.from("items").update({ hidden_by_moderator: false }).eq("id", data.targetId);
+        await supabaseAdmin
+          .from("items")
+          .update({ hidden_by_moderator: false })
+          .eq("id", data.targetId);
         break;
       case "resolve_report":
         await supabaseAdmin
@@ -328,6 +390,8 @@ export const adminModerate = createServerFn({ method: "POST" })
         break;
     }
 
-    await audit(context.userId, data.action, "moderation", data.targetId, { notes: data.notes ?? null });
+    await audit(context.userId, data.action, "moderation", data.targetId, {
+      notes: data.notes ?? null,
+    });
     return { ok: true };
   });

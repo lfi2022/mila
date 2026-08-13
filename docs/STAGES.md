@@ -36,3 +36,45 @@ Notes:
 - Remote: existing GitHub `origin`; no repository was recreated.
 - Branch: `migration/self-hosted-roadmap`.
 - Published history will not be rebased, amended, squashed, force-pushed, or rewritten due to Lovable synchronization.
+
+## Stage 01 — Lovable independence and frontend build bootstrap
+
+Status: DONE
+
+Commit: pending
+
+Implemented:
+
+- proprietary Lovable Vite preset, Cloud OAuth bridge, runtime reporting hooks, preview metadata, asset URLs, package references, Bun lock/config, and `.lovable` project files removed;
+- explicit upstream Vite, TanStack Start, React, Tailwind and Nitro Node build configured;
+- public/canonical URLs centralized and made environment-driven;
+- local/staging indexing disabled by default;
+- npm lockfile repaired and clean install made reproducible;
+- direct test, typecheck, format, secret-scan, build and aggregate quality commands added;
+- GitHub quality workflow added;
+- existing codebase formatted and initial lint errors corrected;
+- source-of-truth roadmap normalized to `MILA_ROADMAP.md`.
+
+Tests:
+
+- `npm ci`: PASS;
+- `npm run security:secrets`: PASS;
+- `npm run format:check`: PASS;
+- `npm run lint`: PASS with 8 non-blocking Fast Refresh warnings in legacy/shared exports;
+- `npm run typecheck`: PASS;
+- `npm run test`: PASS — 12 tests;
+- `npm run build`: PASS — Node/Nitro client and SSR production bundles.
+
+Environment:
+
+- `PUBLIC_APP_URL`, `APP_URL`, `VITE_PUBLIC_APP_URL`;
+- `VITE_API_BASE_URL`, `VITE_ASSET_BASE_URL`;
+- `SEO_INDEXING_ENABLED`, `VITE_SEO_INDEXING_ENABLED`;
+- `PRODUCT_FETCH_USER_AGENT`.
+
+Migration: none.
+
+Notes:
+
+- Supabase is deliberately still transitional and is removed by the backend/data/auth stages.
+- Final full-size Mila logo artwork is `BLOCKED_EXTERNAL`; the local mark prevents runtime Lovable asset calls.

@@ -1,14 +1,4 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
+# Safe default for local and staging builds. Production replaces this through
+# the environment-aware reverse-proxy/deployment configuration.
 User-agent: *
-Allow: /
+Disallow: /

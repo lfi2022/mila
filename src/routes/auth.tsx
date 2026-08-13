@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
-import { lovable } from "@/integrations/lovable/index";
 import { registerReferral } from "@/lib/rewards.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -25,7 +24,8 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: "Connexion parents — Mila" },
       {
         property: "og:description",
-        content: "Créez votre compte parent et publiez votre liste de naissance en quelques minutes.",
+        content:
+          "Créez votre compte parent et publiez votre liste de naissance en quelques minutes.",
       },
     ],
   }),
@@ -122,21 +122,6 @@ function AuthPage() {
     navigate({ to: "/dashboard" });
   };
 
-  const google = async () => {
-    setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      setBusy(false);
-      toast.error("La connexion Google a échoué.");
-      return;
-    }
-    if (result.redirected) return;
-    setBusy(false);
-    navigate({ to: "/dashboard" });
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -175,13 +160,7 @@ function AuthPage() {
 
               <TabsContent value="signup" className="mt-6 space-y-4">
                 <Field id="name" label="Votre prénom" value={name} onChange={setName} />
-                <Field
-                  id="email-up"
-                  label="Email"
-                  value={email}
-                  onChange={setEmail}
-                  type="email"
-                />
+                <Field id="email-up" label="Email" value={email} onChange={setEmail} type="email" />
                 <Field
                   id="password-up"
                   label="Mot de passe"
@@ -195,16 +174,6 @@ function AuthPage() {
               </TabsContent>
             </Tabs>
           )}
-
-          <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            ou
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <Button variant="outline" className="w-full" disabled={busy} onClick={google}>
-            Continuer avec Google
-          </Button>
         </div>
       </main>
     </div>

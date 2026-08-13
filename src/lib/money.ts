@@ -52,7 +52,8 @@ export function applyCaps(
   let amount = amountCents;
   if (caps.perTransaction != null) amount = Math.min(amount, caps.perTransaction);
   if (caps.monthlyRemaining != null) amount = Math.min(amount, Math.max(caps.monthlyRemaining, 0));
-  if (caps.lifetimeRemaining != null) amount = Math.min(amount, Math.max(caps.lifetimeRemaining, 0));
+  if (caps.lifetimeRemaining != null)
+    amount = Math.min(amount, Math.max(caps.lifetimeRemaining, 0));
   return Math.max(amount, 0);
 }
 

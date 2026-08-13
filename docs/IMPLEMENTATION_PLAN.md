@@ -1,6 +1,6 @@
 # Mila Implementation Plan
 
-Source of truth: `MILA_ROADMAP(5).md` (the only roadmap file present at audit time).
+Source of truth: `MILA_ROADMAP.md` (found as `MILA_ROADMAP(5).md` during audit, then normalized to the required name).
 
 Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a secret, account, contract, infrastructure action, domain, or legal decision.
 
@@ -19,13 +19,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 01 — Lovable independence and frontend build bootstrap
 
-- [ ] Replace `@lovable.dev/vite-tanstack-config` with explicit Vite/TanStack/React/Tailwind configuration.
-- [ ] Remove `@lovable.dev/cloud-auth-js`, Lovable auth, error reporting, preview integration, `.lovable`, and Lovable-specific package configuration.
-- [ ] Remove hard-coded `lovable.app` metadata and URLs.
-- [ ] Replace runtime public URLs with centralized environment-aware URL helpers.
-- [ ] Keep the current visual design and working UI components.
-- [ ] Synchronize the npm lockfile and standardize supported Node/npm commands.
-- [ ] Add lint, format-check, typecheck, unit-test, integration-test, and build scripts.
+- [x] Replace `@lovable.dev/vite-tanstack-config` with explicit Vite/TanStack/React/Tailwind configuration.
+- [x] Remove `@lovable.dev/cloud-auth-js`, Lovable auth, error reporting, preview integration, `.lovable`, and Lovable-specific package configuration.
+- [x] Remove hard-coded `lovable.app` metadata and URLs.
+- [x] Replace runtime public URLs with centralized environment-aware URL helpers.
+- [x] Keep the current visual design and working UI components (missing proprietary logo assets use the local Mila mark until final brand files are supplied).
+- [x] Synchronize the npm lockfile and standardize supported Node/npm commands.
+- [x] Add lint, format-check, typecheck, unit-test, secret-scan, build scripts, and CI validation (integration coverage expands with the backend).
 
 ## Stage 02 — Self-hosted backend bootstrap and API v1
 

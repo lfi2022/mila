@@ -36,15 +36,30 @@ describe("rate resolution", () => {
   const base = { globalEnabled: true, affiliateRewardsEnabled: true, globalRateBps: 3000 };
 
   it("prefers the merchant override", () => {
-    expect(resolveRewardRateBps({ ...base, merchant: { rewardEnabled: true, rewardShareRateBps: 4000 } })).toBe(4000);
+    expect(
+      resolveRewardRateBps({
+        ...base,
+        merchant: { rewardEnabled: true, rewardShareRateBps: 4000 },
+      }),
+    ).toBe(4000);
   });
 
   it("falls back to the global rate", () => {
-    expect(resolveRewardRateBps({ ...base, merchant: { rewardEnabled: true, rewardShareRateBps: null } })).toBe(3000);
+    expect(
+      resolveRewardRateBps({
+        ...base,
+        merchant: { rewardEnabled: true, rewardShareRateBps: null },
+      }),
+    ).toBe(3000);
   });
 
   it("gives nothing when the merchant or the program is disabled", () => {
-    expect(resolveRewardRateBps({ ...base, merchant: { rewardEnabled: false, rewardShareRateBps: 5000 } })).toBe(0);
+    expect(
+      resolveRewardRateBps({
+        ...base,
+        merchant: { rewardEnabled: false, rewardShareRateBps: 5000 },
+      }),
+    ).toBe(0);
     expect(resolveRewardRateBps({ ...base, globalEnabled: false, merchant: null })).toBe(0);
   });
 });
@@ -66,11 +81,18 @@ describe("ledger is the source of truth", () => {
       { amount_cents: 300, status: "CANCELLED", type: "REFERRAL" },
       { amount_cents: -1000, status: "CONFIRMED", type: "REDEMPTION" },
     ]);
-    expect(summary).toEqual({ pending: 420, available: 670, lifetimeEarned: 1670, lifetimeRedeemed: 1000 });
+    expect(summary).toEqual({
+      pending: 420,
+      available: 670,
+      lifetimeEarned: 1670,
+      lifetimeRedeemed: 1000,
+    });
   });
 
   it("keeps cancelled rewards out of the available balance", () => {
-    const summary = summariseLedger([{ amount_cents: 150, status: "CANCELLED", type: "AFFILIATE_COMMISSION" }]);
+    const summary = summariseLedger([
+      { amount_cents: 150, status: "CANCELLED", type: "AFFILIATE_COMMISSION" },
+    ]);
     expect(summary.available).toBe(0);
     expect(summary.pending).toBe(0);
   });

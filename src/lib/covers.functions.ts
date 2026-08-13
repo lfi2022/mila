@@ -35,7 +35,8 @@ export const uploadListCover = createServerFn({ method: "POST" })
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
 
-    const ext = data.contentType === "image/png" ? "png" : data.contentType === "image/webp" ? "webp" : "jpg";
+    const ext =
+      data.contentType === "image/png" ? "png" : data.contentType === "image/webp" ? "webp" : "jpg";
     const path = `${data.registryId}/cover-${Date.now()}.${ext}`;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

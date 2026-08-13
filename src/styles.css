@@ -72,7 +72,8 @@
   --radius: 1rem;
   --font-display-family: "Baloo 2", "Fraunces", ui-serif, Georgia, serif;
   --font-sans-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --shadow-soft-value: 0 1px 2px oklch(0.35 0.055 265 / 0.05), 0 12px 30px -18px oklch(0.35 0.055 265 / 0.2);
+  --shadow-soft-value:
+    0 1px 2px oklch(0.35 0.055 265 / 0.05), 0 12px 30px -18px oklch(0.35 0.055 265 / 0.2);
   --shadow-lift-value: 0 24px 60px -28px oklch(0.35 0.055 265 / 0.28);
   --background: oklch(0.985 0.008 25);
   --foreground: oklch(0.35 0.055 265);
@@ -162,7 +163,10 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, .font-display {
+  h1,
+  h2,
+  h3,
+  .font-display {
     font-family: var(--font-display-family);
     font-weight: 600;
     letter-spacing: -0.015em;

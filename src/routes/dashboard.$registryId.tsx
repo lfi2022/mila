@@ -13,7 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,10 +35,14 @@ export const Route = createFileRoute("/dashboard/$registryId")({
       { title: "Gérer ma liste — Mila" },
       {
         name: "description",
-        content: "Ajoutez des cadeaux depuis n'importe quelle boutique, partagez votre liste et suivez les réservations.",
+        content:
+          "Ajoutez des cadeaux depuis n'importe quelle boutique, partagez votre liste et suivez les réservations.",
       },
       { property: "og:title", content: "Gérer ma liste — Mila" },
-      { property: "og:description", content: "Cadeaux, partage, co-parents et réglages de confidentialité." },
+      {
+        property: "og:description",
+        content: "Cadeaux, partage, co-parents et réglages de confidentialité.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -59,7 +69,15 @@ const itemSchema = z.object({
   imageUrl: z.string().trim().max(2000),
 });
 
-const emptyItem = { title: "", store: "", url: "", price: "", quantity: 1, description: "", imageUrl: "" };
+const emptyItem = {
+  title: "",
+  store: "",
+  url: "",
+  price: "",
+  quantity: 1,
+  description: "",
+  imageUrl: "",
+};
 
 function RegistryDetail() {
   const { registryId } = Route.useParams();
@@ -75,7 +93,11 @@ function RegistryDetail() {
   const registry = useQuery({
     queryKey: ["registry", registryId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("registries").select("*").eq("id", registryId).maybeSingle();
+      const { data, error } = await supabase
+        .from("registries")
+        .select("*")
+        .eq("id", registryId)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -112,7 +134,10 @@ function RegistryDetail() {
     queryKey: ["members", registryId],
     queryFn: async () => {
       const [{ data: rows, error }, { data: invitations }] = await Promise.all([
-        supabase.from("list_members").select("id, user_id, role, created_at").eq("registry_id", registryId),
+        supabase
+          .from("list_members")
+          .select("id, user_id, role, created_at")
+          .eq("registry_id", registryId),
         supabase
           .from("list_invitations")
           .select("id, email, role, accepted_at, expires_at")
@@ -237,7 +262,9 @@ function RegistryDetail() {
     mutationFn: () => invite({ data: { registryId, email: inviteEmail, role: "CO_OWNER" } }),
     onSuccess: (result) => {
       setInviteEmail("");
-      toast.success(result.emailed ? "Invitation envoyée par email" : "Invitation créée, partagez le lien");
+      toast.success(
+        result.emailed ? "Invitation envoyée par email" : "Invitation créée, partagez le lien",
+      );
       if (!result.emailed) void navigator.clipboard.writeText(result.link);
       refresh();
     },
@@ -257,14 +284,20 @@ function RegistryDetail() {
   });
 
   if (registry.isLoading) {
-    return <main className="mx-auto max-w-6xl px-4 py-12 text-sm text-muted-foreground">Chargement…</main>;
+    return (
+      <main className="mx-auto max-w-6xl px-4 py-12 text-sm text-muted-foreground">
+        Chargement…
+      </main>
+    );
   }
 
   const list = registry.data;
   if (!list) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-12">
-        <p className="text-sm text-muted-foreground">Cette liste n'existe pas ou vous n'y avez plus accès.</p>
+        <p className="text-sm text-muted-foreground">
+          Cette liste n'existe pas ou vous n'y avez plus accès.
+        </p>
         <Button asChild variant="outline" className="mt-4">
           <Link to="/dashboard">Retour à mes listes</Link>
         </Button>
@@ -324,32 +357,49 @@ function RegistryDetail() {
                     value={item.url}
                     onChange={(e) => setItem({ ...item, url: e.target.value })}
                   />
-                  <Button variant="secondary" disabled={fetchPreview.isPending} onClick={() => fetchPreview.mutate()}>
+                  <Button
+                    variant="secondary"
+                    disabled={fetchPreview.isPending}
+                    onClick={() => fetchPreview.mutate()}
+                  >
                     Remplir
                   </Button>
                 </div>
-                <p className="text-sm">Collez simplement le lien d'un produit. Mila s'occupe du reste.</p>
-                <p className="text-xs text-muted-foreground">
-                  Lorsque c'est possible, Mila récupère automatiquement le nom, l'image et le prix du produit. Vous
-                  pouvez ensuite tout modifier.
+                <p className="text-sm">
+                  Collez simplement le lien d'un produit. Mila s'occupe du reste.
                 </p>
-
+                <p className="text-xs text-muted-foreground">
+                  Lorsque c'est possible, Mila récupère automatiquement le nom, l'image et le prix
+                  du produit. Vous pouvez ensuite tout modifier.
+                </p>
               </div>
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt="" className="h-32 w-32 rounded-lg object-cover" />
               ) : null}
               <div className="space-y-2">
                 <Label htmlFor="item-title">Nom du cadeau</Label>
-                <Input id="item-title" value={item.title} onChange={(e) => setItem({ ...item, title: e.target.value })} />
+                <Input
+                  id="item-title"
+                  value={item.title}
+                  onChange={(e) => setItem({ ...item, title: e.target.value })}
+                />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="item-store">Magasin</Label>
-                  <Input id="item-store" value={item.store} onChange={(e) => setItem({ ...item, store: e.target.value })} />
+                  <Input
+                    id="item-store"
+                    value={item.store}
+                    onChange={(e) => setItem({ ...item, store: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="item-price">Prix (€)</Label>
-                  <Input id="item-price" value={item.price} onChange={(e) => setItem({ ...item, price: e.target.value })} />
+                  <Input
+                    id="item-price"
+                    value={item.price}
+                    onChange={(e) => setItem({ ...item, price: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-[1fr_2fr]">
@@ -382,12 +432,16 @@ function RegistryDetail() {
               {giftRows.map((gift) => {
                 const fullyReserved = gift.reserved_qty >= gift.quantity;
                 return (
-                  <li key={gift.id} className="surface-card flex items-start justify-between gap-4 p-4">
+                  <li
+                    key={gift.id}
+                    className="surface-card flex items-start justify-between gap-4 p-4"
+                  >
                     <div>
                       <p className="font-medium">{gift.title}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {gift.store_name ?? "Magasin non précisé"}
-                        {gift.price ? ` · ${gift.price} €` : ""} · {gift.reserved_qty}/{gift.quantity} réservé
+                        {gift.price ? ` · ${gift.price} €` : ""} · {gift.reserved_qty}/
+                        {gift.quantity} réservé
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -413,7 +467,9 @@ function RegistryDetail() {
             </p>
             <ul className="mt-4 space-y-3">
               {reservations.data?.length === 0 && (
-                <li className="text-sm text-muted-foreground">Aucune réservation pour le moment.</li>
+                <li className="text-sm text-muted-foreground">
+                  Aucune réservation pour le moment.
+                </li>
               )}
               {reservations.data?.map((reservation) => (
                 <li key={reservation.id} className="surface-card p-4">
@@ -429,10 +485,13 @@ function RegistryDetail() {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Par {reservation.guest_name}
-                    {reservation.guest_email ? ` · ${reservation.guest_email}` : ""} · ×{reservation.quantity}
+                    {reservation.guest_email ? ` · ${reservation.guest_email}` : ""} · ×
+                    {reservation.quantity}
                   </p>
                   {reservation.message && (
-                    <p className="mt-3 rounded-lg bg-secondary/60 p-3 text-sm italic">« {reservation.message} »</p>
+                    <p className="mt-3 rounded-lg bg-secondary/60 p-3 text-sm italic">
+                      « {reservation.message} »
+                    </p>
                   )}
                   <Button
                     variant="ghost"
@@ -453,7 +512,9 @@ function RegistryDetail() {
             <ListAppearanceEditor
               registryId={registryId}
               list={list}
-              onChange={(patch: AppearancePatch) => updateRegistry.mutate(patch as TablesUpdate<"registries">)}
+              onChange={(patch: AppearancePatch) =>
+                updateRegistry.mutate(patch as TablesUpdate<"registries">)
+              }
               onCoverUploaded={refresh}
             />
           </div>
@@ -475,18 +536,29 @@ function RegistryDetail() {
             <h2 className="text-xl">Parents et co-parents</h2>
             <ul className="mt-4 space-y-3">
               {members.data?.members.map((member) => (
-                <li key={member.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                <li
+                  key={member.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                >
                   <div>
                     <p className="text-sm font-medium">
                       {member.displayName}
                       {member.user_id === user?.id ? " (vous)" : ""}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {member.role === "OWNER" ? "Propriétaire" : member.role === "CO_OWNER" ? "Co-parent" : "Éditeur"}
+                      {member.role === "OWNER"
+                        ? "Propriétaire"
+                        : member.role === "CO_OWNER"
+                          ? "Co-parent"
+                          : "Éditeur"}
                     </p>
                   </div>
                   {member.role !== "OWNER" ? (
-                    <Button variant="ghost" size="sm" onClick={() => removeMember.mutate(member.id)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeMember.mutate(member.id)}
+                    >
                       Retirer
                     </Button>
                   ) : null}
@@ -542,7 +614,9 @@ function RegistryDetail() {
               <Input
                 id="set-title"
                 defaultValue={list.title}
-                onBlur={(e) => e.target.value !== list.title && updateRegistry.mutate({ title: e.target.value })}
+                onBlur={(e) =>
+                  e.target.value !== list.title && updateRegistry.mutate({ title: e.target.value })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -564,7 +638,14 @@ function RegistryDetail() {
             </div>
             <div className="space-y-2">
               <Label>Type de liste</Label>
-              <Select value={list.type} onValueChange={(value) => updateRegistry.mutate({ type: value as NonNullable<TablesUpdate<"registries">["type"]> })}>
+              <Select
+                value={list.type}
+                onValueChange={(value) =>
+                  updateRegistry.mutate({
+                    type: value as NonNullable<TablesUpdate<"registries">["type"]>,
+                  })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -619,14 +700,22 @@ function RegistryDetail() {
                   <Input
                     id="set-code"
                     value={accessCode}
-                    placeholder={list.access_code_hash ? "Code défini — saisir pour remplacer" : "ex. bebe2026"}
+                    placeholder={
+                      list.access_code_hash ? "Code défini — saisir pour remplacer" : "ex. bebe2026"
+                    }
                     onChange={(e) => setAccessCode(e.target.value)}
                   />
-                  <Button variant="secondary" disabled={submitCode.isPending} onClick={() => submitCode.mutate()}>
+                  <Button
+                    variant="secondary"
+                    disabled={submitCode.isPending}
+                    onClick={() => submitCode.mutate()}
+                  >
                     Enregistrer
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Laissez vide et enregistrez pour retirer le code.</p>
+                <p className="text-xs text-muted-foreground">
+                  Laissez vide et enregistrez pour retirer le code.
+                </p>
               </div>
             ) : null}
 
@@ -640,13 +729,15 @@ function RegistryDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SHOW">Afficher le cadeau comme réservé (recommandé)</SelectItem>
+                  <SelectItem value="SHOW">
+                    Afficher le cadeau comme réservé (recommandé)
+                  </SelectItem>
                   <SelectItem value="HIDE">Masquer le cadeau de la liste publique</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Par défaut, le cadeau reste visible avec la mention « Déjà réservé » : vos proches voient la
-                progression et ne peuvent plus le réserver.
+                Par défaut, le cadeau reste visible avec la mention « Déjà réservé » : vos proches
+                voient la progression et ne peuvent plus le réserver.
               </p>
             </div>
 
@@ -663,11 +754,12 @@ function RegistryDetail() {
               />
             </div>
 
-
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium">Autoriser les moteurs de recherche</p>
-                <p className="text-xs text-muted-foreground">Uniquement pour les listes publiques.</p>
+                <p className="text-xs text-muted-foreground">
+                  Uniquement pour les listes publiques.
+                </p>
               </div>
               <Switch
                 checked={list.allow_indexing}
@@ -679,11 +771,15 @@ function RegistryDetail() {
             <div className="flex items-center justify-between gap-4 border-t pt-4">
               <div>
                 <p className="text-sm font-medium">Archiver la liste</p>
-                <p className="text-xs text-muted-foreground">La page publique n'est plus accessible.</p>
+                <p className="text-xs text-muted-foreground">
+                  La page publique n'est plus accessible.
+                </p>
               </div>
               <Switch
                 checked={list.status === "ARCHIVED"}
-                onCheckedChange={(checked) => updateRegistry.mutate({ status: checked ? "ARCHIVED" : "ACTIVE" })}
+                onCheckedChange={(checked) =>
+                  updateRegistry.mutate({ status: checked ? "ARCHIVED" : "ACTIVE" })
+                }
               />
             </div>
           </section>

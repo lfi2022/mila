@@ -2,7 +2,7 @@
 
 ## Audit baseline
 
-Audit date: 2026-08-13. Repository: existing `origin` (`lfi2022/mila`), initial branch `main`, initial commit `60d4d92`. Migration work uses `migration/self-hosted-roadmap`; published history must not be rewritten because pushes synchronize to Lovable.
+Audit date: 2026-08-13. Repository: existing `origin` (`lfi2022/mila`), initial branch `main`, initial commit `60d4d92`. Migration work uses `migration/self-hosted-roadmap`; published history must not be rewritten because pushes synchronize to Lovable. The sole roadmap file found during audit was normalized to the required `MILA_ROADMAP.md` name after it had been read completely.
 
 The export contains 146 tracked project files and starts from a clean worktree. A real `.env` is tracked in the initial commit despite `.gitignore` not ignoring environment files. Its six keys configure Supabase; values are deliberately omitted here. Those values must be treated as exposed and rotated where applicable. History will not be rewritten due to the explicit Lovable constraint.
 
@@ -34,42 +34,42 @@ Server functions found cover admin statistics/moderation/merchants, list access/
 
 ## Lovable dependency inventory
 
-| Location | Usage | Severity | Replacement |
-| --- | --- | --- | --- |
-| `vite.config.ts`, `package.json`, lockfiles, `bunfig.toml` | Proprietary build preset/plugins | Critical | Explicit upstream Vite/TanStack/React/Tailwind config |
-| `src/integrations/lovable/index.ts`, `src/routes/auth.tsx` | Lovable Cloud OAuth | Critical | Mila backend auth; optional provider adapters |
-| `src/lib/lovable-error-reporting.ts`, `src/routes/__root.tsx` | Lovable error reporting | High | Provider-neutral structured logging/monitoring |
-| `.lovable/` | Project/plan metadata | Medium | Remove from production repository after migration record |
-| `README.md`, `AGENTS.md` | Lovable workflow documentation | Low/constraint | Replace README; retain the no-history-rewrite warning while connected |
-| SEO route metadata | Hard-coded `parent-gift-hub.lovable.app` | High | Environment-derived public URL/canonical helpers |
+| Location                                                      | Usage                                    | Severity       | Replacement                                                           |
+| ------------------------------------------------------------- | ---------------------------------------- | -------------- | --------------------------------------------------------------------- |
+| `vite.config.ts`, `package.json`, lockfiles, `bunfig.toml`    | Proprietary build preset/plugins         | Critical       | Explicit upstream Vite/TanStack/React/Tailwind config                 |
+| `src/integrations/lovable/index.ts`, `src/routes/auth.tsx`    | Lovable Cloud OAuth                      | Critical       | Mila backend auth; optional provider adapters                         |
+| `src/lib/lovable-error-reporting.ts`, `src/routes/__root.tsx` | Lovable error reporting                  | High           | Provider-neutral structured logging/monitoring                        |
+| `.lovable/`                                                   | Project/plan metadata                    | Medium         | Remove from production repository after migration record              |
+| `README.md`, `AGENTS.md`                                      | Lovable workflow documentation           | Low/constraint | Replace README; retain the no-history-rewrite warning while connected |
+| SEO route metadata                                            | Hard-coded `parent-gift-hub.lovable.app` | High           | Environment-derived public URL/canonical helpers                      |
 
 ## Supabase dependency inventory
 
-| Area | Files/usage | Severity | Replacement |
-| --- | --- | --- | --- |
-| Auth | `useAuth`, auth routes, middleware/attacher, client | Critical | Fastify auth module, Argon2id, MySQL sessions, secure cookies |
-| Data access | dashboard/routes and all `*.functions.ts` | Critical | Versioned API client and backend repositories/services |
-| Admin bypass | `client.server.ts` service-role client | Critical | Backend-only Prisma repositories plus explicit authorization |
-| Database logic | 12 PostgreSQL migrations/RPCs/triggers/RLS | Critical | Prisma MySQL schema and transactional services/migrations |
-| Storage | cover upload and storage policies | High | MinIO/S3-compatible media service |
-| Realtime | `NotificationsBell.tsx` | Medium | polling initially; SSE/Redis pub-sub only where justified |
-| Generated types | `src/integrations/supabase/types.ts` (1,678 lines) | Medium | API contracts/domain types generated from maintained schemas |
+| Area            | Files/usage                                         | Severity | Replacement                                                   |
+| --------------- | --------------------------------------------------- | -------- | ------------------------------------------------------------- |
+| Auth            | `useAuth`, auth routes, middleware/attacher, client | Critical | Fastify auth module, Argon2id, MySQL sessions, secure cookies |
+| Data access     | dashboard/routes and all `*.functions.ts`           | Critical | Versioned API client and backend repositories/services        |
+| Admin bypass    | `client.server.ts` service-role client              | Critical | Backend-only Prisma repositories plus explicit authorization  |
+| Database logic  | 12 PostgreSQL migrations/RPCs/triggers/RLS          | Critical | Prisma MySQL schema and transactional services/migrations     |
+| Storage         | cover upload and storage policies                   | High     | MinIO/S3-compatible media service                             |
+| Realtime        | `NotificationsBell.tsx`                             | Medium   | polling initially; SSE/Redis pub-sub only where justified     |
+| Generated types | `src/integrations/supabase/types.ts` (1,678 lines)  | Medium   | API contracts/domain types generated from maintained schemas  |
 
 ## Frontend Architecture Debt
 
-| File | Problem | Priority | Refactor | Target stage |
-| --- | --- | --- | --- | --- |
-| `src/routes/admin.tsx` (752 lines) | UI, queries, mutations, forms, permissions, merchant configuration, moderation | Critical | `features/admin` screens/hooks/API/validation | 09/17 |
-| `src/routes/dashboard.$registryId.tsx` (694 lines) | List settings, gifts, extraction, invitations, Supabase calls, UI | Critical | `features/lists`, `features/gifts`, `features/members` | 05/06/09 |
-| `src/components/admin/RewardsAdmin.tsx` (500 lines) | Rewards business administration and complex UI | High | `features/rewards/admin` | 09/11 |
-| `src/routes/l.$slug.tsx` (402 lines) | SEO loader, public rendering, reservation form/workflow | High | `features/public-list`, `features/reservations` | 07/09 |
-| `src/lib/rewards-admin.functions.ts` (466 lines) | Many unrelated financial/admin operations | Critical | backend rewards services/controllers | 02/11 |
-| `src/lib/rewards.server.ts` (395 lines) | Financial rules, persistence, emails | Critical | backend domain services + worker | 11 |
-| `src/lib/public.functions.ts` (393 lines) | list access, reservation, email, moderation | Critical | backend list/reservation/report modules | 05/07/17 |
-| `src/routes/index.tsx` (348 lines) | large marketing page | Medium | reusable marketing sections | 09/18 |
-| `src/lib/admin.functions.ts` (333 lines) | broad privileged service-role operations | Critical | typed admin modules and policies | 02/17 |
-| `src/components/ListAppearanceEditor.tsx` (321 lines) | upload, business preferences, form UI | Medium | list appearance feature | 05/09 |
-| `src/routes/dashboard.index.tsx` (306 lines) | list creation, client-side slug generation, direct DB | High | list creation feature backed by API | 05/09 |
+| File                                                  | Problem                                                                        | Priority | Refactor                                               | Target stage |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------ | -------- | ------------------------------------------------------ | ------------ |
+| `src/routes/admin.tsx` (752 lines)                    | UI, queries, mutations, forms, permissions, merchant configuration, moderation | Critical | `features/admin` screens/hooks/API/validation          | 09/17        |
+| `src/routes/dashboard.$registryId.tsx` (694 lines)    | List settings, gifts, extraction, invitations, Supabase calls, UI              | Critical | `features/lists`, `features/gifts`, `features/members` | 05/06/09     |
+| `src/components/admin/RewardsAdmin.tsx` (500 lines)   | Rewards business administration and complex UI                                 | High     | `features/rewards/admin`                               | 09/11        |
+| `src/routes/l.$slug.tsx` (402 lines)                  | SEO loader, public rendering, reservation form/workflow                        | High     | `features/public-list`, `features/reservations`        | 07/09        |
+| `src/lib/rewards-admin.functions.ts` (466 lines)      | Many unrelated financial/admin operations                                      | Critical | backend rewards services/controllers                   | 02/11        |
+| `src/lib/rewards.server.ts` (395 lines)               | Financial rules, persistence, emails                                           | Critical | backend domain services + worker                       | 11           |
+| `src/lib/public.functions.ts` (393 lines)             | list access, reservation, email, moderation                                    | Critical | backend list/reservation/report modules                | 05/07/17     |
+| `src/routes/index.tsx` (348 lines)                    | large marketing page                                                           | Medium   | reusable marketing sections                            | 09/18        |
+| `src/lib/admin.functions.ts` (333 lines)              | broad privileged service-role operations                                       | Critical | typed admin modules and policies                       | 02/17        |
+| `src/components/ListAppearanceEditor.tsx` (321 lines) | upload, business preferences, form UI                                          | Medium   | list appearance feature                                | 05/09        |
+| `src/routes/dashboard.index.tsx` (306 lines)          | list creation, client-side slug generation, direct DB                          | High     | list creation feature backed by API                    | 05/09        |
 
 ## Security findings
 

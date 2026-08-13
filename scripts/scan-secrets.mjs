@@ -38,7 +38,9 @@ for (const file of tracked) {
 }
 
 if (findings.length > 0) {
-  console.error("Potential secrets detected:\n" + findings.map((finding) => `- ${finding}`).join("\n"));
+  console.error(
+    "Potential secrets detected:\n" + findings.map((finding) => `- ${finding}`).join("\n"),
+  );
   process.exit(1);
 }
 

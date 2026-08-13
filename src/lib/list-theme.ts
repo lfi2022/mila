@@ -158,14 +158,33 @@ export const LIST_THEMES: ThemeDefinition[] = [
 
 export const HERO_STYLES: { id: HeroStyle; label: string; description: string }[] = [
   { id: "soft", label: "Douce", description: "Bandeau coloré avec la photo en médaillon." },
-  { id: "cover", label: "Photo pleine largeur", description: "La photo occupe tout le haut de la page." },
+  {
+    id: "cover",
+    label: "Photo pleine largeur",
+    description: "La photo occupe tout le haut de la page.",
+  },
   { id: "minimal", label: "Minimale", description: "Juste le titre, sans fond coloré." },
 ];
 
 export const FONT_PAIRS: { id: FontPair; label: string; display: string; body: string }[] = [
-  { id: "baloo", label: "Ronde & douce", display: '"Baloo 2", ui-serif, Georgia, serif', body: '"Manrope", system-ui, sans-serif' },
-  { id: "serif", label: "Élégante", display: '"Fraunces", ui-serif, Georgia, serif', body: '"Manrope", system-ui, sans-serif' },
-  { id: "moderne", label: "Moderne", display: '"Outfit", system-ui, sans-serif', body: '"Outfit", system-ui, sans-serif' },
+  {
+    id: "baloo",
+    label: "Ronde & douce",
+    display: '"Baloo 2", ui-serif, Georgia, serif',
+    body: '"Manrope", system-ui, sans-serif',
+  },
+  {
+    id: "serif",
+    label: "Élégante",
+    display: '"Fraunces", ui-serif, Georgia, serif',
+    body: '"Manrope", system-ui, sans-serif',
+  },
+  {
+    id: "moderne",
+    label: "Moderne",
+    display: '"Outfit", system-ui, sans-serif',
+    body: '"Outfit", system-ui, sans-serif',
+  },
 ];
 
 export const LIST_LAYOUTS: { id: ListLayout; label: string; description: string }[] = [

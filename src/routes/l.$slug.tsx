@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import markAsset from "@/assets/mila-mark.png.asset.json";
+import { buildPublicUrl, runtimeConfig } from "@/config/runtime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,12 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  LAYOUT_CLASSES,
-  appearanceStyle,
-  getHeroStyle,
-  getLayout,
-} from "@/lib/list-theme";
+import { LAYOUT_CLASSES, appearanceStyle, getHeroStyle, getLayout } from "@/lib/list-theme";
 import { getPublicList, reserveGift, type PublicGift } from "@/lib/public.functions";
 
 const searchSchema = z.object({ code: z.string().max(64).optional() });
@@ -62,18 +58,18 @@ export const Route = createFileRoute("/l/$slug")({
       meta.push({ property: "og:image", content: list.cover_image_url });
       meta.push({ name: "twitter:image", content: list.cover_image_url });
     } else {
-      const fallback = `https://parent-gift-hub.lovable.app${markAsset.url}`;
+      const fallback = buildPublicUrl(markAsset.url);
       meta.push({ property: "og:image", content: fallback });
       meta.push({ name: "twitter:image", content: fallback });
     }
-    meta.push({ property: "og:url", content: `https://parent-gift-hub.lovable.app/l/${list.slug}` });
+    meta.push({ property: "og:url", content: buildPublicUrl(`/l/${list.slug}`) });
 
-    if (!list.allow_indexing || list.visibility !== "PUBLIC") {
+    if (!runtimeConfig.seoIndexingEnabled || !list.allow_indexing || list.visibility !== "PUBLIC") {
       meta.push({ name: "robots", content: "noindex, nofollow" });
     }
     return {
       meta,
-      links: [{ rel: "canonical", href: `https://parent-gift-hub.lovable.app/l/${list.slug}` }],
+      links: [{ rel: "canonical", href: buildPublicUrl(`/l/${list.slug}`) }],
     };
   },
   errorComponent: () => <Unavailable />,
@@ -127,7 +123,9 @@ function PublicListPage() {
               autoComplete="off"
             />
           </div>
-          {data.wrongCode ? <p className="text-sm text-destructive">Code incorrect, réessayez.</p> : null}
+          {data.wrongCode ? (
+            <p className="text-sm text-destructive">Code incorrect, réessayez.</p>
+          ) : null}
           <Button type="submit" className="w-full">
             Accéder à la liste
           </Button>
@@ -164,10 +162,14 @@ function PublicListPage() {
             {list.is_demo ? <Badge variant="secondary">Liste de démonstration</Badge> : null}
             <h1 className="mt-3 font-display text-4xl leading-tight">{list.title}</h1>
             {list.baby_name ? (
-              <p className="mt-2 text-lg text-muted-foreground">Pour l'arrivée de {list.baby_name}</p>
+              <p className="mt-2 text-lg text-muted-foreground">
+                Pour l'arrivée de {list.baby_name}
+              </p>
             ) : null}
             {list.welcome_message ? (
-              <p className="mt-5 max-w-2xl whitespace-pre-line text-muted-foreground">{list.welcome_message}</p>
+              <p className="mt-5 max-w-2xl whitespace-pre-line text-muted-foreground">
+                {list.welcome_message}
+              </p>
             ) : null}
             {list.surprise_mode ? (
               <p className="mt-6 text-sm text-muted-foreground">
@@ -201,8 +203,9 @@ function PublicListPage() {
       <main className="mx-auto max-w-5xl px-4 py-12">
         {list.is_demo ? (
           <div className="mb-8 rounded-xl border border-dashed border-primary/50 bg-primary/5 p-4 text-sm">
-            <strong>Liste de démonstration Mila.</strong> Les cadeaux sont fictifs : vous pouvez ouvrir le formulaire de
-            réservation pour voir comment ça se passe, aucune réservation ne sera enregistrée.{" "}
+            <strong>Liste de démonstration Mila.</strong> Les cadeaux sont fictifs : vous pouvez
+            ouvrir le formulaire de réservation pour voir comment ça se passe, aucune réservation ne
+            sera enregistrée.{" "}
             <Link to="/auth" className="underline">
               Créer ma vraie liste
             </Link>
@@ -224,7 +227,6 @@ function PublicListPage() {
           </ul>
         )}
       </main>
-
     </div>
   );
 }
@@ -271,7 +273,9 @@ function GiftCard({
   return (
     <Card
       className={`${
-        horizontal ? "grid overflow-hidden sm:grid-cols-[200px_1fr]" : "flex h-full flex-col overflow-hidden"
+        horizontal
+          ? "grid overflow-hidden sm:grid-cols-[200px_1fr]"
+          : "flex h-full flex-col overflow-hidden"
       }${gift.is_reserved ? " bg-muted/40" : ""}`}
     >
       {gift.image_url ? (
@@ -286,116 +290,137 @@ function GiftCard({
         />
       ) : null}
       <div className={horizontal ? "flex flex-col" : "contents"}>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base leading-snug">{gift.title}</CardTitle>
-          {gift.is_reserved ? (
-            <Badge variant="secondary" className="shrink-0 whitespace-nowrap">
-              🎁 Déjà réservé
-            </Badge>
-          ) : null}
-        </div>
-        {gift.store_name ? <p className="text-xs text-muted-foreground">{gift.store_name}</p> : null}
-      </CardHeader>
-      <CardContent className="flex-1 space-y-2">
-        {gift.description ? (
-          <p className="line-clamp-3 text-sm text-muted-foreground">{gift.description}</p>
-        ) : null}
-        {gift.price != null ? (
-          <p className="font-medium">
-            {gift.price.toLocaleString("fr-FR", { style: "currency", currency: gift.currency || "EUR" })}
-          </p>
-        ) : null}
-      </CardContent>
-      <CardFooter className="flex flex-wrap gap-2">
-        {gift.has_link ? (
-          <Button asChild variant="outline" size="sm" className="min-h-10">
-            <a href={`/go/${gift.public_token}`} target="_blank" rel="noopener noreferrer nofollow">
-              Voir en boutique
-            </a>
-          </Button>
-        ) : null}
-        {gift.is_reserved ? (
-          <Button size="sm" className="min-h-10" disabled>
-            Déjà réservé
-          </Button>
-        ) : (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <Button size="sm" className="min-h-10" onClick={() => setOpen(true)}>
-            Réserver
-          </Button>
-          <DialogContent>
-
-            <DialogHeader>
-              <DialogTitle>{manageLink ? "C'est réservé !" : `Réserver « ${gift.title} »`}</DialogTitle>
-              <DialogDescription>
-                {manageLink
-                  ? "Conservez ce lien pour modifier ou annuler votre réservation."
-                  : isDemo
-                    ? "Liste de démonstration : le formulaire fonctionne, mais rien ne sera enregistré."
-                    : "Le cadeau restera visible sur la liste, marqué comme déjà réservé."}
-              </DialogDescription>
-
-            </DialogHeader>
-
-            {manageLink ? (
-              <div className="space-y-3">
-                <Input readOnly value={manageLink} onFocus={(event) => event.target.select()} />
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(manageLink);
-                    toast.success("Lien copié");
-                  }}
-                >
-                  Copier le lien
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`name-${gift.id}`}>Votre prénom *</Label>
-                  <Input
-                    id={`name-${gift.id}`}
-                    value={form.guestName}
-                    onChange={(event) => setForm((f) => ({ ...f, guestName: event.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`email-${gift.id}`}>Email (pour retrouver votre réservation)</Label>
-                  <Input
-                    id={`email-${gift.id}`}
-                    type="email"
-                    value={form.guestEmail}
-                    onChange={(event) => setForm((f) => ({ ...f, guestEmail: event.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`msg-${gift.id}`}>Un mot pour les parents</Label>
-                  <Textarea
-                    id={`msg-${gift.id}`}
-                    rows={3}
-                    value={form.message}
-                    onChange={(event) => setForm((f) => ({ ...f, message: event.target.value }))}
-                  />
-                </div>
-              </div>
-            )}
-
-            {!manageLink ? (
-              <DialogFooter className="gap-2">
-                <Button variant="outline" disabled={busy} onClick={() => void submit("reserve")}>
-                  Je réserve
-                </Button>
-                <Button disabled={busy} onClick={() => void submit("order")}>
-                  Je réserve et je commande
-                </Button>
-              </DialogFooter>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-base leading-snug">{gift.title}</CardTitle>
+            {gift.is_reserved ? (
+              <Badge variant="secondary" className="shrink-0 whitespace-nowrap">
+                🎁 Déjà réservé
+              </Badge>
             ) : null}
-          </DialogContent>
-        </Dialog>
-        )}
-      </CardFooter>
+          </div>
+          {gift.store_name ? (
+            <p className="text-xs text-muted-foreground">{gift.store_name}</p>
+          ) : null}
+        </CardHeader>
+        <CardContent className="flex-1 space-y-2">
+          {gift.description ? (
+            <p className="line-clamp-3 text-sm text-muted-foreground">{gift.description}</p>
+          ) : null}
+          {gift.price != null ? (
+            <p className="font-medium">
+              {gift.price.toLocaleString("fr-FR", {
+                style: "currency",
+                currency: gift.currency || "EUR",
+              })}
+            </p>
+          ) : null}
+        </CardContent>
+        <CardFooter className="flex flex-wrap gap-2">
+          {gift.has_link ? (
+            <Button asChild variant="outline" size="sm" className="min-h-10">
+              <a
+                href={`/go/${gift.public_token}`}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+              >
+                Voir en boutique
+              </a>
+            </Button>
+          ) : null}
+          {gift.is_reserved ? (
+            <Button size="sm" className="min-h-10" disabled>
+              Déjà réservé
+            </Button>
+          ) : (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <Button size="sm" className="min-h-10" onClick={() => setOpen(true)}>
+                Réserver
+              </Button>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {manageLink ? "C'est réservé !" : `Réserver « ${gift.title} »`}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {manageLink
+                      ? "Conservez ce lien pour modifier ou annuler votre réservation."
+                      : isDemo
+                        ? "Liste de démonstration : le formulaire fonctionne, mais rien ne sera enregistré."
+                        : "Le cadeau restera visible sur la liste, marqué comme déjà réservé."}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {manageLink ? (
+                  <div className="space-y-3">
+                    <Input readOnly value={manageLink} onFocus={(event) => event.target.select()} />
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(manageLink);
+                        toast.success("Lien copié");
+                      }}
+                    >
+                      Copier le lien
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`name-${gift.id}`}>Votre prénom *</Label>
+                      <Input
+                        id={`name-${gift.id}`}
+                        value={form.guestName}
+                        onChange={(event) =>
+                          setForm((f) => ({ ...f, guestName: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`email-${gift.id}`}>
+                        Email (pour retrouver votre réservation)
+                      </Label>
+                      <Input
+                        id={`email-${gift.id}`}
+                        type="email"
+                        value={form.guestEmail}
+                        onChange={(event) =>
+                          setForm((f) => ({ ...f, guestEmail: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`msg-${gift.id}`}>Un mot pour les parents</Label>
+                      <Textarea
+                        id={`msg-${gift.id}`}
+                        rows={3}
+                        value={form.message}
+                        onChange={(event) =>
+                          setForm((f) => ({ ...f, message: event.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {!manageLink ? (
+                  <DialogFooter className="gap-2">
+                    <Button
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => void submit("reserve")}
+                    >
+                      Je réserve
+                    </Button>
+                    <Button disabled={busy} onClick={() => void submit("order")}>
+                      Je réserve et je commande
+                    </Button>
+                  </DialogFooter>
+                ) : null}
+              </DialogContent>
+            </Dialog>
+          )}
+        </CardFooter>
       </div>
     </Card>
   );

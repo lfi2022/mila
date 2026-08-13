@@ -73,5 +73,7 @@ export function appOrigin(): string {
   if (origin) return origin.replace(/\/$/, "");
   const host = getRequestHeader("host");
   const proto = getRequestHeader("x-forwarded-proto") ?? "https";
-  return host ? `${proto}://${host}` : "https://mila.be";
+  return host
+    ? `${proto}://${host}`
+    : (process.env["APP_URL"] ?? "http://localhost").replace(/\/$/, "");
 }

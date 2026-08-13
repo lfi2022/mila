@@ -31,7 +31,11 @@ export type AppearancePatch = {
 
 type Props = {
   registryId: string;
-  list: ListAppearance & { title: string; baby_name: string | null; cover_image_url: string | null };
+  list: ListAppearance & {
+    title: string;
+    baby_name: string | null;
+    cover_image_url: string | null;
+  };
   onChange: (patch: AppearancePatch) => void;
   onCoverUploaded: () => void;
 };
@@ -40,7 +44,9 @@ export function ListAppearanceEditor({ registryId, list, onChange, onCoverUpload
   const upload = useServerFn(uploadListCover);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const [customColor, setCustomColor] = useState(list.accent_color ?? getTheme(list.theme).swatches[1]);
+  const [customColor, setCustomColor] = useState(
+    list.accent_color ?? getTheme(list.theme).swatches[1],
+  );
 
   const heroStyle = getHeroStyle(list.hero_style);
 
@@ -183,7 +189,9 @@ export function ListAppearanceEditor({ registryId, list, onChange, onCoverUpload
                 type="button"
                 onClick={() => onChange({ hero_style: hero.id })}
                 className={`block w-full rounded-xl border p-3 text-left text-sm transition ${
-                  heroStyle === hero.id ? "border-primary ring-2 ring-ring/60" : "hover:border-primary/40"
+                  heroStyle === hero.id
+                    ? "border-primary ring-2 ring-ring/60"
+                    : "hover:border-primary/40"
                 }`}
               >
                 <span className="font-medium">{hero.label}</span>
@@ -251,7 +259,10 @@ export function ListAppearanceEditor({ registryId, list, onChange, onCoverUpload
 
       <div className="lg:sticky lg:top-24 lg:self-start">
         <p className="mb-3 text-sm font-medium text-muted-foreground">Aperçu en direct</p>
-        <div className="overflow-hidden rounded-2xl border shadow-soft" style={appearanceStyle(list)}>
+        <div
+          className="overflow-hidden rounded-2xl border shadow-soft"
+          style={appearanceStyle(list)}
+        >
           <div style={{ backgroundColor: "var(--background)", color: "var(--foreground)" }}>
             {heroStyle === "cover" && list.cover_image_url ? (
               <img src={list.cover_image_url} alt="" className="h-32 w-full object-cover" />
@@ -284,8 +295,14 @@ export function ListAppearanceEditor({ registryId, list, onChange, onCoverUpload
                 </div>
               </div>
               {list.show_progress !== false ? (
-                <div className="mt-4 h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: "var(--muted)" }}>
-                  <div className="h-full w-2/5 rounded-full" style={{ backgroundColor: "var(--accent)" }} />
+                <div
+                  className="mt-4 h-2 w-full overflow-hidden rounded-full"
+                  style={{ backgroundColor: "var(--muted)" }}
+                >
+                  <div
+                    className="h-full w-2/5 rounded-full"
+                    style={{ backgroundColor: "var(--accent)" }}
+                  />
                 </div>
               ) : null}
             </div>
@@ -306,7 +323,10 @@ export function ListAppearanceEditor({ registryId, list, onChange, onCoverUpload
                   </p>
                   <span
                     className="mt-2 inline-block rounded-lg px-3 py-1 text-xs"
-                    style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                    }}
                   >
                     Réserver
                   </span>

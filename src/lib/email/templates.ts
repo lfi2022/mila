@@ -34,7 +34,11 @@ export const emailTemplates = {
     text: `Bienvenue ${params.name} ! Créez votre liste : ${params.appUrl}/onboarding`,
   }),
 
-  coParentInvitation: (params: { listTitle: string; inviterName: string; link: string }): EmailTemplate => ({
+  coParentInvitation: (params: {
+    listTitle: string;
+    inviterName: string;
+    link: string;
+  }): EmailTemplate => ({
     subject: `${params.inviterName} vous invite à gérer « ${params.listTitle} »`,
     html: layout(
       "Vous êtes invité·e à gérer une liste",
@@ -70,10 +74,20 @@ export const emailTemplates = {
     text: `Réservation annulée : ${params.itemTitle} (${params.listTitle}).`,
   }),
 
-  giftReserved: (params: { itemTitle: string; guestName: string; listTitle: string; appUrl: string; surprise: boolean }): EmailTemplate => ({
-    subject: params.surprise ? `Un cadeau vient d'être réservé 🎁` : `${params.guestName} a réservé ${params.itemTitle}`,
+  giftReserved: (params: {
+    itemTitle: string;
+    guestName: string;
+    listTitle: string;
+    appUrl: string;
+    surprise: boolean;
+  }): EmailTemplate => ({
+    subject: params.surprise
+      ? `Un cadeau vient d'être réservé 🎁`
+      : `${params.guestName} a réservé ${params.itemTitle}`,
     html: layout(
-      params.surprise ? "Un cadeau a trouvé quelqu'un 🎁" : `${params.guestName} a réservé un cadeau`,
+      params.surprise
+        ? "Un cadeau a trouvé quelqu'un 🎁"
+        : `${params.guestName} a réservé un cadeau`,
       params.surprise
         ? `<p>Bonne nouvelle : un cadeau de « ${params.listTitle} » vient d'être réservé. Le mode surprise est activé, les détails restent cachés jusqu'à ce que vous les révéliez.</p>${button(`${params.appUrl}/dashboard`, "Voir mon tableau de bord")}`
         : `<p><strong>${params.guestName}</strong> a réservé <strong>${params.itemTitle}</strong> sur « ${params.listTitle} ».</p>${button(`${params.appUrl}/dashboard`, "Voir les réservations")}`,
@@ -83,7 +97,12 @@ export const emailTemplates = {
       : `${params.guestName} a réservé ${params.itemTitle} sur ${params.listTitle}.`,
   }),
 
-  giftPurchased: (params: { itemTitle: string; listTitle: string; appUrl: string; surprise: boolean }): EmailTemplate => ({
+  giftPurchased: (params: {
+    itemTitle: string;
+    listTitle: string;
+    appUrl: string;
+    surprise: boolean;
+  }): EmailTemplate => ({
     subject: params.surprise ? "Un cadeau a été acheté 🎁" : `${params.itemTitle} a été acheté`,
     html: layout(
       params.surprise ? "Un cadeau a été acheté 🎁" : `« ${params.itemTitle} » a été acheté`,
@@ -92,7 +111,12 @@ export const emailTemplates = {
     text: `Un cadeau a été acheté sur ${params.listTitle}.`,
   }),
 
-  messageReceived: (params: { guestName: string; message: string; listTitle: string; appUrl: string }): EmailTemplate => ({
+  messageReceived: (params: {
+    guestName: string;
+    message: string;
+    listTitle: string;
+    appUrl: string;
+  }): EmailTemplate => ({
     subject: `Nouveau message de ${params.guestName}`,
     html: layout(
       `Un mot doux de ${params.guestName}`,
@@ -101,8 +125,15 @@ export const emailTemplates = {
     text: `${params.guestName} : ${params.message}`,
   }),
 
-  rewardCredited: (params: { amount: string; pending: boolean; appUrl: string; registryId: string }): EmailTemplate => ({
-    subject: params.pending ? `Une récompense de ${params.amount} est en attente` : `${params.amount} ajoutés à vos Récompenses Mila 🎁`,
+  rewardCredited: (params: {
+    amount: string;
+    pending: boolean;
+    appUrl: string;
+    registryId: string;
+  }): EmailTemplate => ({
+    subject: params.pending
+      ? `Une récompense de ${params.amount} est en attente`
+      : `${params.amount} ajoutés à vos Récompenses Mila 🎁`,
     html: layout(
       params.pending ? "Une récompense arrive" : "Vos cadeaux vous font un cadeau ❤️",
       params.pending
@@ -114,7 +145,12 @@ export const emailTemplates = {
       : `${params.amount} ajoutés à vos Récompenses Mila : ${params.appUrl}/recompenses/${params.registryId}`,
   }),
 
-  rewardRedeemed: (params: { amount: string; label: string; appUrl: string; registryId: string }): EmailTemplate => ({
+  rewardRedeemed: (params: {
+    amount: string;
+    label: string;
+    appUrl: string;
+    registryId: string;
+  }): EmailTemplate => ({
     subject: `Vous avez utilisé ${params.amount} de récompenses`,
     html: layout(
       "Récompenses utilisées",
@@ -123,7 +159,11 @@ export const emailTemplates = {
     text: `Vous avez utilisé ${params.amount} de récompenses pour ${params.label}.`,
   }),
 
-  referralQualified: (params: { amount: string; appUrl: string; registryId: string }): EmailTemplate => ({
+  referralQualified: (params: {
+    amount: string;
+    appUrl: string;
+    registryId: string;
+  }): EmailTemplate => ({
     subject: "Votre parrainage a été validé 🎉",
     html: layout(
       "Parrainage validé",
@@ -132,7 +172,12 @@ export const emailTemplates = {
     text: `Parrainage validé : ${params.amount} ajoutés à vos récompenses.`,
   }),
 
-  rewardExpiring: (params: { amount: string; date: string; appUrl: string; registryId: string }): EmailTemplate => ({
+  rewardExpiring: (params: {
+    amount: string;
+    date: string;
+    appUrl: string;
+    registryId: string;
+  }): EmailTemplate => ({
     subject: `${params.amount} de récompenses expirent bientôt`,
     html: layout(
       "Vos récompenses expirent bientôt",

@@ -15,9 +15,15 @@ export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
       { title: "Créer ma liste en 4 étapes — Mila" },
-      { name: "description", content: "Quatre étapes courtes pour préparer votre liste de naissance Mila." },
+      {
+        name: "description",
+        content: "Quatre étapes courtes pour préparer votre liste de naissance Mila.",
+      },
       { property: "og:title", content: "Créer ma liste en 4 étapes — Mila" },
-      { property: "og:description", content: "Prénom, date, message : votre liste est prête en deux minutes." },
+      {
+        property: "og:description",
+        content: "Prénom, date, message : votre liste est prête en deux minutes.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
@@ -67,7 +73,10 @@ function OnboardingPage() {
     setBusy(true);
     try {
       if (displayName.trim()) {
-        await supabase.from("profiles").update({ display_name: displayName.trim() }).eq("id", user.id);
+        await supabase
+          .from("profiles")
+          .update({ display_name: displayName.trim() })
+          .eq("id", user.id);
       }
       const slug = `${slugify(babyName || displayName || "notre-liste")}-${Math.random().toString(36).slice(2, 7)}`;
       const { data, error } = await supabase
@@ -112,7 +121,12 @@ function OnboardingPage() {
               <h1 className="font-display text-2xl">Bienvenue sur Mila</h1>
               <div className="space-y-2">
                 <Label htmlFor="ob-name">Comment vous appelez-vous ?</Label>
-                <Input id="ob-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={80} />
+                <Input
+                  id="ob-name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  maxLength={80}
+                />
               </div>
             </>
           ) : null}
@@ -122,11 +136,21 @@ function OnboardingPage() {
               <h1 className="font-display text-2xl">Parlez-nous de bébé</h1>
               <div className="space-y-2">
                 <Label htmlFor="ob-baby">Prénom (ou surnom) de bébé</Label>
-                <Input id="ob-baby" value={babyName} onChange={(e) => setBabyName(e.target.value)} maxLength={80} />
+                <Input
+                  id="ob-baby"
+                  value={babyName}
+                  onChange={(e) => setBabyName(e.target.value)}
+                  maxLength={80}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ob-date">Date prévue</Label>
-                <Input id="ob-date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                <Input
+                  id="ob-date"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
               </div>
             </>
           ) : null}
@@ -161,7 +185,11 @@ function OnboardingPage() {
           ) : null}
 
           <div className="flex justify-between gap-3 pt-2">
-            <Button variant="ghost" disabled={step === 0 || busy} onClick={() => setStep((s) => s - 1)}>
+            <Button
+              variant="ghost"
+              disabled={step === 0 || busy}
+              onClick={() => setStep((s) => s - 1)}
+            >
               Retour
             </Button>
             {step < STEPS.length - 1 ? (

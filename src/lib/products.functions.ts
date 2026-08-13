@@ -76,5 +76,9 @@ export const matchMerchant = createServerFn({ method: "POST" })
       .from("merchants_public")
       .select("id, name, domains");
     const merchant = findMerchantForUrl(validated.url, (merchants ?? []) as never);
-    return { merchantId: merchant?.id ?? null, merchantName: merchant?.name ?? null, url: validated.url };
+    return {
+      merchantId: merchant?.id ?? null,
+      merchantName: merchant?.name ?? null,
+      url: validated.url,
+    };
   });

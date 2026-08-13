@@ -5,7 +5,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /** Role is always re-verified server-side; hiding the UI is not a boundary. */
 async function assertStaff(context: { supabase: unknown; userId: string }, requireAdmin = false) {
-  const client = context.supabase as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> };
+  const client = context.supabase as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }>;
+  };
   const rpc = (fn: string, args: Record<string, unknown>) => client.rpc(fn, args);
   const { data: isStaff } = await rpc("is_staff", { _user_id: context.userId });
   if (!isStaff) throw new Error("Accès refusé.");
@@ -18,7 +20,13 @@ async function assertStaff(context: { supabase: unknown; userId: string }, requi
   }
 }
 
-async function audit(actorId: string, action: string, targetType: string, targetId: string | null, metadata: Record<string, unknown> = {}) {
+async function audit(
+  actorId: string,
+  action: string,
+  targetType: string,
+  targetId: string | null,
+  metadata: Record<string, unknown> = {},
+) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.from("admin_audit_log").insert({
     actor_id: actorId,
@@ -74,7 +82,10 @@ export const updateRewardSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertStaff(context, true);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("reward_settings").update(data as never).eq("id", true);
+    const { error } = await supabaseAdmin
+      .from("reward_settings")
+      .update(data as never)
+      .eq("id", true);
     if (error) throw new Error("Réglages non enregistrés.");
     await audit(context.userId, "reward_settings_updated", "reward_settings", null, data);
     return { ok: true };
@@ -97,7 +108,10 @@ export const updateMerchantRewardConfig = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("merchants")
-      .update({ reward_enabled: data.rewardEnabled, reward_share_rate_bps: data.rewardShareRateBps })
+      .update({
+        reward_enabled: data.rewardEnabled,
+        reward_share_rate_bps: data.rewardShareRateBps,
+      })
       .eq("id", data.merchantId);
     if (error) throw new Error("Marchand non mis à jour.");
     await audit(context.userId, "merchant_reward_updated", "merchant", data.merchantId, data);
@@ -114,9 +128,13 @@ export const getRewardStats = createServerFn({ method: "GET" })
 
     const since30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
     const [commissions, transactions, wallets, redemptions, referrals] = await Promise.all([
-      supabaseAdmin.from("affiliate_commissions").select("commission_amount_cents, status, occurred_at, network, merchant_id"),
+      supabaseAdmin
+        .from("affiliate_commissions")
+        .select("commission_amount_cents, status, occurred_at, network, merchant_id"),
       supabaseAdmin.from("reward_transactions").select("amount_cents, status, type, created_at"),
-      supabaseAdmin.from("reward_wallets").select("pending_balance_cents, available_balance_cents, flagged"),
+      supabaseAdmin
+        .from("reward_wallets")
+        .select("pending_balance_cents, available_balance_cents, flagged"),
       supabaseAdmin.from("reward_redemptions").select("amount_cents, status, type, requested_at"),
       supabaseAdmin.from("referrals").select("status, needs_review"),
     ]);
@@ -126,20 +144,31 @@ export const getRewardStats = createServerFn({ method: "GET" })
     const w = wallets.data ?? [];
     const r = redemptions.data ?? [];
 
-    const confirmedRevenue = c.filter((x) => x.status === "CONFIRMED").reduce((s, x) => s + x.commission_amount_cents, 0);
-    const pendingRevenue = c.filter((x) => x.status === "PENDING").reduce((s, x) => s + x.commission_amount_cents, 0);
-    const cancelledRevenue = c.filter((x) => x.status === "CANCELLED").reduce((s, x) => s + x.commission_amount_cents, 0);
+    const confirmedRevenue = c
+      .filter((x) => x.status === "CONFIRMED")
+      .reduce((s, x) => s + x.commission_amount_cents, 0);
+    const pendingRevenue = c
+      .filter((x) => x.status === "PENDING")
+      .reduce((s, x) => s + x.commission_amount_cents, 0);
+    const cancelledRevenue = c
+      .filter((x) => x.status === "CANCELLED")
+      .reduce((s, x) => s + x.commission_amount_cents, 0);
     const revenue30 = c
       .filter((x) => x.status === "CONFIRMED" && x.occurred_at >= since30)
       .reduce((s, x) => s + x.commission_amount_cents, 0);
 
-    const rewardsGranted = t.filter((x) => x.status === "CONFIRMED" && x.amount_cents > 0).reduce((s, x) => s + x.amount_cents, 0);
-    const rewardsPending = t.filter((x) => x.status === "PENDING").reduce((s, x) => s + x.amount_cents, 0);
+    const rewardsGranted = t
+      .filter((x) => x.status === "CONFIRMED" && x.amount_cents > 0)
+      .reduce((s, x) => s + x.amount_cents, 0);
+    const rewardsPending = t
+      .filter((x) => x.status === "PENDING")
+      .reduce((s, x) => s + x.amount_cents, 0);
     const rewards30 = t
       .filter((x) => x.status === "CONFIRMED" && x.amount_cents > 0 && x.created_at >= since30)
       .reduce((s, x) => s + x.amount_cents, 0);
     const byType = t.reduce<Record<string, number>>((acc, x) => {
-      if (x.status !== "CANCELLED" && x.amount_cents > 0) acc[x.type] = (acc[x.type] ?? 0) + x.amount_cents;
+      if (x.status !== "CANCELLED" && x.amount_cents > 0)
+        acc[x.type] = (acc[x.type] ?? 0) + x.amount_cents;
       return acc;
     }, {});
 
@@ -157,9 +186,14 @@ export const getRewardStats = createServerFn({ method: "GET" })
       rewardsByType: byType,
       walletsCount: w.length,
       flaggedWallets: w.filter((x) => x.flagged).length,
-      outstandingLiabilityCents: w.reduce((s, x) => s + x.available_balance_cents + x.pending_balance_cents, 0),
+      outstandingLiabilityCents: w.reduce(
+        (s, x) => s + x.available_balance_cents + x.pending_balance_cents,
+        0,
+      ),
       redemptionsRequested: r.filter((x) => x.status === "REQUESTED").length,
-      redemptionsValueCents: r.filter((x) => x.status !== "CANCELLED").reduce((s, x) => s + x.amount_cents, 0),
+      redemptionsValueCents: r
+        .filter((x) => x.status !== "CANCELLED")
+        .reduce((s, x) => s + x.amount_cents, 0),
       referralsTotal: (referrals.data ?? []).length,
       referralsToReview: (referrals.data ?? []).filter((x) => x.needs_review).length,
       commissionsCount: c.length,
@@ -199,7 +233,13 @@ export const recordAffiliateCommission = createServerFn({ method: "POST" })
       status: data.status,
       raw: { source: "admin_manual", actor: context.userId },
     });
-    await audit(context.userId, "affiliate_commission_recorded", "affiliate_commission", result.commissionId, data);
+    await audit(
+      context.userId,
+      "affiliate_commission_recorded",
+      "affiliate_commission",
+      result.commissionId,
+      data,
+    );
     return result;
   });
 
@@ -207,7 +247,12 @@ export const recordAffiliateCommission = createServerFn({ method: "POST" })
 export const setCommissionStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ commissionId: z.string().uuid(), status: z.enum(["PENDING", "CONFIRMED", "CANCELLED"]) }).parse(data),
+    z
+      .object({
+        commissionId: z.string().uuid(),
+        status: z.enum(["PENDING", "CONFIRMED", "CANCELLED"]),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     await assertStaff(context, true);
@@ -228,11 +273,22 @@ export const setCommissionStatus = createServerFn({ method: "POST" })
     await supabaseAdmin.rpc("reward_set_status", {
       _source_type: "AFFILIATE_COMMISSION",
       _source_reference: data.commissionId,
-      _status: data.status === "CONFIRMED" ? "CONFIRMED" : data.status === "CANCELLED" ? "CANCELLED" : "PENDING",
+      _status:
+        data.status === "CONFIRMED"
+          ? "CONFIRMED"
+          : data.status === "CANCELLED"
+            ? "CANCELLED"
+            : "PENDING",
     });
     if (data.status !== "CANCELLED") await applyCommissionReward(data.commissionId);
 
-    await audit(context.userId, "commission_status_changed", "affiliate_commission", data.commissionId, data);
+    await audit(
+      context.userId,
+      "commission_status_changed",
+      "affiliate_commission",
+      data.commissionId,
+      data,
+    );
     return { ok: true };
   });
 
@@ -243,7 +299,9 @@ export const listCommissions = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("affiliate_commissions")
-      .select("id, network, external_id, status, commission_amount_cents, order_amount_cents, occurred_at, merchant_id, registry_id")
+      .select(
+        "id, network, external_id, status, commission_amount_cents, order_amount_cents, occurred_at, merchant_id, registry_id",
+      )
       .order("occurred_at", { ascending: false })
       .limit(100);
     return data ?? [];
@@ -253,7 +311,9 @@ export const listCommissions = createServerFn({ method: "GET" })
 export const simulateRewardShare = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ commissionAmountCents: cents, merchantId: z.string().uuid().nullable().optional() }).parse(data),
+    z
+      .object({ commissionAmountCents: cents, merchantId: z.string().uuid().nullable().optional() })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     await assertStaff(context);
@@ -270,7 +330,9 @@ export const adjustWallet = createServerFn({ method: "POST" })
         registryId: z.string().uuid(),
         amountCents: z.number().int().min(-100_000_000).max(100_000_000),
         reason: z.string().trim().min(3).max(300),
-        type: z.enum(["ADJUSTMENT", "PROMOTIONAL_BONUS", "PARTNER_BONUS", "PREMIUM_PURCHASE"]).default("ADJUSTMENT"),
+        type: z
+          .enum(["ADJUSTMENT", "PROMOTIONAL_BONUS", "PARTNER_BONUS", "PREMIUM_PURCHASE"])
+          .default("ADJUSTMENT"),
       })
       .parse(data),
   )
@@ -299,7 +361,9 @@ export const listWallets = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("reward_wallets")
-      .select("id, registry_id, pending_balance_cents, available_balance_cents, lifetime_earned_cents, lifetime_redeemed_cents, flagged, registries(title, slug)")
+      .select(
+        "id, registry_id, pending_balance_cents, available_balance_cents, lifetime_earned_cents, lifetime_redeemed_cents, flagged, registries(title, slug)",
+      )
       .order("lifetime_earned_cents", { ascending: false })
       .limit(100);
     return (data ?? []).map((w) => ({
@@ -316,11 +380,16 @@ export const listWallets = createServerFn({ method: "GET" })
 
 export const setWalletFlag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ walletId: z.string().uuid(), flagged: z.boolean() }).parse(data))
+  .inputValidator((data: unknown) =>
+    z.object({ walletId: z.string().uuid(), flagged: z.boolean() }).parse(data),
+  )
   .handler(async ({ data, context }) => {
     await assertStaff(context, true);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("reward_wallets").update({ flagged: data.flagged }).eq("id", data.walletId);
+    await supabaseAdmin
+      .from("reward_wallets")
+      .update({ flagged: data.flagged })
+      .eq("id", data.walletId);
     await audit(context.userId, "wallet_flag_changed", "reward_wallet", data.walletId, data);
     return { ok: true };
   });
@@ -332,7 +401,9 @@ export const listRedemptions = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("reward_redemptions")
-      .select("id, wallet_id, type, amount_cents, status, requested_at, processed_at, external_reference")
+      .select(
+        "id, wallet_id, type, amount_cents, status, requested_at, processed_at, external_reference",
+      )
       .order("requested_at", { ascending: false })
       .limit(100);
     return data ?? [];
@@ -377,7 +448,13 @@ export const setRedemptionStatus = createServerFn({ method: "POST" })
         .update({ status: "CANCELLED", cancelled_at: now })
         .eq("id", redemption.transaction_id);
     }
-    await audit(context.userId, "redemption_status_changed", "reward_redemption", data.redemptionId, data);
+    await audit(
+      context.userId,
+      "redemption_status_changed",
+      "reward_redemption",
+      data.redemptionId,
+      data,
+    );
     return { ok: true };
   });
 
@@ -388,7 +465,9 @@ export const listReferralsForReview = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("referrals")
-      .select("id, code, status, needs_review, risk_signals, created_at, referrer_user_id, referred_user_id")
+      .select(
+        "id, code, status, needs_review, risk_signals, created_at, referrer_user_id, referred_user_id",
+      )
       .order("created_at", { ascending: false })
       .limit(100);
     return data ?? [];
@@ -408,10 +487,17 @@ export const reviewReferral = createServerFn({ method: "POST" })
     if (!data.approve) {
       await supabaseAdmin
         .from("referrals")
-        .update({ status: "CANCELLED", needs_review: false, cancelled_at: new Date().toISOString() })
+        .update({
+          status: "CANCELLED",
+          needs_review: false,
+          cancelled_at: new Date().toISOString(),
+        })
         .eq("id", data.referralId);
     } else {
-      await supabaseAdmin.from("referrals").update({ needs_review: false }).eq("id", data.referralId);
+      await supabaseAdmin
+        .from("referrals")
+        .update({ needs_review: false })
+        .eq("id", data.referralId);
       await evaluateReferral(data.referralId, appOrigin());
     }
     await audit(context.userId, "referral_reviewed", "referral", data.referralId, data);
@@ -425,7 +511,10 @@ export const listOffersAdmin = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertStaff(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin.from("reward_offers").select("*").order("created_at", { ascending: false });
+    const { data } = await supabaseAdmin
+      .from("reward_offers")
+      .select("*")
+      .order("created_at", { ascending: false });
     return data ?? [];
   });
 
@@ -461,6 +550,12 @@ export const upsertOffer = createServerFn({ method: "POST" })
       ? await supabaseAdmin.from("reward_offers").update(payload).eq("id", data.id)
       : await supabaseAdmin.from("reward_offers").insert(payload);
     if (error) throw new Error("Avantage non enregistré.");
-    await audit(context.userId, data.id ? "offer_updated" : "offer_created", "reward_offer", data.id ?? null, data);
+    await audit(
+      context.userId,
+      data.id ? "offer_updated" : "offer_created",
+      "reward_offer",
+      data.id ?? null,
+      data,
+    );
     return { ok: true };
   });

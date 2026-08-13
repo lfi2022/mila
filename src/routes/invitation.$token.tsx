@@ -12,7 +12,10 @@ export const Route = createFileRoute("/invitation/$token")({
   head: () => ({
     meta: [
       { title: "Invitation co-parent — Mila" },
-      { name: "description", content: "Rejoignez la liste de naissance à laquelle vous avez été invité." },
+      {
+        name: "description",
+        content: "Rejoignez la liste de naissance à laquelle vous avez été invité.",
+      },
       { property: "og:title", content: "Invitation co-parent — Mila" },
       { property: "og:description", content: "Rejoignez une liste et gérez-la à deux." },
       { property: "og:type", content: "website" },
@@ -73,7 +76,8 @@ function InvitationPage() {
       ) : (
         <>
           <p className="mt-4 text-muted-foreground">
-            L'invitation n'a pas pu être acceptée. Demandez un nouveau lien au parent qui vous a invité.
+            L'invitation n'a pas pu être acceptée. Demandez un nouveau lien au parent qui vous a
+            invité.
           </p>
           <Button asChild variant="outline" className="mt-6">
             <Link to="/dashboard">Aller à mon tableau de bord</Link>

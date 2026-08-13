@@ -35,7 +35,10 @@ export async function assertListMember(
   registryId: string,
   userId: string,
 ) {
-  const { data } = await supabase.rpc("is_list_member", { _registry_id: registryId, _user_id: userId });
+  const { data } = await supabase.rpc("is_list_member", {
+    _registry_id: registryId,
+    _user_id: userId,
+  });
   if (!data) throw new Error("Accès refusé à ce portefeuille.");
 }
 
@@ -54,7 +57,10 @@ export async function notifyReward(
   label: string,
 ) {
   const db = await admin();
-  const { data: members } = await db.from("list_members").select("user_id").eq("registry_id", registryId);
+  const { data: members } = await db
+    .from("list_members")
+    .select("user_id")
+    .eq("registry_id", registryId);
   if (!members?.length) return;
 
   const recent = new Date(Date.now() - 6 * 3_600_000).toISOString();
@@ -93,7 +99,10 @@ export async function emailRewardCredited(params: {
   if (rules["emails_reward_credited"] === false) return;
 
   const db = await admin();
-  const { data: members } = await db.from("list_members").select("user_id").eq("registry_id", params.registryId);
+  const { data: members } = await db
+    .from("list_members")
+    .select("user_id")
+    .eq("registry_id", params.registryId);
   if (!members?.length) return;
 
   for (const member of members) {
@@ -158,7 +167,9 @@ export async function ingestAffiliateEvent(input: AffiliateEventInput) {
     const { data: merchants } = await db.from("merchants").select("id, domains");
     const domain = input.merchantDomain.toLowerCase().replace(/^www\./, "");
     merchantId =
-      merchants?.find((m) => (m.domains ?? []).some((d) => domain === d || domain.endsWith(`.${d}`)))?.id ?? null;
+      merchants?.find((m) =>
+        (m.domains ?? []).some((d) => domain === d || domain.endsWith(`.${d}`)),
+      )?.id ?? null;
   }
 
   if (input.itemPublicToken) {
@@ -203,9 +214,16 @@ export async function ingestAffiliateEvent(input: AffiliateEventInput) {
   if (error || !commission) throw new Error("Commission non enregistrée.");
 
   const applied = await applyCommissionReward(commission.id);
-  await db.from("affiliate_events").update({ processed_at: new Date().toISOString() }).eq("id", event?.id ?? "");
+  await db
+    .from("affiliate_events")
+    .update({ processed_at: new Date().toISOString() })
+    .eq("id", event?.id ?? "");
 
-  return { commissionId: commission.id, rewardTransactionId: applied.transactionId, reward: applied };
+  return {
+    commissionId: commission.id,
+    rewardTransactionId: applied.transactionId,
+    reward: applied,
+  };
 }
 
 /**
@@ -217,7 +235,8 @@ export async function applyCommissionReward(commissionId: string) {
   const db = await admin();
   const { data, error } = await db.rpc("reward_apply_commission", { _commission_id: commissionId });
   if (error) {
-    if (/rewards_disabled/.test(error.message)) return { transactionId: null as string | null, skipped: "disabled" };
+    if (/rewards_disabled/.test(error.message))
+      return { transactionId: null as string | null, skipped: "disabled" };
     throw new Error(error.message);
   }
   const transactionId = (data as unknown as string | null) ?? null;
@@ -248,8 +267,13 @@ export async function previewCommissionReward(commissionCents: number, merchantI
   const settings = await loadSettings();
   const db = await admin();
   const merchant = merchantId
-    ? (await db.from("merchants").select("reward_enabled, reward_share_rate_bps").eq("id", merchantId).maybeSingle())
-        .data
+    ? (
+        await db
+          .from("merchants")
+          .select("reward_enabled, reward_share_rate_bps")
+          .eq("id", merchantId)
+          .maybeSingle()
+      ).data
     : null;
 
   const rateBps = resolveRewardRateBps({
@@ -257,7 +281,10 @@ export async function previewCommissionReward(commissionCents: number, merchantI
     affiliateRewardsEnabled: settings.affiliate_rewards_enabled,
     globalRateBps: settings.affiliate_share_rate_bps,
     merchant: merchant
-      ? { rewardEnabled: merchant.reward_enabled, rewardShareRateBps: merchant.reward_share_rate_bps }
+      ? {
+          rewardEnabled: merchant.reward_enabled,
+          rewardShareRateBps: merchant.reward_share_rate_bps,
+        }
       : null,
   });
   const rewardCents = rateBps > 0 ? computeShareCents(commissionCents, rateBps) : 0;
@@ -291,7 +318,11 @@ export async function ensureReferralCode(userId: string): Promise<string> {
 }
 
 /** Risk signals only — never an automatic ban, and never IP-only blocking. */
-export async function referralRiskSignals(referrerId: string, referredId: string, email: string | null) {
+export async function referralRiskSignals(
+  referrerId: string,
+  referredId: string,
+  email: string | null,
+) {
   const db = await admin();
   const signals: string[] = [];
 
@@ -299,9 +330,11 @@ export async function referralRiskSignals(referrerId: string, referredId: string
 
   const { data: referrerUser } = await db.auth.admin.getUserById(referrerId);
   const referrerEmail = referrerUser?.user?.email ?? null;
-  if (email && referrerEmail && email.toLowerCase() === referrerEmail.toLowerCase()) signals.push("same_email");
+  if (email && referrerEmail && email.toLowerCase() === referrerEmail.toLowerCase())
+    signals.push("same_email");
   if (email && referrerEmail) {
-    const normalise = (value: string) => value.split("@")[0]?.replace(/\./g, "").split("+")[0]?.toLowerCase();
+    const normalise = (value: string) =>
+      value.split("@")[0]?.replace(/\./g, "").split("+")[0]?.toLowerCase();
     if (normalise(email) === normalise(referrerEmail)) signals.push("email_alias");
   }
 
@@ -319,28 +352,44 @@ export async function referralRiskSignals(referrerId: string, referredId: string
 export async function evaluateReferral(referralId: string, appUrl: string) {
   const db = await admin();
   const settings = await loadSettings();
-  const { data: referral } = await db.from("referrals").select("*").eq("id", referralId).maybeSingle();
-  if (!referral || referral.status === "REWARDED" || referral.status === "CANCELLED") return { changed: false };
+  const { data: referral } = await db
+    .from("referrals")
+    .select("*")
+    .eq("id", referralId)
+    .maybeSingle();
+  if (!referral || referral.status === "REWARDED" || referral.status === "CANCELLED")
+    return { changed: false };
   if (!settings.enabled || !settings.referral_rewards_enabled) return { changed: false };
   if (referral.needs_review) return { changed: false, reason: "manual_review" };
 
   const { data: user } = await db.auth.admin.getUserById(referral.referred_user_id);
   if (!user?.user) {
-    await db.from("referrals").update({ status: "CANCELLED", cancelled_at: new Date().toISOString() }).eq("id", referralId);
+    await db
+      .from("referrals")
+      .update({ status: "CANCELLED", cancelled_at: new Date().toISOString() })
+      .eq("id", referralId);
     return { changed: true, status: "CANCELLED" };
   }
   if (settings.referral_requires_verified_email && !user.user.email_confirmed_at) {
     return { changed: false, reason: "email_not_verified" };
   }
 
-  const { data: lists } = await db.from("registries").select("id").eq("owner_id", referral.referred_user_id);
-  if (settings.referral_requires_list && !lists?.length) return { changed: false, reason: "no_list" };
+  const { data: lists } = await db
+    .from("registries")
+    .select("id")
+    .eq("owner_id", referral.referred_user_id);
+  if (settings.referral_requires_list && !lists?.length)
+    return { changed: false, reason: "no_list" };
 
   if (settings.referral_min_items > 0) {
     const ids = (lists ?? []).map((l) => l.id);
     if (!ids.length) return { changed: false, reason: "no_list" };
-    const { count } = await db.from("items").select("id", { count: "exact", head: true }).in("registry_id", ids);
-    if ((count ?? 0) < settings.referral_min_items) return { changed: false, reason: "not_enough_items" };
+    const { count } = await db
+      .from("items")
+      .select("id", { count: "exact", head: true })
+      .in("registry_id", ids);
+    if ((count ?? 0) < settings.referral_min_items)
+      return { changed: false, reason: "not_enough_items" };
   }
 
   // Referral cap, computed from the ledger (never from a stored balance).
@@ -358,7 +407,8 @@ export async function evaluateReferral(referralId: string, appUrl: string) {
         .eq("type", "REFERRAL")
         .neq("status", "CANCELLED");
       const total = (earned ?? []).reduce((sum, row) => sum + row.amount_cents, 0);
-      if (total >= settings.referral_cap_cents) return { changed: false, reason: "referral_cap_reached" };
+      if (total >= settings.referral_cap_cents)
+        return { changed: false, reason: "referral_cap_reached" };
     }
   }
 
@@ -372,7 +422,10 @@ export async function evaluateReferral(referralId: string, appUrl: string) {
     .maybeSingle();
   if (!referrerList) return { changed: false, reason: "referrer_has_no_list" };
 
-  await db.from("referrals").update({ status: "QUALIFIED", qualified_at: new Date().toISOString() }).eq("id", referralId);
+  await db
+    .from("referrals")
+    .update({ status: "QUALIFIED", qualified_at: new Date().toISOString() })
+    .eq("id", referralId);
 
   const { data: txnId, error } = await db.rpc("reward_credit", {
     _registry_id: referrerList.id,
@@ -386,9 +439,17 @@ export async function evaluateReferral(referralId: string, appUrl: string) {
   });
   if (error) return { changed: false, reason: error.message };
 
-  await db.from("referrals").update({ status: "REWARDED", rewarded_at: new Date().toISOString() }).eq("id", referralId);
+  await db
+    .from("referrals")
+    .update({ status: "REWARDED", rewarded_at: new Date().toISOString() })
+    .eq("id", referralId);
   if (txnId) {
-    await notifyReward(referrerList.id, settings.referral_bonus_cents, "CONFIRMED", "Un parrainage vient d'être validé.");
+    await notifyReward(
+      referrerList.id,
+      settings.referral_bonus_cents,
+      "CONFIRMED",
+      "Un parrainage vient d'être validé.",
+    );
     void appUrl;
   }
   return { changed: true, status: "REWARDED" };

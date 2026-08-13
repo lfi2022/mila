@@ -57,12 +57,25 @@ export function RewardsAdmin() {
   const stats = useQuery({ queryKey: ["reward-stats"], queryFn: () => fetchStats() });
   const settings = useQuery({ queryKey: ["reward-settings"], queryFn: () => fetchSettings() });
   const wallets = useQuery({ queryKey: ["reward-wallets"], queryFn: () => fetchWallets() });
-  const commissions = useQuery({ queryKey: ["reward-commissions"], queryFn: () => fetchCommissions() });
-  const redemptions = useQuery({ queryKey: ["reward-redemptions"], queryFn: () => fetchRedemptions() });
+  const commissions = useQuery({
+    queryKey: ["reward-commissions"],
+    queryFn: () => fetchCommissions(),
+  });
+  const redemptions = useQuery({
+    queryKey: ["reward-redemptions"],
+    queryFn: () => fetchRedemptions(),
+  });
   const referrals = useQuery({ queryKey: ["reward-referrals"], queryFn: () => fetchReferrals() });
 
   const invalidate = () => {
-    for (const key of ["reward-stats", "reward-settings", "reward-wallets", "reward-commissions", "reward-redemptions", "reward-referrals"])
+    for (const key of [
+      "reward-stats",
+      "reward-settings",
+      "reward-wallets",
+      "reward-commissions",
+      "reward-redemptions",
+      "reward-referrals",
+    ])
       void queryClient.invalidateQueries({ queryKey: [key] });
   };
 
@@ -81,7 +94,8 @@ export function RewardsAdmin() {
   useEffect(() => {
     const s = settings.data;
     if (!s) return;
-    const toAmount = (cents: number | null) => (cents == null ? "" : (cents / 100).toFixed(2).replace(".", ","));
+    const toAmount = (cents: number | null) =>
+      cents == null ? "" : (cents / 100).toFixed(2).replace(".", ",");
     setForm({
       sharePercent: String(s.affiliate_share_rate_bps / 100),
       referralBonus: toAmount(s.referral_bonus_cents),
@@ -104,13 +118,15 @@ export function RewardsAdmin() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const toggle = (key: string, value: boolean) => settingsMutation.mutate({ [key]: value } as never);
+  const toggle = (key: string, value: boolean) =>
+    settingsMutation.mutate({ [key]: value } as never);
 
   const saveNumbers = () => {
     try {
       const optional = (value: string) => (value.trim() === "" ? null : parseAmountToCents(value));
       const percent = Number(form.sharePercent.replace(",", "."));
-      if (!Number.isFinite(percent) || percent < 0 || percent > 100) throw new Error("Pourcentage invalide");
+      if (!Number.isFinite(percent) || percent < 0 || percent > 100)
+        throw new Error("Pourcentage invalide");
       settingsMutation.mutate({
         affiliate_share_rate_bps: Math.round(percent * 100),
         referral_bonus_cents: parseAmountToCents(form.referralBonus),
@@ -138,21 +154,50 @@ export function RewardsAdmin() {
       <section>
         <h3 className="font-display text-xl">Économie réelle du programme</h3>
         <p className="text-sm text-muted-foreground">
-          Chiffres calculés uniquement sur des commissions réellement enregistrées. Aucun montant simulé.
+          Chiffres calculés uniquement sur des commissions réellement enregistrées. Aucun montant
+          simulé.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Metric label="Revenus confirmés" value={formatCents(s?.confirmedRevenueCents ?? 0)} hint={`${s?.commissionsCount ?? 0} commissions`} />
+          <Metric
+            label="Revenus confirmés"
+            value={formatCents(s?.confirmedRevenueCents ?? 0)}
+            hint={`${s?.commissionsCount ?? 0} commissions`}
+          />
           <Metric label="Revenus en attente" value={formatCents(s?.pendingRevenueCents ?? 0)} />
-          <Metric label="Récompenses accordées" value={formatCents(s?.rewardsGrantedCents ?? 0)} hint={`En attente : ${formatCents(s?.rewardsPendingCents ?? 0)}`} />
+          <Metric
+            label="Récompenses accordées"
+            value={formatCents(s?.rewardsGrantedCents ?? 0)}
+            hint={`En attente : ${formatCents(s?.rewardsPendingCents ?? 0)}`}
+          />
           <Metric
             label="Marge nette Mila"
             value={formatCents(s?.netMarginCents ?? 0)}
-            hint={s?.costRatio != null ? `Coût récompenses : ${(s.costRatio * 100).toFixed(1)} % des revenus` : "Pas encore de revenus"}
+            hint={
+              s?.costRatio != null
+                ? `Coût récompenses : ${(s.costRatio * 100).toFixed(1)} % des revenus`
+                : "Pas encore de revenus"
+            }
           />
-          <Metric label="Engagement à honorer" value={formatCents(s?.outstandingLiabilityCents ?? 0)} hint={`${s?.walletsCount ?? 0} portefeuilles`} />
-          <Metric label="30 derniers jours" value={formatCents(s?.revenue30Cents ?? 0)} hint={`Récompenses : ${formatCents(s?.rewards30Cents ?? 0)}`} />
-          <Metric label="Demandes d'utilisation" value={String(s?.redemptionsRequested ?? 0)} hint={formatCents(s?.redemptionsValueCents ?? 0)} />
-          <Metric label="Parrainages à vérifier" value={String(s?.referralsToReview ?? 0)} hint={`${s?.referralsTotal ?? 0} au total`} />
+          <Metric
+            label="Engagement à honorer"
+            value={formatCents(s?.outstandingLiabilityCents ?? 0)}
+            hint={`${s?.walletsCount ?? 0} portefeuilles`}
+          />
+          <Metric
+            label="30 derniers jours"
+            value={formatCents(s?.revenue30Cents ?? 0)}
+            hint={`Récompenses : ${formatCents(s?.rewards30Cents ?? 0)}`}
+          />
+          <Metric
+            label="Demandes d'utilisation"
+            value={String(s?.redemptionsRequested ?? 0)}
+            hint={formatCents(s?.redemptionsValueCents ?? 0)}
+          />
+          <Metric
+            label="Parrainages à vérifier"
+            value={String(s?.referralsToReview ?? 0)}
+            hint={`${s?.referralsTotal ?? 0} au total`}
+          />
         </div>
       </section>
 
@@ -175,13 +220,16 @@ export function RewardsAdmin() {
             const key = entry[0] as string;
             const label = entry[1] as string;
             return (
-            <label key={key} className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3">
-              <span className="text-sm">{label}</span>
-              <Switch
-                checked={Boolean((settings.data as Record<string, unknown> | undefined)?.[key])}
-                onCheckedChange={(value) => toggle(key, value)}
-              />
-            </label>
+              <label
+                key={key}
+                className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3"
+              >
+                <span className="text-sm">{label}</span>
+                <Switch
+                  checked={Boolean((settings.data as Record<string, unknown> | undefined)?.[key])}
+                  onCheckedChange={(value) => toggle(key, value)}
+                />
+              </label>
             );
           })}
         </div>
@@ -192,43 +240,71 @@ export function RewardsAdmin() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <Label>Part reversée aux parents (%)</Label>
-            <Input value={form.sharePercent} onChange={(e) => setForm({ ...form, sharePercent: e.target.value })} />
+            <Input
+              value={form.sharePercent}
+              onChange={(e) => setForm({ ...form, sharePercent: e.target.value })}
+            />
             <p className="mt-1 text-xs text-muted-foreground">
               Actuel : {settings.data ? formatBps(settings.data.affiliate_share_rate_bps) : "—"}
             </p>
           </div>
           <div>
             <Label>Bonus parrainage</Label>
-            <Input value={form.referralBonus} onChange={(e) => setForm({ ...form, referralBonus: e.target.value })} />
+            <Input
+              value={form.referralBonus}
+              onChange={(e) => setForm({ ...form, referralBonus: e.target.value })}
+            />
           </div>
           <div>
             <Label>Seuil minimum d'utilisation</Label>
-            <Input value={form.minRedemption} onChange={(e) => setForm({ ...form, minRedemption: e.target.value })} />
+            <Input
+              value={form.minRedemption}
+              onChange={(e) => setForm({ ...form, minRedemption: e.target.value })}
+            />
           </div>
           <div>
             <Label>Plafond par transaction (vide = aucun)</Label>
-            <Input value={form.perTransactionCap} onChange={(e) => setForm({ ...form, perTransactionCap: e.target.value })} />
+            <Input
+              value={form.perTransactionCap}
+              onChange={(e) => setForm({ ...form, perTransactionCap: e.target.value })}
+            />
           </div>
           <div>
             <Label>Plafond mensuel par liste</Label>
-            <Input value={form.monthlyCap} onChange={(e) => setForm({ ...form, monthlyCap: e.target.value })} />
+            <Input
+              value={form.monthlyCap}
+              onChange={(e) => setForm({ ...form, monthlyCap: e.target.value })}
+            />
           </div>
           <div>
             <Label>Plafond total par liste</Label>
-            <Input value={form.lifetimeCap} onChange={(e) => setForm({ ...form, lifetimeCap: e.target.value })} />
+            <Input
+              value={form.lifetimeCap}
+              onChange={(e) => setForm({ ...form, lifetimeCap: e.target.value })}
+            />
           </div>
           <div>
             <Label>Plafond parrainage par parent</Label>
-            <Input value={form.referralCap} onChange={(e) => setForm({ ...form, referralCap: e.target.value })} />
+            <Input
+              value={form.referralCap}
+              onChange={(e) => setForm({ ...form, referralCap: e.target.value })}
+            />
           </div>
           <div>
             <Label>Cadeaux minimum pour valider un parrainage</Label>
-            <Input value={form.referralMinItems} onChange={(e) => setForm({ ...form, referralMinItems: e.target.value })} />
+            <Input
+              value={form.referralMinItems}
+              onChange={(e) => setForm({ ...form, referralMinItems: e.target.value })}
+            />
           </div>
         </div>
         <div className="mt-4">
           <Label>Texte pédagogique affiché aux parents</Label>
-          <Textarea rows={4} value={form.explainer} onChange={(e) => setForm({ ...form, explainer: e.target.value })} />
+          <Textarea
+            rows={4}
+            value={form.explainer}
+            onChange={(e) => setForm({ ...form, explainer: e.target.value })}
+          />
         </div>
         <Button className="mt-4" onClick={saveNumbers} disabled={settingsMutation.isPending}>
           Enregistrer
@@ -240,13 +316,19 @@ export function RewardsAdmin() {
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <div>
             <Label>Commission reçue</Label>
-            <Input className="w-40" value={sim.amount} onChange={(e) => setSim({ ...sim, amount: e.target.value })} />
+            <Input
+              className="w-40"
+              value={sim.amount}
+              onChange={(e) => setSim({ ...sim, amount: e.target.value })}
+            />
           </div>
           <Button
             variant="secondary"
             onClick={async () => {
               try {
-                const result = await simulate({ data: { commissionAmountCents: parseAmountToCents(sim.amount) } });
+                const result = await simulate({
+                  data: { commissionAmountCents: parseAmountToCents(sim.amount) },
+                });
                 setSim({
                   ...sim,
                   result: `Parents : ${formatCents(result.rewardCents)} (${formatBps(result.rateBps)}) · Mila : ${formatCents(result.milaCents)}`,
@@ -265,13 +347,30 @@ export function RewardsAdmin() {
       <section className="rounded-2xl border border-border bg-card p-6">
         <h3 className="font-display text-xl">Enregistrer une commission</h3>
         <p className="text-sm text-muted-foreground">
-          Import manuel ou réconciliation. Idempotent : le même identifiant externe ne crédite jamais deux fois.
+          Import manuel ou réconciliation. Idempotent : le même identifiant externe ne crédite
+          jamais deux fois.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-4">
-          <Input placeholder="Réseau (ex. awin)" value={manual.network} onChange={(e) => setManual({ ...manual, network: e.target.value })} />
-          <Input placeholder="ID externe" value={manual.externalId} onChange={(e) => setManual({ ...manual, externalId: e.target.value })} />
-          <Input placeholder="Commission (12,50)" value={manual.amount} onChange={(e) => setManual({ ...manual, amount: e.target.value })} />
-          <Input placeholder="Jeton cadeau (optionnel)" value={manual.token} onChange={(e) => setManual({ ...manual, token: e.target.value })} />
+          <Input
+            placeholder="Réseau (ex. awin)"
+            value={manual.network}
+            onChange={(e) => setManual({ ...manual, network: e.target.value })}
+          />
+          <Input
+            placeholder="ID externe"
+            value={manual.externalId}
+            onChange={(e) => setManual({ ...manual, externalId: e.target.value })}
+          />
+          <Input
+            placeholder="Commission (12,50)"
+            value={manual.amount}
+            onChange={(e) => setManual({ ...manual, amount: e.target.value })}
+          />
+          <Input
+            placeholder="Jeton cadeau (optionnel)"
+            value={manual.token}
+            onChange={(e) => setManual({ ...manual, token: e.target.value })}
+          />
         </div>
         <Button
           className="mt-3"
@@ -301,9 +400,14 @@ export function RewardsAdmin() {
       <section className="rounded-2xl border border-border bg-card p-6">
         <h3 className="font-display text-xl">Commissions</h3>
         <div className="mt-4 space-y-2">
-          {(commissions.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Aucune commission enregistrée.</p>}
+          {(commissions.data ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground">Aucune commission enregistrée.</p>
+          )}
           {(commissions.data ?? []).map((c) => (
-            <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            <div
+              key={c.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
+            >
               <div>
                 <p className="text-sm font-medium">
                   {c.network} · {formatCents(c.commission_amount_cents)}
@@ -313,7 +417,15 @@ export function RewardsAdmin() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={c.status === "CONFIRMED" ? "default" : c.status === "CANCELLED" ? "outline" : "secondary"}>
+                <Badge
+                  variant={
+                    c.status === "CONFIRMED"
+                      ? "default"
+                      : c.status === "CANCELLED"
+                        ? "outline"
+                        : "secondary"
+                  }
+                >
                   {c.status}
                 </Badge>
                 {c.status !== "CONFIRMED" && (
@@ -351,12 +463,15 @@ export function RewardsAdmin() {
         <h3 className="font-display text-xl">Portefeuilles</h3>
         <div className="mt-4 space-y-2">
           {(wallets.data ?? []).map((w) => (
-            <div key={w.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            <div
+              key={w.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
+            >
               <div>
                 <p className="text-sm font-medium">{w.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  Disponible {formatCents(w.availableCents)} · En attente {formatCents(w.pendingCents)} · Cumul{" "}
-                  {formatCents(w.lifetimeEarnedCents)}
+                  Disponible {formatCents(w.availableCents)} · En attente{" "}
+                  {formatCents(w.pendingCents)} · Cumul {formatCents(w.lifetimeEarnedCents)}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -377,9 +492,21 @@ export function RewardsAdmin() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-4">
-          <Input placeholder="ID de liste" value={adjustment.registryId} onChange={(e) => setAdjustment({ ...adjustment, registryId: e.target.value })} />
-          <Input placeholder="Montant (12,50 ou -12,50)" value={adjustment.amount} onChange={(e) => setAdjustment({ ...adjustment, amount: e.target.value })} />
-          <Input placeholder="Motif" value={adjustment.reason} onChange={(e) => setAdjustment({ ...adjustment, reason: e.target.value })} />
+          <Input
+            placeholder="ID de liste"
+            value={adjustment.registryId}
+            onChange={(e) => setAdjustment({ ...adjustment, registryId: e.target.value })}
+          />
+          <Input
+            placeholder="Montant (12,50 ou -12,50)"
+            value={adjustment.amount}
+            onChange={(e) => setAdjustment({ ...adjustment, amount: e.target.value })}
+          />
+          <Input
+            placeholder="Motif"
+            value={adjustment.reason}
+            onChange={(e) => setAdjustment({ ...adjustment, reason: e.target.value })}
+          />
           <Button
             variant="secondary"
             onClick={async () => {
@@ -408,14 +535,21 @@ export function RewardsAdmin() {
       <section className="rounded-2xl border border-border bg-card p-6">
         <h3 className="font-display text-xl">Demandes d'utilisation</h3>
         <div className="mt-4 space-y-2">
-          {(redemptions.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Aucune demande.</p>}
+          {(redemptions.data ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground">Aucune demande.</p>
+          )}
           {(redemptions.data ?? []).map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            <div
+              key={r.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
+            >
               <div>
                 <p className="text-sm font-medium">
                   {r.type} · {formatCents(r.amount_cents)}
                 </p>
-                <p className="text-xs text-muted-foreground">{new Date(r.requested_at).toLocaleDateString("fr-BE")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(r.requested_at).toLocaleDateString("fr-BE")}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{r.status}</Badge>
@@ -453,18 +587,27 @@ export function RewardsAdmin() {
       <section className="rounded-2xl border border-border bg-card p-6">
         <h3 className="font-display text-xl">Parrainages</h3>
         <div className="mt-4 space-y-2">
-          {(referrals.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Aucun parrainage.</p>}
+          {(referrals.data ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground">Aucun parrainage.</p>
+          )}
           {(referrals.data ?? []).map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            <div
+              key={r.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
+            >
               <div>
                 <p className="text-sm font-medium">Code {r.code}</p>
                 <p className="text-xs text-muted-foreground">
                   {new Date(r.created_at).toLocaleDateString("fr-BE")} · signaux :{" "}
-                  {Array.isArray(r.risk_signals) && r.risk_signals.length ? r.risk_signals.join(", ") : "aucun"}
+                  {Array.isArray(r.risk_signals) && r.risk_signals.length
+                    ? r.risk_signals.join(", ")
+                    : "aucun"}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={r.needs_review ? "destructive" : "outline"}>{r.needs_review ? "À vérifier" : r.status}</Badge>
+                <Badge variant={r.needs_review ? "destructive" : "outline"}>
+                  {r.needs_review ? "À vérifier" : r.status}
+                </Badge>
                 {r.needs_review && (
                   <>
                     <Button

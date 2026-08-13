@@ -97,7 +97,16 @@ export const inviteCoParent = createServerFn({ method: "POST" })
 export const acceptInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ token: z.string().trim().min(32).max(128).regex(/^[a-f0-9]+$/i) }).parse(data),
+    z
+      .object({
+        token: z
+          .string()
+          .trim()
+          .min(32)
+          .max(128)
+          .regex(/^[a-f0-9]+$/i),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { sha256Hex } = await import("./server-utils.server");
@@ -112,7 +121,8 @@ export const acceptInvitation = createServerFn({ method: "POST" })
 
     if (!invitation) return { state: "invalid" as const };
     if (invitation.accepted_at) return { state: "already_used" as const };
-    if (new Date(invitation.expires_at).getTime() < Date.now()) return { state: "expired" as const };
+    if (new Date(invitation.expires_at).getTime() < Date.now())
+      return { state: "expired" as const };
 
     const { error } = await supabaseAdmin
       .from("list_members")

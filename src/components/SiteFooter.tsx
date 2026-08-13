@@ -8,7 +8,14 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-14">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <img src={markAsset.url} alt="" width={512} height={512} loading="lazy" className="h-10 w-10" />
+            <img
+              src={markAsset.url}
+              alt=""
+              width={512}
+              height={512}
+              loading="lazy"
+              className="h-10 w-10"
+            />
             <p className="font-display mt-3 text-lg">Mila</p>
             <p className="mt-2 text-sm text-muted-foreground">
               Les listes de naissance, en toute liberté. ❤️
@@ -106,8 +113,8 @@ export function SiteFooter() {
         </div>
 
         <p className="mt-12 text-xs text-muted-foreground">
-          Mila est un service indépendant. Les marques citées (Amazon, IKEA, Vertbaudet…) le sont uniquement à
-          titre d'exemple et ne sont pas partenaires de Mila.
+          Mila est un service indépendant. Les marques citées (Amazon, IKEA, Vertbaudet…) le sont
+          uniquement à titre d'exemple et ne sont pas partenaires de Mila.
         </p>
       </div>
     </footer>

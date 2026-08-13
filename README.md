@@ -1,29 +1,44 @@
-# Welcome to your Lovable project
+# Mila
 
-This project was built with [Lovable](https://lovable.dev).
+Mila is a universal, family-friendly gift-list platform. This repository is being migrated from its exported prototype to a fully self-hosted architecture with a TanStack/React frontend, a versioned Node.js API, remote MySQL, Redis, workers, and S3-compatible storage.
 
-## Build with Lovable
+The complete execution checklist is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md). The exported-code audit and migration design are in [`MIGRATION_FROM_LOVABLE.md`](MIGRATION_FROM_LOVABLE.md).
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+## Current migration state
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+The Lovable build preset, runtime auth bridge, preview metadata, and error-reporting hook have been removed. Supabase remains temporarily connected while its auth/data/storage features are replaced stage by stage; it is not part of the target architecture.
+
+Do not use the migration branch as production until the stage journal marks the required technical and product stages complete.
+
+## Requirements
+
+- Node.js 22.12 or newer
+- npm 11 or newer
+- environment values copied from `.env.example`
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm ci
 npm run dev
 ```
 
-## Built with
+The development server listens on port 8080 by default.
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+## Validation
+
+```sh
+npm run check
+```
+
+Individual commands are available for secret scanning, formatting, linting, type checking, unit tests, and the production build.
+
+## Environment safety
+
+Real `.env` files, keys, certificates, and credentials are ignored. Only `*.example` templates may be committed. Unknown values must remain `A_REMPLIR`.
+
+Public URLs are environment-driven. Local and staging builds are non-indexable by default; production indexing must be explicitly enabled.
+
+## Git and Lovable history
+
+This repository is connected to Lovable for synchronization of pushed commits. Never rewrite published history: no force push, and no rebase/amend/squash of commits already pushed.

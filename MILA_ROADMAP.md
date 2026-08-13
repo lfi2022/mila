@@ -11,7 +11,7 @@
 > copier leur identité, les simplifier, les améliorer et les réunir dans
 > une expérience Mila cohérente.
 
-------------------------------------------------------------------------
+---
 
 ## 0. Vision
 
@@ -26,27 +26,26 @@ naissance.**
 
 Mila doit progressivement réunir :
 
--   liste universelle multi-enseignes ;
--   cadeaux ajoutés par URL ou manuellement ;
--   réservation sans compte pour les proches ;
--   cadeaux neufs, d'occasion, services et cadeaux libres ;
--   participations financières ;
--   cagnotte/contributions via Mollie ;
--   récompenses Mila financées par les revenus réels de la plateforme ;
--   comparaison de prix ;
--   suivi des prix ;
--   messages, voix et vidéos ;
--   remerciements ;
--   livre souvenir ;
--   co-parents ;
--   confidentialité avancée ;
--   parrainage ;
--   SEO éditorial ;
--   partenaires ;
--   réutilisation pour anniversaires, Noël et autres événements.
+- liste universelle multi-enseignes ;
+- cadeaux ajoutés par URL ou manuellement ;
+- réservation sans compte pour les proches ;
+- cadeaux neufs, d'occasion, services et cadeaux libres ;
+- participations financières ;
+- cagnotte/contributions via Mollie ;
+- récompenses Mila financées par les revenus réels de la plateforme ;
+- comparaison de prix ;
+- suivi des prix ;
+- messages, voix et vidéos ;
+- remerciements ;
+- livre souvenir ;
+- co-parents ;
+- confidentialité avancée ;
+- parrainage ;
+- SEO éditorial ;
+- partenaires ;
+- réutilisation pour anniversaires, Noël et autres événements.
 
-------------------------------------------------------------------------
-
+---
 
 ---
 
@@ -173,7 +172,6 @@ Créer une abstraction/remplacement lorsque nécessaire.
 
 ---
 
-
 # B2. Audit d'architecture frontend — éviter le monolithe
 
 Avant de créer ou connecter le nouveau backend, auditer la structure frontend exportée depuis Lovable.
@@ -294,7 +292,6 @@ avec :
 - priorité ;
 - refactor proposé ;
 - stage cible.
-
 
 # C. Suppression complète de Supabase
 
@@ -487,7 +484,6 @@ Le frontend ne doit jamais se connecter directement à PostgreSQL.
 
 ---
 
-
 # F2. Versionnement des routes API
 
 Le backend Mila doit utiliser un versionnement explicite des routes dès le départ.
@@ -621,7 +617,6 @@ feat(api-v1): add merchant price refresh endpoint
 feat(api-v2): introduce revised contribution model
 chore(api-v1): deprecate legacy contribution endpoint
 ```
-
 
 # G. Authentification Mila
 
@@ -1071,7 +1066,6 @@ Il doit contenir :
 
 Après migration, un développeur doit pouvoir cloner Mila sur une machine neuve et lancer le projet sans compte Lovable et sans compte Supabase.
 
-
 # 1. Principes produit non négociables
 
 ## 1.1 Simplicité
@@ -1100,17 +1094,17 @@ Mila ne doit pas enfermer les parents dans un magasin.
 
 Une liste peut mélanger :
 
--   Amazon ;
--   IKEA ;
--   boutiques bébé ;
--   artisans ;
--   seconde main ;
--   produits sans URL ;
--   services ;
--   participations ;
--   expériences ;
--   cadeaux déjà possédés mais pour lesquels une contribution est
-    souhaitée.
+- Amazon ;
+- IKEA ;
+- boutiques bébé ;
+- artisans ;
+- seconde main ;
+- produits sans URL ;
+- services ;
+- participations ;
+- expériences ;
+- cadeaux déjà possédés mais pour lesquels une contribution est
+  souhaitée.
 
 ## 1.3 Confiance
 
@@ -1132,17 +1126,17 @@ Les récompenses liées à l'affiliation doivent provenir d'une **valeur
 
 Aucune donnée fictive dans les dashboards de production :
 
--   pas de faux utilisateurs ;
--   pas de faux revenus ;
--   pas de faux avis ;
--   pas de fausses réservations ;
--   pas de faux partenaires ;
--   pas de faux achats.
+- pas de faux utilisateurs ;
+- pas de faux revenus ;
+- pas de faux avis ;
+- pas de fausses réservations ;
+- pas de faux partenaires ;
+- pas de faux achats.
 
 Les données de démonstration doivent être explicitement identifiées
 comme telles.
 
-------------------------------------------------------------------------
+---
 
 # 2. Positionnement
 
@@ -1178,7 +1172,7 @@ Possibilité d'accepter des cadeaux d'occasion.
 Messages, souvenirs, remerciements et transformation de la liste en
 événement futur.
 
-------------------------------------------------------------------------
+---
 
 # 3. Architecture fonctionnelle cible
 
@@ -1186,45 +1180,45 @@ Messages, souvenirs, remerciements et transformation de la liste en
 
 Rôles plateforme :
 
--   `USER`
--   `MODERATOR`
--   `ADMIN`
--   `SUPER_ADMIN`
+- `USER`
+- `MODERATOR`
+- `ADMIN`
+- `SUPER_ADMIN`
 
 Rôles sur une liste :
 
--   `OWNER`
--   `CO_OWNER`
--   `EDITOR`
+- `OWNER`
+- `CO_OWNER`
+- `EDITOR`
 
 Entités conceptuelles :
 
--   `User`
--   `List`
--   `ListMember`
--   `Gift`
--   `GiftReservation`
--   `GiftContribution`
--   `Merchant`
--   `MerchantOffer`
--   `AffiliateClick`
--   `AffiliateCommission`
--   `RewardWallet`
--   `RewardTransaction`
--   `RewardRedemption`
--   `Referral`
--   `Partner`
--   `PartnerCampaign`
--   `Payment`
--   `Refund`
--   `Message`
--   `MediaMessage`
--   `Notification`
--   `ThankYou`
--   `Report`
--   `AdminAuditLog`
+- `User`
+- `List`
+- `ListMember`
+- `Gift`
+- `GiftReservation`
+- `GiftContribution`
+- `Merchant`
+- `MerchantOffer`
+- `AffiliateClick`
+- `AffiliateCommission`
+- `RewardWallet`
+- `RewardTransaction`
+- `RewardRedemption`
+- `Referral`
+- `Partner`
+- `PartnerCampaign`
+- `Payment`
+- `Refund`
+- `Message`
+- `MediaMessage`
+- `Notification`
+- `ThankYou`
+- `Report`
+- `AdminAuditLog`
 
-------------------------------------------------------------------------
+---
 
 # 4. Phase 0 --- Audit et durcissement de l'existant
 
@@ -1234,74 +1228,74 @@ Avant d'ajouter des fonctionnalités, auditer l'application actuelle.
 
 ## Backend
 
--   [ ] Inventorier toutes les routes API.
--   [ ] Identifier les routes publiques.
--   [ ] Identifier les routes authentifiées.
--   [ ] Identifier les routes administrateur.
--   [ ] Vérifier les contrôles d'autorisation côté serveur.
--   [ ] Vérifier qu'un utilisateur ne peut jamais lire/modifier la liste
-    d'un autre.
--   [ ] Vérifier les contrôles `OWNER`, `CO_OWNER`, `EDITOR`.
--   [ ] Auditer les validations.
--   [ ] Auditer les erreurs.
--   [ ] Auditer les logs.
--   [ ] Vérifier le rate limiting.
--   [ ] Vérifier la protection brute-force.
--   [ ] Vérifier CSRF si applicable.
--   [ ] Vérifier CORS.
--   [ ] Vérifier les headers de sécurité.
--   [ ] Vérifier la gestion des secrets.
--   [ ] Vérifier les uploads.
--   [ ] Vérifier les MIME types.
--   [ ] Vérifier les limites de taille.
--   [ ] Vérifier les tokens temporaires.
--   [ ] Vérifier l'expiration des tokens.
--   [ ] Vérifier l'idempotence des actions financières.
+- [ ] Inventorier toutes les routes API.
+- [ ] Identifier les routes publiques.
+- [ ] Identifier les routes authentifiées.
+- [ ] Identifier les routes administrateur.
+- [ ] Vérifier les contrôles d'autorisation côté serveur.
+- [ ] Vérifier qu'un utilisateur ne peut jamais lire/modifier la liste
+      d'un autre.
+- [ ] Vérifier les contrôles `OWNER`, `CO_OWNER`, `EDITOR`.
+- [ ] Auditer les validations.
+- [ ] Auditer les erreurs.
+- [ ] Auditer les logs.
+- [ ] Vérifier le rate limiting.
+- [ ] Vérifier la protection brute-force.
+- [ ] Vérifier CSRF si applicable.
+- [ ] Vérifier CORS.
+- [ ] Vérifier les headers de sécurité.
+- [ ] Vérifier la gestion des secrets.
+- [ ] Vérifier les uploads.
+- [ ] Vérifier les MIME types.
+- [ ] Vérifier les limites de taille.
+- [ ] Vérifier les tokens temporaires.
+- [ ] Vérifier l'expiration des tokens.
+- [ ] Vérifier l'idempotence des actions financières.
 
 ## Extraction d'URL / SSRF
 
--   [ ] Autoriser uniquement HTTP/HTTPS.
--   [ ] Bloquer `javascript:`.
--   [ ] Bloquer `data:`.
--   [ ] Bloquer `file:`.
--   [ ] Bloquer localhost.
--   [ ] Bloquer loopback IPv4/IPv6.
--   [ ] Bloquer IP privées.
--   [ ] Bloquer link-local.
--   [ ] Bloquer metadata cloud.
--   [ ] Revalider après chaque redirection HTTP.
--   [ ] Limiter le nombre de redirections.
--   [ ] Limiter la taille téléchargée.
--   [ ] Timeout strict.
--   [ ] User-Agent identifiable.
--   [ ] Parser Open Graph.
--   [ ] Parser JSON-LD Product.
--   [ ] Parser metadata HTML.
--   [ ] Sanitizer HTML.
--   [ ] Ne jamais exécuter le JavaScript distant.
+- [ ] Autoriser uniquement HTTP/HTTPS.
+- [ ] Bloquer `javascript:`.
+- [ ] Bloquer `data:`.
+- [ ] Bloquer `file:`.
+- [ ] Bloquer localhost.
+- [ ] Bloquer loopback IPv4/IPv6.
+- [ ] Bloquer IP privées.
+- [ ] Bloquer link-local.
+- [ ] Bloquer metadata cloud.
+- [ ] Revalider après chaque redirection HTTP.
+- [ ] Limiter le nombre de redirections.
+- [ ] Limiter la taille téléchargée.
+- [ ] Timeout strict.
+- [ ] User-Agent identifiable.
+- [ ] Parser Open Graph.
+- [ ] Parser JSON-LD Product.
+- [ ] Parser metadata HTML.
+- [ ] Sanitizer HTML.
+- [ ] Ne jamais exécuter le JavaScript distant.
 
 ## Réservations
 
--   [ ] Tester deux réservations simultanées.
--   [ ] Empêcher le double booking en base.
--   [ ] Utiliser transaction/contrainte atomique.
--   [ ] Tester annulation.
--   [ ] Tester expiration éventuelle.
--   [ ] Tester passage `AVAILABLE -> RESERVED -> PURCHASED`.
--   [ ] Tester mode surprise.
--   [ ] Tester cadeau masqué après réservation.
+- [ ] Tester deux réservations simultanées.
+- [ ] Empêcher le double booking en base.
+- [ ] Utiliser transaction/contrainte atomique.
+- [ ] Tester annulation.
+- [ ] Tester expiration éventuelle.
+- [ ] Tester passage `AVAILABLE -> RESERVED -> PURCHASED`.
+- [ ] Tester mode surprise.
+- [ ] Tester cadeau masqué après réservation.
 
 ## Admin
 
--   [ ] Aucune sécurité basée uniquement sur l'interface.
--   [ ] Toutes les routes admin vérifient le rôle.
--   [ ] Journaliser les actions sensibles.
--   [ ] Tester escalade de privilèges.
--   [ ] Tester IDOR.
--   [ ] Tester accès aux wallets.
--   [ ] Tester accès aux paiements.
+- [ ] Aucune sécurité basée uniquement sur l'interface.
+- [ ] Toutes les routes admin vérifient le rôle.
+- [ ] Journaliser les actions sensibles.
+- [ ] Tester escalade de privilèges.
+- [ ] Tester IDOR.
+- [ ] Tester accès aux wallets.
+- [ ] Tester accès aux paiements.
 
-------------------------------------------------------------------------
+---
 
 # 5. Phase 1 --- Cœur de Mila irréprochable
 
@@ -1309,51 +1303,51 @@ Avant d'ajouter des fonctionnalités, auditer l'application actuelle.
 
 ## Authentification
 
--   [ ] Inscription.
--   [ ] Connexion.
--   [ ] Déconnexion.
--   [ ] Vérification email.
--   [ ] Mot de passe oublié.
--   [ ] Réinitialisation sécurisée.
--   [ ] Modification profil.
--   [ ] Suppression compte.
--   [ ] Export des données.
+- [ ] Inscription.
+- [ ] Connexion.
+- [ ] Déconnexion.
+- [ ] Vérification email.
+- [ ] Mot de passe oublié.
+- [ ] Réinitialisation sécurisée.
+- [ ] Modification profil.
+- [ ] Suppression compte.
+- [ ] Export des données.
 
 ## Création de liste
 
--   [ ] Nom.
--   [ ] Slug.
--   [ ] Description.
--   [ ] Image de couverture.
--   [ ] Date prévue facultative.
--   [ ] Prénom facultatif.
--   [ ] Type de liste.
--   [ ] Visibilité.
--   [ ] Mode surprise.
--   [ ] Paramètres de réservation.
--   [ ] Paramètres cadeaux réservés.
+- [ ] Nom.
+- [ ] Slug.
+- [ ] Description.
+- [ ] Image de couverture.
+- [ ] Date prévue facultative.
+- [ ] Prénom facultatif.
+- [ ] Type de liste.
+- [ ] Visibilité.
+- [ ] Mode surprise.
+- [ ] Paramètres de réservation.
+- [ ] Paramètres cadeaux réservés.
 
 ## Visibilité
 
--   [ ] `PUBLIC`
--   [ ] `UNLISTED`
--   [ ] `PROTECTED`
+- [ ] `PUBLIC`
+- [ ] `UNLISTED`
+- [ ] `PROTECTED`
 
 Pour `PROTECTED` :
 
--   [ ] code/mot de passe hashé ;
--   [ ] rate limiting ;
--   [ ] cookie/session d'accès temporaire.
+- [ ] code/mot de passe hashé ;
+- [ ] rate limiting ;
+- [ ] cookie/session d'accès temporaire.
 
 ## Co-parent
 
--   [ ] Invitation par email.
--   [ ] Acceptation sécurisée.
--   [ ] `OWNER`.
--   [ ] `CO_OWNER`.
--   [ ] `EDITOR`.
--   [ ] Révocation.
--   [ ] Historique.
+- [ ] Invitation par email.
+- [ ] Acceptation sécurisée.
+- [ ] `OWNER`.
+- [ ] `CO_OWNER`.
+- [ ] `EDITOR`.
+- [ ] Révocation.
+- [ ] Historique.
 
 ## Ajout de cadeau par URL
 
@@ -1363,14 +1357,14 @@ Objectif UX :
 
 Extraire :
 
--   [ ] titre ;
--   [ ] image ;
--   [ ] prix ;
--   [ ] devise ;
--   [ ] marchand ;
--   [ ] description ;
--   [ ] disponibilité si fiable ;
--   [ ] référence produit si détectable.
+- [ ] titre ;
+- [ ] image ;
+- [ ] prix ;
+- [ ] devise ;
+- [ ] marchand ;
+- [ ] description ;
+- [ ] disponibilité si fiable ;
+- [ ] référence produit si détectable.
 
 Toujours permettre correction manuelle.
 
@@ -1378,63 +1372,63 @@ Toujours permettre correction manuelle.
 
 Types :
 
--   [ ] produit ;
--   [ ] service ;
--   [ ] expérience ;
--   [ ] cadeau libre ;
--   [ ] participation ;
--   [ ] cadeau d'occasion accepté.
+- [ ] produit ;
+- [ ] service ;
+- [ ] expérience ;
+- [ ] cadeau libre ;
+- [ ] participation ;
+- [ ] cadeau d'occasion accepté.
 
 ## Liste publique
 
--   [ ] Responsive.
--   [ ] Accessible.
--   [ ] Rapide.
--   [ ] Image de couverture.
--   [ ] Produits.
--   [ ] Marchands.
--   [ ] Prix.
--   [ ] Statut.
--   [ ] Message des parents.
--   [ ] Progression facultative.
--   [ ] Partage.
+- [ ] Responsive.
+- [ ] Accessible.
+- [ ] Rapide.
+- [ ] Image de couverture.
+- [ ] Produits.
+- [ ] Marchands.
+- [ ] Prix.
+- [ ] Statut.
+- [ ] Message des parents.
+- [ ] Progression facultative.
+- [ ] Partage.
 
 ## Réservation sans compte
 
 Demander le minimum :
 
--   [ ] prénom ;
--   [ ] email ;
--   [ ] message facultatif.
+- [ ] prénom ;
+- [ ] email ;
+- [ ] message facultatif.
 
 Créer un token sécurisé permettant :
 
--   [ ] consulter ;
--   [ ] annuler ;
--   [ ] modifier message ;
--   [ ] indiquer acheté.
+- [ ] consulter ;
+- [ ] annuler ;
+- [ ] modifier message ;
+- [ ] indiquer acheté.
 
 ## Emails
 
--   [ ] bienvenue ;
--   [ ] vérification email ;
--   [ ] reset password ;
--   [ ] invitation co-parent ;
--   [ ] réservation ;
--   [ ] annulation ;
--   [ ] cadeau acheté ;
--   [ ] notification parent.
+- [ ] bienvenue ;
+- [ ] vérification email ;
+- [ ] reset password ;
+- [ ] invitation co-parent ;
+- [ ] réservation ;
+- [ ] annulation ;
+- [ ] cadeau acheté ;
+- [ ] notification parent.
 
 ## Partage
 
--   [ ] copier URL ;
--   [ ] QR code ;
--   [ ] WhatsApp ;
--   [ ] email ;
--   [ ] Web Share API ;
--   [ ] Open Graph.
+- [ ] copier URL ;
+- [ ] QR code ;
+- [ ] WhatsApp ;
+- [ ] email ;
+- [ ] Web Share API ;
+- [ ] Open Graph.
 
-------------------------------------------------------------------------
+---
 
 # 6. Phase 2 --- Marchands et affiliation
 
@@ -1442,17 +1436,17 @@ Créer un token sécurisé permettant :
 
 Chaque marchand peut avoir :
 
--   nom ;
--   domaine(s) ;
--   logo ;
--   actif/inactif ;
--   affiliation active ;
--   réseau ;
--   identifiant ;
--   template ;
--   règles ;
--   taux de récompense ;
--   tracking.
+- nom ;
+- domaine(s) ;
+- logo ;
+- actif/inactif ;
+- affiliation active ;
+- réseau ;
+- identifiant ;
+- template ;
+- règles ;
+- taux de récompense ;
+- tracking.
 
 ## Route `/go/:token`
 
@@ -1467,50 +1461,50 @@ Flux :
 
 Sécurité :
 
--   [ ] token opaque ;
--   [ ] destination contrôlée ;
--   [ ] aucune open redirect ;
--   [ ] URL originale conservée ;
--   [ ] tracking respectueux de la vie privée.
+- [ ] token opaque ;
+- [ ] destination contrôlée ;
+- [ ] aucune open redirect ;
+- [ ] URL originale conservée ;
+- [ ] tracking respectueux de la vie privée.
 
 ## AffiliateClick
 
 Conserver uniquement ce qui est utile :
 
--   cadeau ;
--   liste ;
--   marchand ;
--   timestamp ;
--   campagne ;
--   source ;
--   référence anonyme.
+- cadeau ;
+- liste ;
+- marchand ;
+- timestamp ;
+- campagne ;
+- source ;
+- référence anonyme.
 
 ## AffiliateCommission
 
 Prévoir :
 
--   réseau ;
--   externalId ;
--   clickId ;
--   merchantId ;
--   orderReference ;
--   montant commande si disponible ;
--   commission ;
--   devise ;
--   statut ;
--   date ;
--   confirmation ;
--   annulation.
+- réseau ;
+- externalId ;
+- clickId ;
+- merchantId ;
+- orderReference ;
+- montant commande si disponible ;
+- commission ;
+- devise ;
+- statut ;
+- date ;
+- confirmation ;
+- annulation.
 
 Statuts :
 
--   `PENDING`
--   `CONFIRMED`
--   `CANCELLED`
+- `PENDING`
+- `CONFIRMED`
+- `CANCELLED`
 
 Idempotence obligatoire sur les événements externes.
 
-------------------------------------------------------------------------
+---
 
 # 7. Phase 3 --- Récompenses Mila
 
@@ -1527,10 +1521,10 @@ Un wallet par liste.
 
 Afficher :
 
--   disponible ;
--   en attente ;
--   gagné à vie ;
--   utilisé à vie.
+- disponible ;
+- en attente ;
+- gagné à vie ;
+- utilisé à vie.
 
 ## Ledger
 
@@ -1538,20 +1532,20 @@ Chaque mouvement est une transaction.
 
 Types :
 
--   `AFFILIATE_COMMISSION`
--   `REFERRAL`
--   `PREMIUM_PURCHASE`
--   `PARTNER_BONUS`
--   `PROMOTIONAL_BONUS`
--   `REDEMPTION`
--   `ADJUSTMENT`
+- `AFFILIATE_COMMISSION`
+- `REFERRAL`
+- `PREMIUM_PURCHASE`
+- `PARTNER_BONUS`
+- `PROMOTIONAL_BONUS`
+- `REDEMPTION`
+- `ADJUSTMENT`
 
 Statuts :
 
--   `PENDING`
--   `CONFIRMED`
--   `CANCELLED`
--   `EXPIRED`
+- `PENDING`
+- `CONFIRMED`
+- `CANCELLED`
+- `EXPIRED`
 
 ## Calcul
 
@@ -1561,22 +1555,22 @@ Commission Mila : 5,00 € Part parents : 30 % Récompense : 1,50 €
 
 Le taux doit être configurable :
 
--   globalement ;
--   par réseau ;
--   par marchand ;
--   par campagne.
+- globalement ;
+- par réseau ;
+- par marchand ;
+- par campagne.
 
 ## Garde-fous
 
--   [ ] pas de float ;
--   [ ] Decimal ou centimes ;
--   [ ] idempotence ;
--   [ ] audit ;
--   [ ] plafonds ;
--   [ ] aucune récompense \> revenu source sauf bonus explicite ;
--   [ ] annulation possible tant que pending ;
--   [ ] correction d'une transaction confirmée via transaction
-    compensatrice.
+- [ ] pas de float ;
+- [ ] Decimal ou centimes ;
+- [ ] idempotence ;
+- [ ] audit ;
+- [ ] plafonds ;
+- [ ] aucune récompense \> revenu source sauf bonus explicite ;
+- [ ] annulation possible tant que pending ;
+- [ ] correction d'une transaction confirmée via transaction
+      compensatrice.
 
 ## Interface parents
 
@@ -1587,15 +1581,15 @@ explication.
 
 ## Admin
 
--   [ ] coût programme ;
--   [ ] revenu associé ;
--   [ ] marge Mila ;
--   [ ] taux reversé ;
--   [ ] wallets ;
--   [ ] anomalies ;
--   [ ] ajustements audités.
+- [ ] coût programme ;
+- [ ] revenu associé ;
+- [ ] marge Mila ;
+- [ ] taux reversé ;
+- [ ] wallets ;
+- [ ] anomalies ;
+- [ ] ajustements audités.
 
-------------------------------------------------------------------------
+---
 
 # 8. Phase 4 --- Paiements Mollie
 
@@ -1607,9 +1601,9 @@ Deux usages doivent être clairement séparés.
 
 Pour :
 
--   Mila Premium ;
--   produits/services vendus directement par Mila ;
--   éventuellement options payantes.
+- Mila Premium ;
+- produits/services vendus directement par Mila ;
+- éventuellement options payantes.
 
 Utiliser la Payments API Mollie.
 
@@ -1639,48 +1633,48 @@ routage/split des paiements.
 
 Prévoir dans l'architecture :
 
--   `PaymentAccount`
--   `Payment`
--   `PaymentRoute`
--   `Contribution`
--   `Refund`
--   `Chargeback`
+- `PaymentAccount`
+- `Payment`
+- `PaymentRoute`
+- `Contribution`
+- `Refund`
+- `Chargeback`
 
 ## Mollie Connect
 
 Préparer :
 
--   OAuth ;
--   organisation connectée ;
--   onboarding ;
--   statut onboarding ;
--   permissions ;
--   routing ;
--   application fees si le modèle retenu le permet ;
--   webhooks ;
--   refunds ;
--   chargebacks.
+- OAuth ;
+- organisation connectée ;
+- onboarding ;
+- statut onboarding ;
+- permissions ;
+- routing ;
+- application fees si le modèle retenu le permet ;
+- webhooks ;
+- refunds ;
+- chargebacks.
 
 ## Webhooks Mollie
 
 Traiter notamment :
 
--   paiement payé ;
--   paiement pending ;
--   paiement échoué ;
--   paiement expiré ;
--   paiement annulé ;
--   refund ;
--   chargeback.
+- paiement payé ;
+- paiement pending ;
+- paiement échoué ;
+- paiement expiré ;
+- paiement annulé ;
+- refund ;
+- chargeback.
 
 Règles :
 
--   [ ] webhook idempotent ;
--   [ ] ne jamais faire confiance au retour navigateur seul ;
--   [ ] revérifier l'objet auprès de Mollie ;
--   [ ] conserver l'identifiant Mollie ;
--   [ ] journaliser sans secrets ;
--   [ ] résister aux événements reçus dans le désordre.
+- [ ] webhook idempotent ;
+- [ ] ne jamais faire confiance au retour navigateur seul ;
+- [ ] revérifier l'objet auprès de Mollie ;
+- [ ] conserver l'identifiant Mollie ;
+- [ ] journaliser sans secrets ;
+- [ ] résister aux événements reçus dans le désordre.
 
 ## Moyens de paiement
 
@@ -1692,38 +1686,38 @@ particulièrement fluide sur mobile.
 
 ## Refund
 
--   [ ] remboursement complet ;
--   [ ] remboursement partiel ;
--   [ ] état pending ;
--   [ ] échec ;
--   [ ] rapprochement ledger.
+- [ ] remboursement complet ;
+- [ ] remboursement partiel ;
+- [ ] état pending ;
+- [ ] échec ;
+- [ ] rapprochement ledger.
 
 ## Chargeback
 
--   [ ] événement enregistré ;
--   [ ] alerte admin ;
--   [ ] impact comptable ;
--   [ ] impact reward ;
--   [ ] impact contribution ;
--   [ ] journal d'audit.
+- [ ] événement enregistré ;
+- [ ] alerte admin ;
+- [ ] impact comptable ;
+- [ ] impact reward ;
+- [ ] impact contribution ;
+- [ ] journal d'audit.
 
 ## Environnements
 
--   [ ] test ;
--   [ ] production ;
--   [ ] clés séparées ;
--   [ ] aucun secret frontend ;
--   [ ] feature flag `payments`.
+- [ ] test ;
+- [ ] production ;
+- [ ] clés séparées ;
+- [ ] aucun secret frontend ;
+- [ ] feature flag `payments`.
 
-------------------------------------------------------------------------
+---
 
 # 9. Phase 5 --- Contributions financières
 
 Les parents peuvent choisir pour un cadeau :
 
--   achat complet ;
--   contribution partielle ;
--   contribution libre.
+- achat complet ;
+- contribution partielle ;
+- contribution libre.
 
 Exemple :
 
@@ -1731,45 +1725,45 @@ Exemple :
 
 ## Fonctionnalités
 
--   [ ] montant objectif ;
--   [ ] montant reçu ;
--   [ ] montant restant ;
--   [ ] contribution libre ;
--   [ ] contribution anonyme ;
--   [ ] message ;
--   [ ] plusieurs contributeurs ;
--   [ ] clôture automatique à objectif ;
--   [ ] protection dépassement ;
--   [ ] remboursement.
+- [ ] montant objectif ;
+- [ ] montant reçu ;
+- [ ] montant restant ;
+- [ ] contribution libre ;
+- [ ] contribution anonyme ;
+- [ ] message ;
+- [ ] plusieurs contributeurs ;
+- [ ] clôture automatique à objectif ;
+- [ ] protection dépassement ;
+- [ ] remboursement.
 
 ## UX
 
 Un proche doit comprendre clairement :
 
--   à quoi il contribue ;
--   combien ;
--   qui reçoit les fonds ;
--   les éventuels frais ;
--   les conditions.
+- à quoi il contribue ;
+- combien ;
+- qui reçoit les fonds ;
+- les éventuels frais ;
+- les conditions.
 
 ## Administration
 
--   [ ] paiements ;
--   [ ] contributions ;
--   [ ] anomalies ;
--   [ ] remboursements ;
--   [ ] chargebacks ;
--   [ ] rapprochement Mollie.
+- [ ] paiements ;
+- [ ] contributions ;
+- [ ] anomalies ;
+- [ ] remboursements ;
+- [ ] chargebacks ;
+- [ ] rapprochement Mollie.
 
-------------------------------------------------------------------------
+---
 
 # 10. Phase 6 --- Seconde main
 
 Chaque cadeau peut accepter :
 
--   `NEW_ONLY`
--   `SECOND_HAND_ALLOWED`
--   `SECOND_HAND_PREFERRED`
+- `NEW_ONLY`
+- `SECOND_HAND_ALLOWED`
+- `SECOND_HAND_PREFERRED`
 
 Côté parent :
 
@@ -1781,17 +1775,17 @@ Côté proche :
 
 Actions :
 
--   [ ] proposer le sien ;
--   [ ] indiquer état ;
--   [ ] ajouter photo ;
--   [ ] laisser commentaire ;
--   [ ] parent accepte/refuse si nécessaire.
+- [ ] proposer le sien ;
+- [ ] indiquer état ;
+- [ ] ajouter photo ;
+- [ ] laisser commentaire ;
+- [ ] parent accepte/refuse si nécessaire.
 
 Ne pas transformer Mila immédiatement en marketplace de seconde main.
 
 V1 = coordination entre proches et parents.
 
-------------------------------------------------------------------------
+---
 
 # 11. Phase 7 --- Suivi des prix
 
@@ -1799,20 +1793,20 @@ V1 = coordination entre proches et parents.
 
 Stocker :
 
--   giftId ;
--   merchantId ;
--   prix ;
--   devise ;
--   timestamp ;
--   disponibilité.
+- giftId ;
+- merchantId ;
+- prix ;
+- devise ;
+- timestamp ;
+- disponibilité.
 
 ## Affichage
 
--   prix lors de l'ajout ;
--   prix actuel ;
--   baisse ;
--   hausse ;
--   dernière vérification.
+- prix lors de l'ajout ;
+- prix actuel ;
+- baisse ;
+- hausse ;
+- dernière vérification.
 
 ## Alertes
 
@@ -1822,18 +1816,18 @@ Parents :
 
 Feature flags :
 
--   `priceTracking`
--   `priceAlerts`
+- `priceTracking`
+- `priceAlerts`
 
 ## Respect marchand
 
--   fréquence raisonnable ;
--   cache ;
--   API officielle si disponible ;
--   conditions d'utilisation ;
--   ne pas crawler agressivement.
+- fréquence raisonnable ;
+- cache ;
+- API officielle si disponible ;
+- conditions d'utilisation ;
+- ne pas crawler agressivement.
 
-------------------------------------------------------------------------
+---
 
 # 12. Phase 8 --- Comparaison de prix
 
@@ -1842,22 +1836,22 @@ même produit.
 
 Sources possibles :
 
--   GTIN/EAN ;
--   SKU constructeur ;
--   MPN ;
--   marque + modèle ;
--   matching contrôlé.
+- GTIN/EAN ;
+- SKU constructeur ;
+- MPN ;
+- marque + modèle ;
+- matching contrôlé.
 
 ## MerchantOffer
 
--   produit ;
--   marchand ;
--   URL ;
--   prix ;
--   livraison si connue ;
--   stock ;
--   affiliation ;
--   dernière vérification.
+- produit ;
+- marchand ;
+- URL ;
+- prix ;
+- livraison si connue ;
+- stock ;
+- affiliation ;
+- dernière vérification.
 
 ## UX
 
@@ -1879,7 +1873,7 @@ affiliée est meilleure.
 
 La pertinence utilisateur prime.
 
-------------------------------------------------------------------------
+---
 
 # 13. Phase 9 --- Parrainage
 
@@ -1887,52 +1881,52 @@ Chaque parent peut partager un code/lien.
 
 États :
 
--   `PENDING`
--   `QUALIFIED`
--   `REWARDED`
--   `CANCELLED`
+- `PENDING`
+- `QUALIFIED`
+- `REWARDED`
+- `CANCELLED`
 
 Conditions possibles :
 
--   email vérifié ;
--   liste créée ;
--   X cadeaux ;
--   première réservation ;
--   premier achat éligible ;
--   ancienneté.
+- email vérifié ;
+- liste créée ;
+- X cadeaux ;
+- première réservation ;
+- premier achat éligible ;
+- ancienneté.
 
 Anti-fraude :
 
--   pas d'auto-parrainage ;
--   détection multi-comptes ;
--   signaux de risque ;
--   plafond ;
--   revue manuelle.
+- pas d'auto-parrainage ;
+- détection multi-comptes ;
+- signaux de risque ;
+- plafond ;
+- revue manuelle.
 
 Ne pas bannir simplement parce que plusieurs utilisateurs partagent une
 IP.
 
-------------------------------------------------------------------------
+---
 
 # 14. Phase 10 --- Messages et souvenirs
 
 Lors d'une réservation :
 
--   texte ;
--   audio ;
--   vidéo.
+- texte ;
+- audio ;
+- vidéo.
 
 ## Media
 
 Prévoir :
 
--   taille maximale ;
--   formats ;
--   transcodage éventuel ;
--   antivirus/scanning ;
--   stockage privé ;
--   URLs signées ;
--   suppression.
+- taille maximale ;
+- formats ;
+- transcodage éventuel ;
+- antivirus/scanning ;
+- stockage privé ;
+- URLs signées ;
+- suppression.
 
 ## Livre souvenir
 
@@ -1942,42 +1936,43 @@ Après naissance :
 
 Contenu :
 
--   messages ;
--   photos autorisées ;
--   vidéos ;
--   cadeaux ;
--   proches ;
--   souvenirs.
+- messages ;
+- photos autorisées ;
+- vidéos ;
+- cadeaux ;
+- proches ;
+- souvenirs.
 
 Premium potentiel :
 
--   export PDF ;
--   version imprimable ;
--   conservation longue durée ;
--   thèmes.
+- export PDF ;
+- version imprimable ;
+- conservation longue durée ;
+- thèmes.
 
-------------------------------------------------------------------------
+---
 
 # 15. Phase 11 --- Remerciements
 
 Dashboard :
 
-  Proche   Cadeau   Reçu   Message   Remercié
-  -------- -------- ------ --------- ----------
+Proche Cadeau Reçu Message Remercié
+
+---
 
 Fonctions :
 
--   [ ] marquer reçu ;
--   [ ] marquer remercié ;
--   [ ] filtrer non remerciés ;
--   [ ] générer brouillon ;
--   [ ] carte numérique ;
--   [ ] export.
+- [ ] marquer reçu ;
+- [ ] marquer remercié ;
+- [ ] filtrer non remerciés ;
+- [ ] générer brouillon ;
+- [ ] carte numérique ;
+- [ ] export.
 
 Ne pas envoyer automatiquement un message généré sans validation des
 parents.
 
-------------------------------------------------------------------------
+---
 
 # 16. Phase 12 --- Mila Premium
 
@@ -1985,18 +1980,18 @@ Le cœur du produit doit rester excellent gratuitement.
 
 ## Premium potentiel
 
--   thèmes premium ;
--   personnalisation avancée ;
--   galerie ;
--   livre souvenir ;
--   vidéo ;
--   exports ;
--   URL avancée ;
--   statistiques avancées ;
--   options de confidentialité ;
--   conservation prolongée ;
--   absence d'éléments promotionnels ;
--   outils souvenirs.
+- thèmes premium ;
+- personnalisation avancée ;
+- galerie ;
+- livre souvenir ;
+- vidéo ;
+- exports ;
+- URL avancée ;
+- statistiques avancées ;
+- options de confidentialité ;
+- conservation prolongée ;
+- absence d'éléments promotionnels ;
+- outils souvenirs.
 
 ## Pricing à tester
 
@@ -2011,44 +2006,44 @@ Permettre :
 
 > Payer Mila Premium avec mes Récompenses Mila.
 
-------------------------------------------------------------------------
+---
 
 # 17. Phase 13 --- Partenaires
 
 Partenaires pertinents :
 
--   photographes ;
--   boutiques bébé ;
--   créateurs ;
--   faire-part ;
--   puériculture ;
--   vêtements ;
--   décoration ;
--   services familiaux.
+- photographes ;
+- boutiques bébé ;
+- créateurs ;
+- faire-part ;
+- puériculture ;
+- vêtements ;
+- décoration ;
+- services familiaux.
 
 ## Partner
 
--   identité ;
--   contact ;
--   statut ;
--   catégorie ;
--   zone ;
--   contrat ;
--   tracking.
+- identité ;
+- contact ;
+- statut ;
+- catégorie ;
+- zone ;
+- contrat ;
+- tracking.
 
 ## Campaign
 
--   période ;
--   avantage ;
--   budget ;
--   conditions ;
--   attribution ;
--   reward parents ;
--   revenu Mila.
+- période ;
+- avantage ;
+- budget ;
+- conditions ;
+- attribution ;
+- reward parents ;
+- revenu Mila.
 
 Aucun faux partenariat affiché.
 
-------------------------------------------------------------------------
+---
 
 # 18. Phase 14 --- SEO et acquisition organique
 
@@ -2058,51 +2053,51 @@ Créer une vraie plateforme éditoriale.
 
 ### Listes
 
--   liste de naissance ;
--   liste naissance gratuite ;
--   liste multi-enseignes ;
--   que mettre sur une liste ;
--   exemple liste.
+- liste de naissance ;
+- liste naissance gratuite ;
+- liste multi-enseignes ;
+- que mettre sur une liste ;
+- exemple liste.
 
 ### Produits
 
--   meilleure poussette ;
--   meilleur babyphone ;
--   siège auto ;
--   lit bébé ;
--   porte-bébé.
+- meilleure poussette ;
+- meilleur babyphone ;
+- siège auto ;
+- lit bébé ;
+- porte-bébé.
 
 ### Budget
 
--   cadeaux moins de 20 € ;
--   30 € ;
--   50 € ;
--   100 €.
+- cadeaux moins de 20 € ;
+- 30 € ;
+- 50 € ;
+- 100 €.
 
 ### Guides
 
--   indispensables naissance ;
--   erreurs à éviter ;
--   seconde main ;
--   checklist maternité ;
--   préparer arrivée bébé.
+- indispensables naissance ;
+- erreurs à éviter ;
+- seconde main ;
+- checklist maternité ;
+- préparer arrivée bébé.
 
 ## Règles
 
--   contenu utile ;
--   pas de pages SEO vides ;
--   données structurées correctes ;
--   canonical ;
--   sitemap ;
--   Open Graph ;
--   Core Web Vitals ;
--   maillage interne.
+- contenu utile ;
+- pas de pages SEO vides ;
+- données structurées correctes ;
+- canonical ;
+- sitemap ;
+- Open Graph ;
+- Core Web Vitals ;
+- maillage interne.
 
 ## Affiliation éditoriale
 
 Les guides peuvent contenir des liens affiliés, avec transparence.
 
-------------------------------------------------------------------------
+---
 
 # 19. Phase 15 --- Analytics produit
 
@@ -2114,41 +2109,41 @@ Funnel principal :
 
 ## KPIs
 
--   visiteurs ;
--   signup conversion ;
--   listes créées ;
--   activation ;
--   cadeaux/listes ;
--   partages ;
--   visites par liste ;
--   réservations ;
--   GMV observable ;
--   commissions ;
--   revenu/list ;
--   coût récompenses ;
--   marge ;
--   premium conversion ;
--   referral rate ;
--   rétention.
+- visiteurs ;
+- signup conversion ;
+- listes créées ;
+- activation ;
+- cadeaux/listes ;
+- partages ;
+- visites par liste ;
+- réservations ;
+- GMV observable ;
+- commissions ;
+- revenu/list ;
+- coût récompenses ;
+- marge ;
+- premium conversion ;
+- referral rate ;
+- rétention.
 
 ## North Star candidates
 
--   listes ayant reçu au moins une réservation ;
--   valeur de cadeaux activement utilisée ;
--   familles actives.
+- listes ayant reçu au moins une réservation ;
+- valeur de cadeaux activement utilisée ;
+- familles actives.
 
-------------------------------------------------------------------------
+---
 
 # 20. Phase 16 --- Cycle de vie familial
 
 Architecture `List.type` :
 
--   `BIRTH`
--   `BIRTHDAY`
--   `CHRISTENING`
--   `CHRISTMAS`
--   `WEDDING`
--   `OTHER`
+- `BIRTH`
+- `BIRTHDAY`
+- `CHRISTENING`
+- `CHRISTMAS`
+- `WEDDING`
+- `OTHER`
 
 Ne pas afficher tout dès le lancement.
 
@@ -2160,11 +2155,11 @@ Action :
 
 Puis :
 
--   archive souvenir ;
--   remerciements ;
--   livre ;
--   récompenses ;
--   transformer/créer anniversaire.
+- archive souvenir ;
+- remerciements ;
+- livre ;
+- récompenses ;
+- transformer/créer anniversaire.
 
 ## Premier anniversaire
 
@@ -2181,152 +2176,152 @@ Permettre une liste de Noël familiale/enfant.
 Objectif : transformer une acquisition naissance en relation de
 plusieurs années.
 
-------------------------------------------------------------------------
+---
 
 # 21. Phase 17 --- Notifications
 
 Canaux :
 
--   in-app ;
--   email ;
--   push PWA plus tard.
+- in-app ;
+- email ;
+- push PWA plus tard.
 
 Événements :
 
--   réservation ;
--   achat ;
--   contribution ;
--   message ;
--   reward pending ;
--   reward confirmed ;
--   baisse de prix ;
--   co-parent ;
--   parrainage ;
--   anniversaire futur.
+- réservation ;
+- achat ;
+- contribution ;
+- message ;
+- reward pending ;
+- reward confirmed ;
+- baisse de prix ;
+- co-parent ;
+- parrainage ;
+- anniversaire futur.
 
 Préférences granulaires.
 
 Anti-spam et regroupement.
 
-------------------------------------------------------------------------
+---
 
 # 22. Phase 18 --- PWA
 
 Avant une application native :
 
--   manifest ;
--   installable ;
--   icons ;
--   offline minimal ;
--   cache intelligent ;
--   notifications push si utile ;
--   partage natif ;
--   raccourcis.
+- manifest ;
+- installable ;
+- icons ;
+- offline minimal ;
+- cache intelligent ;
+- notifications push si utile ;
+- partage natif ;
+- raccourcis.
 
 N'envisager Android/iOS natif que si les données d'usage le justifient.
 
-------------------------------------------------------------------------
+---
 
 # 23. Phase 19 --- Administration complète
 
 ## Dashboard
 
--   utilisateurs ;
--   listes ;
--   cadeaux ;
--   réservations ;
--   contributions ;
--   paiements ;
--   rewards ;
--   affiliation ;
--   marchands ;
--   partenaires ;
--   signalements ;
--   revenus.
+- utilisateurs ;
+- listes ;
+- cadeaux ;
+- réservations ;
+- contributions ;
+- paiements ;
+- rewards ;
+- affiliation ;
+- marchands ;
+- partenaires ;
+- signalements ;
+- revenus.
 
 ## Utilisateurs
 
--   recherche ;
--   état ;
--   suspension ;
--   historique ;
--   listes ;
--   sécurité.
+- recherche ;
+- état ;
+- suspension ;
+- historique ;
+- listes ;
+- sécurité.
 
 ## Listes
 
--   inspection ;
--   signalements ;
--   suspension ;
--   restauration.
+- inspection ;
+- signalements ;
+- suspension ;
+- restauration.
 
 ## Merchants
 
--   domaines ;
--   affiliation ;
--   rewards ;
--   règles ;
--   statut.
+- domaines ;
+- affiliation ;
+- rewards ;
+- règles ;
+- statut.
 
 ## Payments
 
--   Mollie ID ;
--   état ;
--   montant ;
--   refunds ;
--   chargebacks.
+- Mollie ID ;
+- état ;
+- montant ;
+- refunds ;
+- chargebacks.
 
 ## Rewards
 
--   wallet ;
--   ledger ;
--   source ;
--   ajustement ;
--   anomalies.
+- wallet ;
+- ledger ;
+- source ;
+- ajustement ;
+- anomalies.
 
 ## Audit
 
 Chaque action sensible :
 
--   admin ;
--   action ;
--   cible ;
--   avant/après si approprié ;
--   timestamp ;
--   raison.
+- admin ;
+- action ;
+- cible ;
+- avant/après si approprié ;
+- timestamp ;
+- raison.
 
-------------------------------------------------------------------------
+---
 
 # 24. Phase 20 --- Modération et anti-abus
 
 ## Signalement
 
--   liste ;
--   cadeau ;
--   message ;
--   utilisateur.
+- liste ;
+- cadeau ;
+- message ;
+- utilisateur.
 
 ## Risques
 
--   phishing ;
--   liens malveillants ;
--   spam ;
--   faux produits ;
--   contenu illégal ;
--   fraude paiement ;
--   abus referral ;
--   bot.
+- phishing ;
+- liens malveillants ;
+- spam ;
+- faux produits ;
+- contenu illégal ;
+- fraude paiement ;
+- abus referral ;
+- bot.
 
 ## Outils
 
--   rate limiting ;
--   CAPTCHA adaptatif ;
--   score de risque ;
--   suspension ;
--   revue manuelle ;
--   audit.
+- rate limiting ;
+- CAPTCHA adaptatif ;
+- score de risque ;
+- suspension ;
+- revue manuelle ;
+- audit.
 
-------------------------------------------------------------------------
+---
 
 # 25. Phase 21 --- RGPD et confidentialité
 
@@ -2334,19 +2329,19 @@ Chaque action sensible :
 
 Prévoir :
 
--   privacy by design ;
--   minimisation ;
--   finalités ;
--   consentement ;
--   cookies ;
--   export ;
--   suppression ;
--   rectification ;
--   rétention ;
--   sous-traitants ;
--   journal des traitements ;
--   sécurité ;
--   gestion incident.
+- privacy by design ;
+- minimisation ;
+- finalités ;
+- consentement ;
+- cookies ;
+- export ;
+- suppression ;
+- rectification ;
+- rétention ;
+- sous-traitants ;
+- journal des traitements ;
+- sécurité ;
+- gestion incident.
 
 ## Enfants
 
@@ -2358,27 +2353,27 @@ Prénom/date/photo doivent rester facultatifs lorsque possible.
 
 Expliquer clairement aux parents ce qui sera visible publiquement.
 
-------------------------------------------------------------------------
+---
 
 # 26. Phase 22 --- Pages légales
 
 Avant lancement :
 
--   [ ] mentions légales ;
--   [ ] politique de confidentialité ;
--   [ ] politique cookies ;
--   [ ] CGU ;
--   [ ] conditions Premium ;
--   [ ] conditions Récompenses Mila ;
--   [ ] conditions parrainage ;
--   [ ] informations affiliation ;
--   [ ] conditions contributions/paiements ;
--   [ ] procédure signalement/contact.
+- [ ] mentions légales ;
+- [ ] politique de confidentialité ;
+- [ ] politique cookies ;
+- [ ] CGU ;
+- [ ] conditions Premium ;
+- [ ] conditions Récompenses Mila ;
+- [ ] conditions parrainage ;
+- [ ] informations affiliation ;
+- [ ] conditions contributions/paiements ;
+- [ ] procédure signalement/contact.
 
 Faire valider les flux financiers et conditions correspondantes par un
 professionnel compétent avant activation réelle.
 
-------------------------------------------------------------------------
+---
 
 # 27. Phase 23 --- Observabilité
 
@@ -2386,82 +2381,82 @@ professionnel compétent avant activation réelle.
 
 Logs structurés :
 
--   request ID ;
--   user ID pseudonymisé si utile ;
--   action ;
--   erreur ;
--   durée.
+- request ID ;
+- user ID pseudonymisé si utile ;
+- action ;
+- erreur ;
+- durée.
 
 Jamais :
 
--   mots de passe ;
--   API keys ;
--   tokens complets ;
--   données bancaires.
+- mots de passe ;
+- API keys ;
+- tokens complets ;
+- données bancaires.
 
 ## Monitoring
 
--   uptime ;
--   erreurs 5xx ;
--   latence ;
--   queue ;
--   email ;
--   scraper ;
--   webhooks ;
--   Mollie ;
--   DB ;
--   stockage.
+- uptime ;
+- erreurs 5xx ;
+- latence ;
+- queue ;
+- email ;
+- scraper ;
+- webhooks ;
+- Mollie ;
+- DB ;
+- stockage.
 
 ## Alertes
 
--   paiement incohérent ;
--   webhook en échec ;
--   queue bloquée ;
--   extraction massive ;
--   erreurs auth ;
--   taux 5xx ;
--   chargeback.
+- paiement incohérent ;
+- webhook en échec ;
+- queue bloquée ;
+- extraction massive ;
+- erreurs auth ;
+- taux 5xx ;
+- chargeback.
 
-------------------------------------------------------------------------
+---
 
 # 28. Phase 24 --- Jobs et workers
 
 Créer des workers pour :
 
--   extraction produit ;
--   refresh prix ;
--   email ;
--   notifications ;
--   traitement webhooks ;
--   affiliation ;
--   rewards ;
--   génération médias ;
--   nettoyage tokens ;
--   expiration ;
--   analytics.
+- extraction produit ;
+- refresh prix ;
+- email ;
+- notifications ;
+- traitement webhooks ;
+- affiliation ;
+- rewards ;
+- génération médias ;
+- nettoyage tokens ;
+- expiration ;
+- analytics.
 
 Les tâches lentes ne doivent pas bloquer les requêtes HTTP.
 
-------------------------------------------------------------------------
+---
 
 # 29. Phase 25 --- Tests
 
 ## Unit
 
--   rewards ;
--   prix ;
--   permissions ;
--   parsing ;
--   statut réservation ;
--   calcul financier.
+- rewards ;
+- prix ;
+- permissions ;
+- parsing ;
+- statut réservation ;
+- calcul financier.
 
 ## Integration
 
--   DB ;
--   Mollie test ;
--   webhooks ;
--   email ;
--   storage.
+- DB ;
+- Mollie test ;
+- webhooks ;
+- email ;
+- storage.
 
 ## E2E
 
@@ -2483,70 +2478,70 @@ connexion → recherche → action → audit.
 
 ## Sécurité
 
--   IDOR ;
--   SSRF ;
--   XSS ;
--   injections ;
--   upload ;
--   privilege escalation ;
--   brute-force ;
--   open redirect ;
--   replay webhook.
+- IDOR ;
+- SSRF ;
+- XSS ;
+- injections ;
+- upload ;
+- privilege escalation ;
+- brute-force ;
+- open redirect ;
+- replay webhook.
 
-------------------------------------------------------------------------
+---
 
 # 30. Phase 26 --- Performance
 
 Objectifs :
 
--   landing rapide ;
--   liste publique rapide ;
--   images optimisées ;
--   CDN ;
--   cache ;
--   pagination ;
--   indexes DB ;
--   queues ;
--   compression.
+- landing rapide ;
+- liste publique rapide ;
+- images optimisées ;
+- CDN ;
+- cache ;
+- pagination ;
+- indexes DB ;
+- queues ;
+- compression.
 
 Surveiller Core Web Vitals.
 
-------------------------------------------------------------------------
+---
 
 # 31. Phase 27 --- Accessibilité
 
--   contraste ;
--   clavier ;
--   focus ;
--   labels ;
--   ARIA ;
--   alt ;
--   formulaires ;
--   erreurs compréhensibles ;
--   taille zones tactiles.
+- contraste ;
+- clavier ;
+- focus ;
+- labels ;
+- ARIA ;
+- alt ;
+- formulaires ;
+- erreurs compréhensibles ;
+- taille zones tactiles.
 
 Mila doit rester utilisable par des proches peu techniques.
 
-------------------------------------------------------------------------
+---
 
 # 32. Phase 28 --- Expérimentations business
 
 Tester sans détériorer la confiance :
 
--   wording hero ;
--   CTA ;
--   onboarding ;
--   nombre d'étapes ;
--   Premium ;
--   reward messaging ;
--   referral ;
--   partenaires.
+- wording hero ;
+- CTA ;
+- onboarding ;
+- nombre d'étapes ;
+- Premium ;
+- reward messaging ;
+- referral ;
+- partenaires.
 
 Toujours mesurer.
 
 Ne pas optimiser uniquement le clic : optimiser l'activation réelle.
 
-------------------------------------------------------------------------
+---
 
 # 33. Phase 29 --- Lancement géographique
 
@@ -2556,9 +2551,9 @@ Belgique francophone.
 
 Avantages :
 
--   terrain de test maîtrisable ;
--   Bancontact/usage européen ;
--   partenariats locaux possibles.
+- terrain de test maîtrisable ;
+- Bancontact/usage européen ;
+- partenariats locaux possibles.
 
 ## Étape 2
 
@@ -2574,56 +2569,56 @@ France.
 
 Adapter :
 
--   moyens de paiement ;
--   marchands ;
--   partenaires ;
--   législation ;
--   langue ;
--   SEO.
+- moyens de paiement ;
+- marchands ;
+- partenaires ;
+- législation ;
+- langue ;
+- SEO.
 
-------------------------------------------------------------------------
+---
 
 # 34. Phase 30 --- Stratégie partenaires locale
 
 Approcher :
 
--   sages-femmes ;
--   photographes ;
--   boutiques indépendantes ;
--   baby planners ;
--   créateurs ;
--   magasins de puériculture.
+- sages-femmes ;
+- photographes ;
+- boutiques indépendantes ;
+- baby planners ;
+- créateurs ;
+- magasins de puériculture.
 
 Créer :
 
--   QR partenaire ;
--   landing personnalisée ;
--   code attribution ;
--   dashboard partenaire plus tard.
+- QR partenaire ;
+- landing personnalisée ;
+- code attribution ;
+- dashboard partenaire plus tard.
 
 Exemple :
 
 `mila.be/p/photographe-x`
 
-------------------------------------------------------------------------
+---
 
 # 35. Ce que Mila ne doit PAS faire trop tôt
 
--   [ ] application native ;
--   [ ] réseau social ;
--   [ ] marketplace complète de seconde main ;
--   [ ] IA ajoutée partout ;
--   [ ] dizaines d'outils grossesse sans cohérence ;
--   [ ] expansion internationale prématurée ;
--   [ ] crypto ;
--   [ ] wallet bancaire maison ;
--   [ ] stockage manuel de fonds tiers hors modèle PSP validé.
+- [ ] application native ;
+- [ ] réseau social ;
+- [ ] marketplace complète de seconde main ;
+- [ ] IA ajoutée partout ;
+- [ ] dizaines d'outils grossesse sans cohérence ;
+- [ ] expansion internationale prématurée ;
+- [ ] crypto ;
+- [ ] wallet bancaire maison ;
+- [ ] stockage manuel de fonds tiers hors modèle PSP validé.
 
-------------------------------------------------------------------------
+---
 
 # 36. Feature flags recommandés
 
-``` text
+```text
 rewards
 affiliateRewards
 referralRewards
@@ -2655,7 +2650,7 @@ familyEvents
 pwaPush
 ```
 
-------------------------------------------------------------------------
+---
 
 # 37. Variables d'environnement --- principe
 
@@ -2663,7 +2658,7 @@ Créer `.env.example`.
 
 Catégories :
 
-``` text
+```text
 APP_*
 DATABASE_*
 AUTH_*
@@ -2681,7 +2676,7 @@ Aucun secret réel dans Git.
 Pour Mollie, prévoir les variables nécessaires selon l'intégration
 réellement retenue, sans inventer les secrets.
 
-------------------------------------------------------------------------
+---
 
 # 38. Modèle financier
 
@@ -2697,30 +2692,30 @@ réellement retenue, sans inventer les secrets.
 
 ## Dépenses
 
--   hébergement ;
--   email ;
--   stockage vidéo ;
--   scraping/price tracking ;
--   Mollie ;
--   refunds/chargebacks ;
--   rewards ;
--   marketing ;
--   support ;
--   juridique.
+- hébergement ;
+- email ;
+- stockage vidéo ;
+- scraping/price tracking ;
+- Mollie ;
+- refunds/chargebacks ;
+- rewards ;
+- marketing ;
+- support ;
+- juridique.
 
 ## Métriques financières
 
--   revenu moyen/liste ;
--   revenu affilié/liste ;
--   coût reward/liste ;
--   marge contribution ;
--   coût paiement ;
--   CAC ;
--   LTV ;
--   Premium conversion ;
--   partner revenue.
+- revenu moyen/liste ;
+- revenu affilié/liste ;
+- coût reward/liste ;
+- marge contribution ;
+- coût paiement ;
+- CAC ;
+- LTV ;
+- Premium conversion ;
+- partner revenue.
 
-------------------------------------------------------------------------
+---
 
 # 39. Règles de priorité
 
@@ -2738,7 +2733,7 @@ Score suggéré :
 
 `Impact × Confiance ÷ Effort`
 
-------------------------------------------------------------------------
+---
 
 # 40. Jalons
 
@@ -2748,34 +2743,34 @@ Landing + démonstration.
 
 ## M1 --- Alpha privée
 
--   auth ;
--   listes ;
--   cadeaux ;
--   réservation ;
--   partage.
+- auth ;
+- listes ;
+- cadeaux ;
+- réservation ;
+- partage.
 
 ## M2 --- Bêta fermée
 
--   sécurité renforcée ;
--   emails ;
--   co-parent ;
--   confidentialité ;
--   admin ;
--   analytics.
+- sécurité renforcée ;
+- emails ;
+- co-parent ;
+- confidentialité ;
+- admin ;
+- analytics.
 
 ## M3 --- Bêta publique Belgique
 
--   affiliation initiale ;
--   merchants ;
--   `/go/` ;
--   premières métriques ;
--   support.
+- affiliation initiale ;
+- merchants ;
+- `/go/` ;
+- premières métriques ;
+- support.
 
 ## M4 --- Monétisation
 
--   rewards ;
--   Premium Mollie ;
--   premiers partenaires.
+- rewards ;
+- Premium Mollie ;
+- premiers partenaires.
 
 ## M5 --- Contributions
 
@@ -2783,17 +2778,17 @@ Après validation du modèle Mollie/Connect et juridique.
 
 ## M6 --- Différenciation
 
--   seconde main ;
--   suivi prix ;
--   comparaison.
+- seconde main ;
+- suivi prix ;
+- comparaison.
 
 ## M7 --- Rétention
 
--   remerciements ;
--   souvenirs ;
--   anniversaire/Noël.
+- remerciements ;
+- souvenirs ;
+- anniversaire/Noël.
 
-------------------------------------------------------------------------
+---
 
 # 41. Definition of Done
 
@@ -2801,24 +2796,24 @@ Une fonctionnalité n'est pas terminée parce que l'interface existe.
 
 Elle est terminée si :
 
--   [ ] frontend terminé ;
--   [ ] backend terminé ;
--   [ ] DB/migration terminée ;
--   [ ] validation serveur ;
--   [ ] permissions ;
--   [ ] erreurs ;
--   [ ] loading ;
--   [ ] empty state ;
--   [ ] mobile ;
--   [ ] accessibilité ;
--   [ ] logs ;
--   [ ] tests ;
--   [ ] documentation ;
--   [ ] analytics ;
--   [ ] sécurité ;
--   [ ] feature flag si nécessaire.
+- [ ] frontend terminé ;
+- [ ] backend terminé ;
+- [ ] DB/migration terminée ;
+- [ ] validation serveur ;
+- [ ] permissions ;
+- [ ] erreurs ;
+- [ ] loading ;
+- [ ] empty state ;
+- [ ] mobile ;
+- [ ] accessibilité ;
+- [ ] logs ;
+- [ ] tests ;
+- [ ] documentation ;
+- [ ] analytics ;
+- [ ] sécurité ;
+- [ ] feature flag si nécessaire.
 
-------------------------------------------------------------------------
+---
 
 # 42. Ordre recommandé à partir de maintenant
 
@@ -2867,50 +2862,50 @@ Elle est terminée si :
 29. Luxembourg.
 30. France.
 
-------------------------------------------------------------------------
+---
 
 # 43. Décisions déjà prises
 
--   **Nom : Mila**
--   Liste de naissance comme point d'entrée.
--   Multi-enseignes.
--   Réservation sans compte pour les proches.
--   Architecture générique pour autres événements.
--   Récompenses Mila.
--   Récompenses principalement financées par la valeur réellement
-    générée.
--   Paiements : **Mollie**.
--   Premium : préférence pour paiement ponctuel par événement.
--   Seconde main prévue.
--   Comparaison de prix prévue.
--   Cycle anniversaire/Noël prévu.
--   Admin complet obligatoire.
--   Privacy/security by design.
+- **Nom : Mila**
+- Liste de naissance comme point d'entrée.
+- Multi-enseignes.
+- Réservation sans compte pour les proches.
+- Architecture générique pour autres événements.
+- Récompenses Mila.
+- Récompenses principalement financées par la valeur réellement
+  générée.
+- Paiements : **Mollie**.
+- Premium : préférence pour paiement ponctuel par événement.
+- Seconde main prévue.
+- Comparaison de prix prévue.
+- Cycle anniversaire/Noël prévu.
+- Admin complet obligatoire.
+- Privacy/security by design.
 
-------------------------------------------------------------------------
+---
 
 # 44. Questions à trancher avant production financière
 
--   Quel modèle Mollie exact pour les contributions aux parents ?
--   Les parents devront-ils disposer d'un compte/organisation connecté
-    Mollie ?
--   Mila sera-t-il propriétaire du paiement dans certains flux ?
--   Quel niveau de commission/application fee ?
--   Qui supporte les frais Mollie ?
--   Qui supporte les chargebacks ?
--   Quelle politique de remboursement ?
--   Les Récompenses Mila sont-elles des crédits, bons, remises ou
-    montants retirable ?
--   Durée de validité des rewards ?
--   Minimum d'utilisation ?
--   Traitement comptable et TVA ?
--   Conditions d'affiliation par marchand/réseau ?
--   Durée de conservation des médias souvenirs ?
+- Quel modèle Mollie exact pour les contributions aux parents ?
+- Les parents devront-ils disposer d'un compte/organisation connecté
+  Mollie ?
+- Mila sera-t-il propriétaire du paiement dans certains flux ?
+- Quel niveau de commission/application fee ?
+- Qui supporte les frais Mollie ?
+- Qui supporte les chargebacks ?
+- Quelle politique de remboursement ?
+- Les Récompenses Mila sont-elles des crédits, bons, remises ou
+  montants retirable ?
+- Durée de validité des rewards ?
+- Minimum d'utilisation ?
+- Traitement comptable et TVA ?
+- Conditions d'affiliation par marchand/réseau ?
+- Durée de conservation des médias souvenirs ?
 
 **Ne pas activer les flux financiers complexes avant d'avoir répondu
 clairement à ces questions.**
 
-------------------------------------------------------------------------
+---
 
 # 45. Vision à long terme
 
@@ -2931,20 +2926,20 @@ Mila → achats/contributions → Mila génère du revenu → parents obtiennent
 remerciements/souvenirs → anniversaire → Noël → nouveaux événements →
 nouveaux utilisateurs.
 
-------------------------------------------------------------------------
+---
 
 # 46. Manifeste produit
 
 Mila doit rester :
 
--   simple ;
--   doux ;
--   familial ;
--   transparent ;
--   moderne ;
--   utile ;
--   respectueux ;
--   universel.
+- simple ;
+- doux ;
+- familial ;
+- transparent ;
+- moderne ;
+- utile ;
+- respectueux ;
+- universel.
 
 Chaque fonctionnalité doit renforcer cette identité.
 
@@ -2953,7 +2948,6 @@ Chaque fonctionnalité doit renforcer cette identité.
 Le but est que les parents puissent dire :
 
 > **« Avec Mila, tout était simple. »**
-
 
 ---
 
@@ -3903,8 +3897,6 @@ Un flux paiement n'est pas terminé tant que :
 - [ ] audit ;
 - [ ] comptabilité/CGU vérifiées.
 
-
-
 ---
 
 # W. Base de données SQL déportée — règle d'architecture obligatoire
@@ -3928,7 +3920,6 @@ DATABASE_PASSWORD=...
 Ces valeurs sont uniquement des exemples de structure et ne doivent jamais être codées en dur.
 
 Le vrai host, utilisateur et mot de passe seront fournis via `.env`.
-
 
 La base de données de production de Mila sera **déportée du serveur applicatif**.
 
@@ -4468,8 +4459,6 @@ Avant toute nouvelle fonctionnalité Mila, effectuer désormais dans cet ordre :
 18. poursuivre stage suivant.
 
 **Aucun stage suivant ne doit commencer si le stage précédent laisse le repository dans un état volontairement cassé.**
-
-
 
 ---
 
@@ -5316,4 +5305,3 @@ Puis :
 ```text
 docs(infra): document localhost to dev06 deployment
 ```
-

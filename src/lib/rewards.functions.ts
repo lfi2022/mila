@@ -12,9 +12,11 @@ export const getRewardProgramStatus = createServerFn({ method: "GET" })
     return {
       enabled: settings.enabled && (await isFlagEnabled("rewards")),
       affiliateRewards: settings.affiliate_rewards_enabled,
-      referralRewards: settings.referral_rewards_enabled && (await isFlagEnabled("referralRewards")),
+      referralRewards:
+        settings.referral_rewards_enabled && (await isFlagEnabled("referralRewards")),
       redemptionEnabled: settings.redemption_enabled && (await isFlagEnabled("rewardRedemption")),
-      marketplaceEnabled: settings.marketplace_enabled && (await isFlagEnabled("rewardMarketplace")),
+      marketplaceEnabled:
+        settings.marketplace_enabled && (await isFlagEnabled("rewardMarketplace")),
       bankPayoutEnabled: settings.bank_payout_enabled && (await isFlagEnabled("bankPayout")),
       minRedemptionCents: settings.min_redemption_cents,
       currency: settings.currency,
@@ -28,7 +30,8 @@ export const getListRewards = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ registryId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { admin, assertListMember, ensureWallet, loadSettings, isFlagEnabled } = await import("./rewards.server");
+    const { admin, assertListMember, ensureWallet, loadSettings, isFlagEnabled } =
+      await import("./rewards.server");
     const { summariseLedger } = await import("./money");
     await assertListMember(context.supabase as never, data.registryId, context.userId);
 
@@ -37,10 +40,16 @@ export const getListRewards = createServerFn({ method: "POST" })
     const db = await admin();
 
     const walletId = await ensureWallet(data.registryId);
-    const { data: wallet } = await db.from("reward_wallets").select("*").eq("id", walletId).maybeSingle();
+    const { data: wallet } = await db
+      .from("reward_wallets")
+      .select("*")
+      .eq("id", walletId)
+      .maybeSingle();
     const { data: transactions } = await db
       .from("reward_transactions")
-      .select("id, type, amount_cents, status, description, merchant_id, created_at, confirmed_at, expires_at, metadata")
+      .select(
+        "id, type, amount_cents, status, description, merchant_id, created_at, confirmed_at, expires_at, metadata",
+      )
       .eq("wallet_id", walletId)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -68,7 +77,11 @@ export const getListRewards = createServerFn({ method: "POST" })
 
     // Balances are recomputed from the ledger and compared with the stored ones.
     const recomputed = summariseLedger(
-      (transactions ?? []).map((t) => ({ amount_cents: t.amount_cents, status: t.status, type: t.type })),
+      (transactions ?? []).map((t) => ({
+        amount_cents: t.amount_cents,
+        status: t.status,
+        type: t.type,
+      })),
     );
 
     return {
@@ -99,7 +112,8 @@ export const listRewardOffers = createServerFn({ method: "GET" })
   .handler(async () => {
     const { admin, loadSettings, isFlagEnabled } = await import("./rewards.server");
     const settings = await loadSettings();
-    if (!settings.marketplace_enabled || !(await isFlagEnabled("rewardMarketplace"))) return { enabled: false, offers: [] };
+    if (!settings.marketplace_enabled || !(await isFlagEnabled("rewardMarketplace")))
+      return { enabled: false, offers: [] };
     const db = await admin();
     const { data } = await db
       .from("reward_offers")
@@ -128,27 +142,38 @@ export const requestRewardRedemption = createServerFn({ method: "POST" })
       .object({
         registryId: z.string().uuid(),
         offerId: z.string().uuid().optional(),
-        type: z.enum(["MILA_CREDIT", "PREMIUM", "PARTNER_VOUCHER", "GIFT_CARD", "BANK_PAYOUT"]).default("MILA_CREDIT"),
+        type: z
+          .enum(["MILA_CREDIT", "PREMIUM", "PARTNER_VOUCHER", "GIFT_CARD", "BANK_PAYOUT"])
+          .default("MILA_CREDIT"),
       })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { admin, assertListMember, isFlagEnabled, loadSettings } = await import("./rewards.server");
+    const { admin, assertListMember, isFlagEnabled, loadSettings } =
+      await import("./rewards.server");
     const { formatCents } = await import("./money");
     await assertListMember(context.supabase as never, data.registryId, context.userId);
 
     const settings = await loadSettings();
-    if (!settings.enabled || !settings.redemption_enabled || !(await isFlagEnabled("rewardRedemption"))) {
+    if (
+      !settings.enabled ||
+      !settings.redemption_enabled ||
+      !(await isFlagEnabled("rewardRedemption"))
+    ) {
       throw new Error("L'utilisation des récompenses n'est pas encore disponible.");
     }
-    if (data.type === "BANK_PAYOUT" && (!settings.bank_payout_enabled || !(await isFlagEnabled("bankPayout")))) {
+    if (
+      data.type === "BANK_PAYOUT" &&
+      (!settings.bank_payout_enabled || !(await isFlagEnabled("bankPayout")))
+    ) {
       throw new Error("Le virement bancaire n'est pas encore disponible.");
     }
 
     const db = await admin();
     let amountCents = settings.min_redemption_cents;
     let label = "Crédit Mila";
-    let type: "MILA_CREDIT" | "PREMIUM" | "PARTNER_VOUCHER" | "GIFT_CARD" | "BANK_PAYOUT" = data.type;
+    let type: "MILA_CREDIT" | "PREMIUM" | "PARTNER_VOUCHER" | "GIFT_CARD" | "BANK_PAYOUT" =
+      data.type;
     if (data.offerId) {
       const { data: offer } = await db
         .from("reward_offers")
@@ -156,7 +181,8 @@ export const requestRewardRedemption = createServerFn({ method: "POST" })
         .eq("id", data.offerId)
         .maybeSingle();
       if (!offer || !offer.active) throw new Error("Cet avantage n'est plus disponible.");
-      if (offer.stock !== null && offer.stock <= 0) throw new Error("Cet avantage n'est plus disponible.");
+      if (offer.stock !== null && offer.stock <= 0)
+        throw new Error("Cet avantage n'est plus disponible.");
       amountCents = offer.cost_cents;
       label = offer.title;
       type = offer.type;
@@ -187,10 +213,20 @@ export const requestRewardRedemption = createServerFn({ method: "POST" })
 export const getMyReferral = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { admin, ensureReferralCode, loadSettings, isFlagEnabled } = await import("./rewards.server");
+    const { admin, ensureReferralCode, loadSettings, isFlagEnabled } =
+      await import("./rewards.server");
     const settings = await loadSettings();
-    const enabled = settings.enabled && settings.referral_rewards_enabled && (await isFlagEnabled("referralRewards"));
-    if (!enabled) return { enabled: false, code: null, bonusCents: settings.referral_bonus_cents, referrals: [] };
+    const enabled =
+      settings.enabled &&
+      settings.referral_rewards_enabled &&
+      (await isFlagEnabled("referralRewards"));
+    if (!enabled)
+      return {
+        enabled: false,
+        code: null,
+        bonusCents: settings.referral_bonus_cents,
+        referrals: [],
+      };
 
     const code = await ensureReferralCode(context.userId);
     const db = await admin();
@@ -220,16 +256,23 @@ export const registerReferral = createServerFn({ method: "POST" })
     z.object({ code: z.string().trim().min(4).max(16) }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { admin, loadSettings, referralRiskSignals, evaluateReferral } = await import("./rewards.server");
+    const { admin, loadSettings, referralRiskSignals, evaluateReferral } =
+      await import("./rewards.server");
     const { appOrigin, rateLimit, clientFingerprint } = await import("./server-utils.server");
-    if (!rateLimit(`referral:${clientFingerprint()}`, 10, 3_600_000)) throw new Error("Trop de tentatives.");
+    if (!rateLimit(`referral:${clientFingerprint()}`, 10, 3_600_000))
+      throw new Error("Trop de tentatives.");
 
     const settings = await loadSettings();
-    if (!settings.enabled || !settings.referral_rewards_enabled) return { ok: false, reason: "disabled" };
+    if (!settings.enabled || !settings.referral_rewards_enabled)
+      return { ok: false, reason: "disabled" };
 
     const db = await admin();
     const code = data.code.toUpperCase();
-    const { data: referrer } = await db.from("profiles").select("id").eq("referral_code", code).maybeSingle();
+    const { data: referrer } = await db
+      .from("profiles")
+      .select("id")
+      .eq("referral_code", code)
+      .maybeSingle();
     if (!referrer) return { ok: false, reason: "unknown_code" };
     if (referrer.id === context.userId) return { ok: false, reason: "self_referral" };
 
@@ -243,7 +286,8 @@ export const registerReferral = createServerFn({ method: "POST" })
     const { data: me } = await db.auth.admin.getUserById(context.userId);
     const signals = await referralRiskSignals(referrer.id, context.userId, me?.user?.email ?? null);
     const threshold = Number(
-      (settings.anti_fraud_rules as Record<string, unknown> | null)?.["manual_review_threshold"] ?? 3,
+      (settings.anti_fraud_rules as Record<string, unknown> | null)?.["manual_review_threshold"] ??
+        3,
     );
     const blocking = signals.includes("self_referral") || signals.includes("same_email");
     if (blocking) return { ok: false, reason: "not_eligible" };

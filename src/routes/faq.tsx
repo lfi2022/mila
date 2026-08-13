@@ -1,8 +1,15 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
+import { buildPublicUrl } from "@/config/runtime";
+
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { FAQ_ENTRIES } from "@/lib/faq-content";
 
@@ -18,13 +25,14 @@ export const Route = createFileRoute("/faq")({
       { property: "og:title", content: "Questions fréquentes — Mila" },
       {
         property: "og:description",
-        content: "Gratuité, réservations, confidentialité, récompenses : les réponses aux questions des parents.",
+        content:
+          "Gratuité, réservations, confidentialité, récompenses : les réponses aux questions des parents.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://parent-gift-hub.lovable.app/faq" },
+      { property: "og:url", content: buildPublicUrl("/faq") },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://parent-gift-hub.lovable.app/faq" }],
+    links: [{ rel: "canonical", href: buildPublicUrl("/faq") }],
     scripts: [
       {
         type: "application/ld+json",
@@ -50,14 +58,20 @@ function FaqPage() {
       <main className="mx-auto max-w-3xl px-4 py-16">
         <h1 className="text-4xl">Questions fréquentes</h1>
         <p className="mt-4 text-muted-foreground">
-          Une question qui n'est pas ici ? Écrivez-nous depuis la page <Link to="/contact" className="underline">contact</Link>.
+          Une question qui n'est pas ici ? Écrivez-nous depuis la page{" "}
+          <Link to="/contact" className="underline">
+            contact
+          </Link>
+          .
         </p>
 
         <Accordion type="single" collapsible className="mt-10">
           {FAQ_ENTRIES.map((entry) => (
             <AccordionItem key={entry.question} value={entry.question}>
               <AccordionTrigger className="text-left text-base">{entry.question}</AccordionTrigger>
-              <AccordionContent className="text-sm text-muted-foreground">{entry.answer}</AccordionContent>
+              <AccordionContent className="text-sm text-muted-foreground">
+                {entry.answer}
+              </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>

@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { buildPublicUrl } from "@/config/runtime";
+
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 
@@ -9,15 +11,19 @@ export const Route = createFileRoute("/contact")({
       { title: "Contact — Mila" },
       {
         name: "description",
-        content: "Une question sur votre liste de naissance Mila, vos données ou vos récompenses ? Écrivez-nous.",
+        content:
+          "Une question sur votre liste de naissance Mila, vos données ou vos récompenses ? Écrivez-nous.",
       },
       { property: "og:title", content: "Contact — Mila" },
-      { property: "og:description", content: "Contactez l'équipe Mila pour toute question sur votre liste." },
+      {
+        property: "og:description",
+        content: "Contactez l'équipe Mila pour toute question sur votre liste.",
+      },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://parent-gift-hub.lovable.app/contact" },
+      { property: "og:url", content: buildPublicUrl("/contact") },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://parent-gift-hub.lovable.app/contact" }],
+    links: [{ rel: "canonical", href: buildPublicUrl("/contact") }],
   }),
   component: ContactPage,
 });
@@ -29,8 +35,8 @@ function ContactPage() {
       <main className="mx-auto max-w-2xl px-4 py-16">
         <h1 className="text-4xl">Nous écrire</h1>
         <p className="mt-4 text-muted-foreground">
-          Nous lisons chaque message. Pour une question sur une liste, précisez son lien : cela nous aide à répondre
-          plus vite.
+          Nous lisons chaque message. Pour une question sur une liste, précisez son lien : cela nous
+          aide à répondre plus vite.
         </p>
 
         <div className="surface-card mt-8 space-y-4 p-6 text-sm">
@@ -52,8 +58,8 @@ function ContactPage() {
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
-            Réponse sous quelques jours ouvrés. Ces adresses doivent être confirmées par l'éditeur du site avant la
-            mise en ligne publique.
+            Réponse sous quelques jours ouvrés. Ces adresses doivent être confirmées par l'éditeur
+            du site avant la mise en ligne publique.
           </p>
         </div>
       </main>

@@ -15,7 +15,8 @@ export const Route = createFileRoute("/r/$token")({
       { title: "Ma réservation — Mila" },
       {
         name: "description",
-        content: "Gérez votre réservation de cadeau : confirmez l'achat, modifiez votre message ou annulez.",
+        content:
+          "Gérez votre réservation de cadeau : confirmez l'achat, modifiez votre message ou annulez.",
       },
       { property: "og:title", content: "Ma réservation — Mila" },
       { property: "og:description", content: "Gérez votre réservation de cadeau en un clic." },
@@ -48,7 +49,9 @@ function ReservationPage() {
   const { token } = Route.useParams();
   const router = useRouter();
   const update = useServerFn(updateReservationByToken);
-  const [message, setMessage] = useState(data.state === "ok" ? (data.reservation.message ?? "") : "");
+  const [message, setMessage] = useState(
+    data.state === "ok" ? (data.reservation.message ?? "") : "",
+  );
   const [busy, setBusy] = useState(false);
 
   if (data.state !== "ok") return <Fallback title="Réservation introuvable" />;
@@ -105,14 +108,21 @@ function ReservationPage() {
               onChange={(event) => setMessage(event.target.value)}
               placeholder="Un petit mot doux…"
             />
-            <Button variant="secondary" disabled={busy} onClick={() => run("message", "Message mis à jour")}>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => run("message", "Message mis à jour")}
+            >
               Enregistrer le message
             </Button>
           </div>
 
           <div className="flex flex-wrap gap-3 border-t pt-5">
             {!purchased ? (
-              <Button disabled={busy} onClick={() => run("purchased", "Merci, les parents sont prévenus !")}>
+              <Button
+                disabled={busy}
+                onClick={() => run("purchased", "Merci, les parents sont prévenus !")}
+              >
                 J'ai acheté ce cadeau
               </Button>
             ) : null}

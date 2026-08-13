@@ -1,8 +1,15 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
+import { buildPublicUrl } from "@/config/runtime";
+
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/recompenses/")({
@@ -21,10 +28,10 @@ export const Route = createFileRoute("/recompenses/")({
           "Vos cadeaux peuvent aussi vous faire des cadeaux : comment les commissions d'affiliation peuvent être partagées avec les parents.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://parent-gift-hub.lovable.app/recompenses" },
+      { property: "og:url", content: buildPublicUrl("/recompenses") },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://parent-gift-hub.lovable.app/recompenses" }],
+    links: [{ rel: "canonical", href: buildPublicUrl("/recompenses") }],
     scripts: [
       {
         type: "application/ld+json",
@@ -101,10 +108,13 @@ function RewardsInfoPage() {
       <main>
         <section className="mx-auto max-w-3xl px-4 py-16 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-primary">Récompenses Mila</p>
-          <h1 className="mt-5 text-4xl text-balance-pretty">Vos cadeaux peuvent aussi vous faire des cadeaux. ❤️</h1>
+          <h1 className="mt-5 text-4xl text-balance-pretty">
+            Vos cadeaux peuvent aussi vous faire des cadeaux. ❤️
+          </h1>
           <p className="mx-auto mt-5 max-w-xl text-balance-pretty text-muted-foreground">
-            Certains achats éligibles réalisés depuis votre liste peuvent générer des Récompenses Mila. Lorsque Mila
-            reçoit une commission sur un achat éligible, une partie peut être ajoutée à vos récompenses.
+            Certains achats éligibles réalisés depuis votre liste peuvent générer des Récompenses
+            Mila. Lorsque Mila reçoit une commission sur un achat éligible, une partie peut être
+            ajoutée à vos récompenses.
           </p>
         </section>
 
@@ -130,8 +140,12 @@ function RewardsInfoPage() {
           <Accordion type="single" collapsible className="mt-6">
             {REWARD_FAQ.map((entry) => (
               <AccordionItem key={entry.question} value={entry.question}>
-                <AccordionTrigger className="text-left text-base">{entry.question}</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">{entry.answer}</AccordionContent>
+                <AccordionTrigger className="text-left text-base">
+                  {entry.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground">
+                  {entry.answer}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -139,7 +153,8 @@ function RewardsInfoPage() {
           <div className="surface-card mt-12 space-y-4 p-8 text-center">
             <h2 className="text-2xl">Commencez par votre liste</h2>
             <p className="text-sm text-muted-foreground">
-              Les récompenses sont un bonus : le cœur de Mila reste votre liste, libre et multi-boutiques.
+              Les récompenses sont un bonus : le cœur de Mila reste votre liste, libre et
+              multi-boutiques.
             </p>
             <Button asChild size="lg">
               <Link to="/auth">Créer ma liste gratuitement</Link>

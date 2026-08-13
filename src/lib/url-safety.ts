@@ -39,8 +39,7 @@ function isPrivateIpv6(host: string): boolean {
 }
 
 export type SafeUrlResult =
-  | { ok: true; url: string; hostname: string }
-  | { ok: false; reason: string };
+  { ok: true; url: string; hostname: string } | { ok: false; reason: string };
 
 /** Validates a user-provided external URL (anti-SSRF, anti-javascript:/data:). */
 export function validateExternalUrl(raw: string): SafeUrlResult {
@@ -66,7 +65,12 @@ export function validateExternalUrl(raw: string): SafeUrlResult {
   }
 
   const host = parsed.hostname.toLowerCase();
-  if (!host || BLOCKED_HOSTNAMES.has(host) || host.endsWith(".local") || host.endsWith(".internal")) {
+  if (
+    !host ||
+    BLOCKED_HOSTNAMES.has(host) ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal")
+  ) {
     return { ok: false, reason: "Ce domaine n'est pas autorisé." };
   }
   if (isPrivateIpv4(host) || isPrivateIpv6(host)) {

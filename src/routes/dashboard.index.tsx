@@ -8,7 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
@@ -21,10 +27,14 @@ export const Route = createFileRoute("/dashboard/")({
       { title: "Mes listes de cadeaux — Mila" },
       {
         name: "description",
-        content: "Gérez vos listes de naissance et d'événements, vos cadeaux et les réservations de vos proches.",
+        content:
+          "Gérez vos listes de naissance et d'événements, vos cadeaux et les réservations de vos proches.",
       },
       { property: "og:title", content: "Mes listes de cadeaux — Mila" },
-      { property: "og:description", content: "Tableau de bord parents : cadeaux, réservations et messages reçus." },
+      {
+        property: "og:description",
+        content: "Tableau de bord parents : cadeaux, réservations et messages reçus.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -111,7 +121,11 @@ function DashboardHome() {
         visibility,
         is_public: visibility === "PUBLIC",
       };
-      const { data, error } = await supabase.from("registries").insert(payload).select("id").maybeSingle();
+      const { data, error } = await supabase
+        .from("registries")
+        .insert(payload)
+        .select("id")
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -121,7 +135,8 @@ function DashboardHome() {
       setForm({ title: "", babyName: "", welcome: "", dueDate: "" });
       setOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["registries"] });
-      if (created) void navigate({ to: "/dashboard/$registryId", params: { registryId: created.id } });
+      if (created)
+        void navigate({ to: "/dashboard/$registryId", params: { registryId: created.id } });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -146,7 +161,9 @@ function DashboardHome() {
             Naissance, anniversaire, baptême… ajoutez des cadeaux de n'importe quelle boutique.
           </p>
         </div>
-        <Button onClick={() => setOpen((value) => !value)}>{open ? "Annuler" : "Nouvelle liste"}</Button>
+        <Button onClick={() => setOpen((value) => !value)}>
+          {open ? "Annuler" : "Nouvelle liste"}
+        </Button>
       </div>
 
       {open && (
@@ -163,7 +180,11 @@ function DashboardHome() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="baby">Prénom / occasion (optionnel)</Label>
-              <Input id="baby" value={form.babyName} onChange={(e) => setForm({ ...form, babyName: e.target.value })} />
+              <Input
+                id="baby"
+                value={form.babyName}
+                onChange={(e) => setForm({ ...form, babyName: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Type de liste</Label>
@@ -182,7 +203,10 @@ function DashboardHome() {
             </div>
             <div className="space-y-2">
               <Label>Visibilité</Label>
-              <Select value={visibility} onValueChange={(value) => setVisibility(value as typeof visibility)}>
+              <Select
+                value={visibility}
+                onValueChange={(value) => setVisibility(value as typeof visibility)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -220,11 +244,15 @@ function DashboardHome() {
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[2fr_1fr]">
         <section className="space-y-4">
-          {registries.isLoading && <p className="text-sm text-muted-foreground">Chargement des listes…</p>}
+          {registries.isLoading && (
+            <p className="text-sm text-muted-foreground">Chargement des listes…</p>
+          )}
           {registries.data?.length === 0 && (
             <div className="surface-card p-8 text-center">
               <p className="font-display text-lg">Aucune liste pour l'instant</p>
-              <p className="mt-1 text-sm text-muted-foreground">Créez votre première liste en une minute.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Créez votre première liste en une minute.
+              </p>
             </div>
           )}
           {registries.data?.map((registry) => {
@@ -233,41 +261,44 @@ function DashboardHome() {
             const typeLabel = LIST_TYPES.find((t) => t.value === registry.type)?.label ?? "Liste";
             return (
               <div key={registry.id} className="space-y-2">
-              <Link
-                to="/dashboard/$registryId"
-                params={{ registryId: registry.id }}
-                className="surface-card block p-6 transition-shadow hover:shadow-lift"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-xl">{registry.title}</h2>
-                  <div className="flex gap-2">
-                    <Badge variant="outline">{typeLabel}</Badge>
-                    <Badge variant={registry.visibility === "PUBLIC" ? "default" : "secondary"}>
-                      {registry.status !== "ACTIVE"
-                        ? registry.status === "ARCHIVED"
-                          ? "Archivée"
-                          : "Suspendue"
-                        : registry.visibility === "PUBLIC"
-                          ? "Publique"
-                          : registry.visibility === "PROTECTED"
-                            ? "Code d'accès"
-                            : "Lien privé"}
-                    </Badge>
+                <Link
+                  to="/dashboard/$registryId"
+                  params={{ registryId: registry.id }}
+                  className="surface-card block p-6 transition-shadow hover:shadow-lift"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-xl">{registry.title}</h2>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">{typeLabel}</Badge>
+                      <Badge variant={registry.visibility === "PUBLIC" ? "default" : "secondary"}>
+                        {registry.status !== "ACTIVE"
+                          ? registry.status === "ARCHIVED"
+                            ? "Archivée"
+                            : "Suspendue"
+                          : registry.visibility === "PUBLIC"
+                            ? "Publique"
+                            : registry.visibility === "PROTECTED"
+                              ? "Code d'accès"
+                              : "Lien privé"}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {items.length} cadeau{items.length > 1 ? "x" : ""} · {reserved} réservé{reserved > 1 ? "s" : ""} ·{" "}
-                  {registry.view_count} visite{registry.view_count > 1 ? "s" : ""}
-                  {registry.due_date ? ` · prévu le ${new Date(registry.due_date).toLocaleDateString("fr-FR")}` : ""}
-                </p>
-              </Link>
-              <Link
-                to="/recompenses/$registryId"
-                params={{ registryId: registry.id }}
-                className="inline-flex text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              >
-                Voir les Récompenses Mila de cette liste →
-              </Link>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {items.length} cadeau{items.length > 1 ? "x" : ""} · {reserved} réservé
+                    {reserved > 1 ? "s" : ""} · {registry.view_count} visite
+                    {registry.view_count > 1 ? "s" : ""}
+                    {registry.due_date
+                      ? ` · prévu le ${new Date(registry.due_date).toLocaleDateString("fr-FR")}`
+                      : ""}
+                  </p>
+                </Link>
+                <Link
+                  to="/recompenses/$registryId"
+                  params={{ registryId: registry.id }}
+                  className="inline-flex text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Voir les Récompenses Mila de cette liste →
+                </Link>
               </div>
             );
           })}
@@ -290,9 +321,14 @@ function DashboardHome() {
                 }`}
               >
                 <p className="text-sm font-medium">{notification.title}</p>
-                {notification.body && <p className="mt-1 text-xs text-muted-foreground">{notification.body}</p>}
+                {notification.body && (
+                  <p className="mt-1 text-xs text-muted-foreground">{notification.body}</p>
+                )}
                 {!notification.read_at && (
-                  <button className="mt-2 text-xs text-primary underline" onClick={() => markRead.mutate(notification.id)}>
+                  <button
+                    className="mt-2 text-xs text-primary underline"
+                    onClick={() => markRead.mutate(notification.id)}
+                  >
                     Marquer comme lu
                   </button>
                 )}
