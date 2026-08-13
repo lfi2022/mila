@@ -75,6 +75,7 @@ export class ListsService {
 
   async create(userId: string, input: ListInput, attributionToken?: string) {
     this.assertTypeEnabled(input.type);
+    assertPublicSlugAvailable(input.slug);
     const accessCodeHash = await this.accessCodeHash(input.visibility, input.accessCode);
     const data = {
       ownerId: userId,
@@ -104,6 +105,7 @@ export class ListsService {
   async update(userId: string, listId: string, input: Partial<ListInput>) {
     await this.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
     if (input.type) this.assertTypeEnabled(input.type);
+    if (input.slug) assertPublicSlugAvailable(input.slug);
     if (input.status === "ARCHIVED" || input.status === "DELETED")
       throw new AppError(409, "USE_LIST_LIFECYCLE", "Use the archive lifecycle action");
     const current = await this.prisma.giftList.findUniqueOrThrow({ where: { id: listId } });
@@ -470,6 +472,12 @@ export class ListsService {
 
   private sign(value: string): string {
     return createHmac("sha256", this.config.AUTH_SECRET).update(value).digest("hex");
+  }
+}
+
+function assertPublicSlugAvailable(slug: string) {
+  if (slug.trim().toLowerCase() === "demo-mila") {
+    throw new AppError(409, "LIST_SLUG_RESERVED", "This public link is reserved by Mila");
   }
 }
 

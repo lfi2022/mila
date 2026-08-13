@@ -49,6 +49,23 @@ describe("ListsService", () => {
       }),
     ).rejects.toMatchObject({ code: "LIST_TYPE_DISABLED" });
   });
+  it("reserves the public demo slug", async () => {
+    const service = new ListsService({} as PrismaClient, config);
+    await expect(
+      service.create("user-1", {
+        title: "Tentative",
+        slug: "demo-mila",
+        type: "BIRTH",
+        visibility: "PUBLIC",
+        status: "ACTIVE",
+        surpriseMode: false,
+        hideReservedGifts: false,
+        allowIndexing: false,
+        showProgress: true,
+        theme: "default",
+      }),
+    ).rejects.toMatchObject({ code: "LIST_SLUG_RESERVED" });
+  });
   it("hashes protected-list access codes", async () => {
     const create = vi.fn().mockImplementation(({ data }) => Promise.resolve(data));
     const service = new ListsService({ giftList: { create } } as unknown as PrismaClient, config);

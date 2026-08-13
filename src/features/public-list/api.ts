@@ -75,7 +75,7 @@ export type PublicListResult =
         visibility: PublicListPayload["visibility"];
         allow_indexing: boolean;
         surprise_mode: boolean;
-        is_demo: false;
+        is_demo: boolean;
         theme: string;
         accent_color: string | null;
         hero_style: string;
@@ -110,7 +110,7 @@ export async function getPublicList(slug: string, wrongCode = false): Promise<Pu
         visibility: list.visibility,
         allow_indexing: list.allowIndexing,
         surprise_mode: list.surpriseMode,
-        is_demo: false,
+        is_demo: list.slug === "demo-mila",
         theme: list.theme,
         accent_color: list.accentColor,
         hero_style: list.heroStyle,
