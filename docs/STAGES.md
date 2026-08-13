@@ -438,3 +438,43 @@ External blockers:
 - Mollie live activation is `BLOCKED_EXTERNAL` until a verified Mollie account, live API key, enabled methods, production domain/webhook and accounting/refund/chargeback policy are supplied and approved;
 - Mollie Connect and all third-party-funds routing remain disabled for Stage 13 pending the marketplace contract plus legal/accounting validation;
 - final Premium price, benefits, tax treatment and partial-refund access policy require commercial/legal approval before production activation.
+
+## Stage 13 — Contributions and bank transfers
+
+Status: DONE_WITH_THIRD_PARTY_FUNDS_ACTIVATION_BLOCKED
+
+Commit: `56d6cc5`
+
+Implemented:
+
+- target-backed full/partial participation and target-free contribution gifts with anonymous display, message, progress, closure and expiry release;
+- serializable target reservation, global idempotency keys and exact minor-unit fee/Mila/net-parent calculation;
+- bank instructions with configured beneficiary/full IBAN returned on demand, only masked IBAN persisted, unique references and fourteen-day expiry;
+- waiting, exact-match, manual-review and refund lifecycle with single and 500-row staff reconciliation APIs plus audit records;
+- separate contribution, bank-transfer, transfer-instruction, parent-funds ledger, holding projection and disabled payout models;
+- ledger-derived held parent balance separated from Mila revenue, append-only confirmed/refund movements and parent dashboard breakdown;
+- public contribution flow, transparent cost display, parent contribution history and staff reconciliation interface;
+- fail-closed contribution/bank/payout flags and startup validation for cost policy, bank details and Mollie Connect dependency.
+
+Migration: `202608130007_contribution_funds`.
+
+Validation:
+
+- `npm run check`: PASS;
+- frontend tests: 14 PASS;
+- backend tests: 52 PASS, including exact integer contribution splits and fail-closed financial configuration;
+- frontend and backend production builds: PASS;
+- Prisma validation, legacy migration audit and Docker Compose configuration: PASS;
+- lint: PASS with 8 pre-existing Fast Refresh warnings.
+
+Environment variables:
+
+- `FEATURE_CONTRIBUTIONS`, `FEATURE_BANK_TRANSFERS`, `FEATURE_PARENT_PAYOUTS`;
+- `CONTRIBUTION_FEE_RATE_BPS`, `CONTRIBUTION_PLATFORM_SHARE_RATE_BPS`, `CONTRIBUTION_MIN_MINOR`;
+- `BANK_TRANSFER_BENEFICIARY`, `BANK_TRANSFER_IBAN`, `BANK_TRANSFER_IBAN_MASKED`.
+
+External blockers:
+
+- real third-party-funds collection remains disabled until legal/accounting validation identifies an authorized account and operating process;
+- Mollie Connect, parent onboarding/routing and executable payouts remain `BLOCKED_EXTERNAL` pending the marketplace contract, provider approval, KYC model and production credentials;
+- payout UI/API is intentionally absent until those regulated-flow prerequisites are approved.

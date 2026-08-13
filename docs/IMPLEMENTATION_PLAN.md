@@ -137,12 +137,12 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 13 — Contributions and bank transfers
 
-- [ ] Implement full, partial, and free contributions, anonymous option, message, target/progress, oversubscription prevention, closure, and refund.
-- [ ] Show beneficiary, fees, total paid, amount to parents, and Mila share transparently.
-- [ ] Model PaymentAccount, PaymentRoute, Contribution, FundsLedger, HoldingBalance, TransferInstruction, Payout, Refund, and Chargeback separately from Mila revenue.
-- [ ] Implement bank-transfer instructions with unique reference and waiting/received/matched/manual-review/refunded lifecycle.
-- [ ] Prepare bank import/API reconciliation and manual review.
-- [ ] Keep Mollie Connect, parent onboarding/routing/payouts, and real third-party-funds flow `BLOCKED_EXTERNAL` pending Mollie contract and legal/accounting validation.
+- [x] Implement full, partial, and free contributions, anonymous option, message, target/progress, oversubscription prevention, closure, and refund.
+- [x] Show beneficiary, fees, total paid, amount to parents, and Mila share transparently.
+- [x] Model PaymentAccount, PaymentRoute, Contribution, FundsLedger, HoldingBalance, TransferInstruction, Payout, Refund, and Chargeback separately from Mila revenue.
+- [x] Implement bank-transfer instructions with unique reference and waiting/received/matched/manual-review/refunded lifecycle.
+- [x] Prepare bank import/API reconciliation and manual review.
+- [x] Keep Mollie Connect, parent onboarding/routing/payouts, and real third-party-funds flow `BLOCKED_EXTERNAL` pending Mollie contract and legal/accounting validation.
 
 ## Stage 14 — Price tracking and comparison
 
