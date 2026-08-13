@@ -49,13 +49,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 04 — Self-hosted authentication and account lifecycle
 
-- [ ] Implement signup, login, logout, current session, refresh/rotation, email verification, forgotten/reset password, profile update, data export, and account deletion.
-- [ ] Hash passwords with Argon2id and store only hashed opaque session/token values.
-- [ ] Use HttpOnly/Secure/SameSite environment-aware cookies and CSRF protection where applicable.
-- [ ] Add brute-force defenses and Redis-backed rate limits.
-- [ ] Implement `USER`, `MODERATOR`, `ADMIN`, and `SUPER_ADMIN` backend authorization.
-- [ ] Replace Supabase auth in the frontend and server middleware.
-- [ ] Put optional OAuth behind provider-specific flags; no Lovable OAuth dependency.
+- [x] Implement signup, login, logout, current session, refresh/rotation, email verification, forgotten/reset password, profile update, data export, and account deletion.
+- [x] Hash passwords with Argon2id and store only hashed opaque session/token values.
+- [x] Use HttpOnly/Secure/SameSite environment-aware cookies and CSRF protection where applicable.
+- [x] Add timing-equalized login, account-enumeration defenses and Redis-backed rate limits.
+- [x] Implement `USER`, `MODERATOR`, `ADMIN`, and `SUPER_ADMIN` backend authorization.
+- [ ] Replace Supabase auth in the frontend and server middleware: frontend account/auth/profile flows are migrated; transitional legacy server functions remain until their data modules move to `/api/v1` in Stages 05–11.
+- [x] Put optional OAuth behind a disabled provider-neutral flag; no Lovable OAuth dependency.
 
 ## Stage 05 — Lists, membership, privacy, and sharing
 

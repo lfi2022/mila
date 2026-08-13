@@ -12,6 +12,9 @@ const valid = {
   DATABASE_USER: "mila_test",
   DATABASE_PASSWORD: "test-only-password",
   DATABASE_URL: "mysql://mila_test:test-only-password@db.test.invalid:3306/mila_test",
+  AUTH_SECRET: "test-auth-secret-at-least-32-characters",
+  SESSION_SECRET: "test-session-secret-at-least-32-characters",
+  REDIS_URL: "redis://cache.test.invalid:6379",
 };
 
 describe("database environment", () => {
@@ -35,5 +38,11 @@ describe("database environment", () => {
         DATABASE_POOL_MAX: "8",
       }),
     ).toMatchObject({ DATABASE_SSL_MODE: "required", DATABASE_POOL_MIN: 1, DATABASE_POOL_MAX: 8 });
+  });
+
+  it("requires distinct authentication and session secrets", () => {
+    expect(() => loadConfig({ ...valid, SESSION_SECRET: valid.AUTH_SECRET })).toThrow(
+      /SESSION_SECRET/,
+    );
   });
 });

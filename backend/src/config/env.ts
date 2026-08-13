@@ -34,6 +34,26 @@ const envSchema = z
     DATABASE_POOL_MIN: z.coerce.number().int().min(0).default(2),
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
     DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+    AUTH_SECRET: z.string().min(32),
+    SESSION_SECRET: z.string().min(32),
+    SESSION_TTL_SECONDS: z.coerce.number().int().min(300).default(2_592_000),
+    EMAIL_VERIFICATION_TTL_SECONDS: z.coerce.number().int().min(300).default(86_400),
+    PASSWORD_RESET_TTL_SECONDS: z.coerce.number().int().min(300).default(3_600),
+    COOKIE_NAME: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]+$/)
+      .default("mila_session"),
+    COOKIE_DOMAIN: z.string().trim().optional().default(""),
+    COOKIE_SECURE: booleanString,
+    COOKIE_SAME_SITE: z.enum(["strict", "lax", "none"]).default("lax"),
+    REDIS_URL: z
+      .string()
+      .url()
+      .refine((value) => ["redis:", "rediss:"].includes(new URL(value).protocol), {
+        message: "REDIS_URL must use redis:// or rediss://",
+      }),
+    QUEUE_PREFIX: z.string().trim().min(1).default("mila"),
+    FEATURE_OAUTH: booleanString,
   })
   .superRefine((env, context) => {
     if (env.APP_ENV !== "development" && !env.APP_URL.startsWith("https://")) {
@@ -55,6 +75,27 @@ const envSchema = z
         code: "custom",
         path: ["DATABASE_POOL_MIN"],
         message: "DATABASE_POOL_MIN cannot exceed DATABASE_POOL_MAX",
+      });
+    }
+    if (env.COOKIE_SAME_SITE === "none" && !env.COOKIE_SECURE) {
+      context.addIssue({
+        code: "custom",
+        path: ["COOKIE_SECURE"],
+        message: "COOKIE_SECURE must be true when COOKIE_SAME_SITE is none",
+      });
+    }
+    if (env.APP_ENV === "production" && !env.COOKIE_SECURE) {
+      context.addIssue({
+        code: "custom",
+        path: ["COOKIE_SECURE"],
+        message: "COOKIE_SECURE must be true in production",
+      });
+    }
+    if (env.AUTH_SECRET === env.SESSION_SECRET) {
+      context.addIssue({
+        code: "custom",
+        path: ["SESSION_SECRET"],
+        message: "SESSION_SECRET must be distinct from AUTH_SECRET",
       });
     }
   });

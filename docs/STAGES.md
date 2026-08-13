@@ -156,3 +156,37 @@ External blockers:
 
 - remote database provisioning, firewall allowlist, TLS certificate, accounts and backup activation require operator access;
 - a sanitized Supabase export is required to finalize, rehearse and approve the production row-level mapping without guessing personal-data transformations.
+
+## Stage 04 — Self-hosted authentication and account lifecycle
+
+Status: CORE_DONE_TRANSITIONAL_CALLERS_REMAIN
+
+Implemented:
+
+- autonomous `/api/v1/auth` signup, login, current-session, rotation, logout, verification, reset, profile, export and deletion endpoints;
+- Argon2id passwords and 256-bit opaque session/verification/reset tokens stored only as keyed digests;
+- transactional session rotation, global revocation after password reset, suspension/deletion enforcement and timing-equalized invalid login;
+- HttpOnly environment-aware session cookie plus constant-time double-submit CSRF protection;
+- Redis-backed global and authentication-specific rate limiting, and MySQL/Redis readiness;
+- backend role enforcement helpers for `USER`, `MODERATOR`, `ADMIN`, and `SUPER_ADMIN`;
+- centralized frontend API client and autonomous auth/profile/reset/verification pages;
+- frontend session bootstrap, admin presentation check and account lifecycle no longer use Supabase Auth;
+- optional OAuth disabled behind `FEATURE_OAUTH`.
+
+Tests:
+
+- `npm run check`: PASS;
+- frontend tests: 12 PASS;
+- backend tests: 11 PASS, including hashing/token-storage, non-enumeration, CSRF, environment and role behavior.
+
+Environment:
+
+- `AUTH_SECRET`, `SESSION_SECRET`, `SESSION_TTL_SECONDS`;
+- `EMAIL_VERIFICATION_TTL_SECONDS`, `PASSWORD_RESET_TTL_SECONDS`;
+- `COOKIE_NAME`, `VITE_AUTH_COOKIE_NAME`, `COOKIE_DOMAIN`, `COOKIE_SECURE`, `COOKIE_SAME_SITE`;
+- `REDIS_URL`, `QUEUE_PREFIX`, `FEATURE_OAUTH`.
+
+External/transition blockers:
+
+- SMTP/provider credentials and sender-domain DNS are required for production delivery of generated verification/reset links (`BLOCKED_EXTERNAL`);
+- legacy TanStack server functions still use the transitional Supabase auth middleware while their data access is migrated module-by-module in the following stages; the new frontend auth path and Fastify API are independent of it.

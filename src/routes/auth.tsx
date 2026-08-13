@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
 import { registerReferral } from "@/lib/rewards.functions";
 
@@ -34,13 +33,13 @@ export const Route = createFileRoute("/auth")({
 
 const credentials = z.object({
   email: z.string().trim().email("Adresse email invalide").max(255),
-  password: z.string().min(8, "8 caractères minimum").max(72),
+  password: z.string().min(12, "12 caractères minimum").max(128),
   name: z.string().trim().max(80).optional(),
 });
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, signIn: authenticate, signUp: register } = useAuth();
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,14 +82,13 @@ function AuthPage() {
     const data = validate(false);
     if (!data) return;
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-    setBusy(false);
-    if (error) {
+    try {
+      await authenticate(data.email, data.password);
+    } catch {
       toast.error("Connexion impossible : identifiants incorrects.");
       return;
+    } finally {
+      setBusy(false);
     }
     navigate({ to: "/dashboard" });
   };
@@ -100,26 +98,17 @@ function AuthPage() {
     const data = validate(true);
     if (!data) return;
     setBusy(true);
-    const { data: result, error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: { display_name: data.name },
-      },
-    });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
+    try {
+      await register(data.email, data.password, data.name);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Inscription impossible.");
       return;
+    } finally {
+      setBusy(false);
     }
-    if (!result.session) {
-      setSent(true);
-      track("signup_completed");
-      toast.success("Vérifiez votre boîte mail pour confirmer votre compte.");
-      return;
-    }
-    navigate({ to: "/dashboard" });
+    setSent(true);
+    track("signup_completed");
+    toast.success("Vérifiez votre boîte mail pour confirmer votre compte.");
   };
 
   return (
@@ -155,6 +144,9 @@ function AuthPage() {
                 />
                 <Button className="w-full" disabled={busy} onClick={signIn}>
                   Se connecter
+                </Button>
+                <Button asChild variant="link" className="w-full">
+                  <Link to="/mot-de-passe-oublie">Mot de passe oublié ?</Link>
                 </Button>
               </TabsContent>
 

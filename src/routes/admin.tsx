@@ -38,7 +38,6 @@ import {
   adminSaveMerchant,
   adminTestAffiliateLink,
   getAdminStats,
-  getMyAdminRole,
 } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin")({
@@ -61,15 +60,9 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const { user, loading } = useAuth();
-  const role = useServerFn(getMyAdminRole);
+  const isStaff = user?.roles.some((role) => ["MODERATOR", "ADMIN", "SUPER_ADMIN"].includes(role));
 
-  const roleQuery = useQuery({
-    queryKey: ["admin-role", user?.id],
-    queryFn: () => role(),
-    enabled: Boolean(user),
-  });
-
-  if (loading || (user && roleQuery.isLoading)) {
+  if (loading) {
     return <Shell>Vérification de vos droits…</Shell>;
   }
 
@@ -84,7 +77,7 @@ function AdminPage() {
     );
   }
 
-  if (!roleQuery.data?.isStaff) {
+  if (!isStaff) {
     return (
       <Shell>
         <p>Vous n'avez pas accès à l'administration.</p>
@@ -95,7 +88,9 @@ function AdminPage() {
     );
   }
 
-  return <AdminContent isAdmin={roleQuery.data.isAdmin} />;
+  return (
+    <AdminContent isAdmin={user.roles.some((role) => ["ADMIN", "SUPER_ADMIN"].includes(role))} />
+  );
 }
 
 function Shell({ children }: { children: React.ReactNode }) {

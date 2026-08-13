@@ -21,8 +21,11 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
+import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfilRouteImport } from './routes/profil'
+import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
+import { Route as VerificationEmailRouteImport } from './routes/verification-email'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardRegistryIdRouteImport } from './routes/dashboard.$registryId'
 import { Route as GoTokenRouteImport } from './routes/go.$token'
@@ -94,6 +97,11 @@ const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
   path: '/mentions-legales',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
+  id: '/mot-de-passe-oublie',
+  path: '/mot-de-passe-oublie',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -102,6 +110,16 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const ProfilRoute = ProfilRouteImport.update({
   id: '/profil',
   path: '/profil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
+  id: '/reinitialiser-mot-de-passe',
+  path: '/reinitialiser-mot-de-passe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerificationEmailRoute = VerificationEmailRouteImport.update({
+  id: '/verification-email',
+  path: '/verification-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
@@ -169,8 +187,11 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRoute
   '/faq': typeof FaqRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/onboarding': typeof OnboardingRoute
   '/profil': typeof ProfilRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/verification-email': typeof VerificationEmailRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -194,8 +215,11 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRoute
   '/faq': typeof FaqRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/onboarding': typeof OnboardingRoute
   '/profil': typeof ProfilRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/verification-email': typeof VerificationEmailRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -221,8 +245,11 @@ export interface FileRoutesById {
   '/demo': typeof DemoRoute
   '/faq': typeof FaqRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/onboarding': typeof OnboardingRoute
   '/profil': typeof ProfilRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/verification-email': typeof VerificationEmailRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -249,8 +276,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/faq'
     | '/mentions-legales'
+    | '/mot-de-passe-oublie'
     | '/onboarding'
     | '/profil'
+    | '/reinitialiser-mot-de-passe'
+    | '/verification-email'
     | '/dashboard/$registryId'
     | '/go/$token'
     | '/invitation/$token'
@@ -274,8 +304,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/faq'
     | '/mentions-legales'
+    | '/mot-de-passe-oublie'
     | '/onboarding'
     | '/profil'
+    | '/reinitialiser-mot-de-passe'
+    | '/verification-email'
     | '/dashboard/$registryId'
     | '/go/$token'
     | '/invitation/$token'
@@ -300,8 +333,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/faq'
     | '/mentions-legales'
+    | '/mot-de-passe-oublie'
     | '/onboarding'
     | '/profil'
+    | '/reinitialiser-mot-de-passe'
+    | '/verification-email'
     | '/dashboard/$registryId'
     | '/go/$token'
     | '/invitation/$token'
@@ -327,8 +363,11 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRoute
   FaqRoute: typeof FaqRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
+  MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfilRoute: typeof ProfilRoute
+  ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  VerificationEmailRoute: typeof VerificationEmailRoute
   GoTokenRoute: typeof GoTokenRoute
   InvitationTokenRoute: typeof InvitationTokenRoute
   LSlugRoute: typeof LSlugRoute
@@ -425,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MentionsLegalesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mot-de-passe-oublie': {
+      id: '/mot-de-passe-oublie'
+      path: '/mot-de-passe-oublie'
+      fullPath: '/mot-de-passe-oublie'
+      preLoaderRoute: typeof MotDePasseOublieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -437,6 +483,20 @@ declare module '@tanstack/react-router' {
       path: '/profil'
       fullPath: '/profil'
       preLoaderRoute: typeof ProfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reinitialiser-mot-de-passe': {
+      id: '/reinitialiser-mot-de-passe'
+      path: '/reinitialiser-mot-de-passe'
+      fullPath: '/reinitialiser-mot-de-passe'
+      preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verification-email': {
+      id: '/verification-email'
+      path: '/verification-email'
+      fullPath: '/verification-email'
+      preLoaderRoute: typeof VerificationEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
@@ -539,8 +599,11 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRoute,
   FaqRoute: FaqRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
+  MotDePasseOublieRoute: MotDePasseOublieRoute,
   OnboardingRoute: OnboardingRoute,
   ProfilRoute: ProfilRoute,
+  ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  VerificationEmailRoute: VerificationEmailRoute,
   GoTokenRoute: GoTokenRoute,
   InvitationTokenRoute: InvitationTokenRoute,
   LSlugRoute: LSlugRoute,

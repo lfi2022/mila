@@ -14,6 +14,24 @@ The self-hosted HTTP API is versioned from its first release. The current base p
 
 Authentication, users, lists, gifts, reservations, products, merchants, orders, payments, rewards, notifications, media, reports, admin, and webhooks are registered as explicit module boundaries. Their routes are added in their roadmap stages; no placeholder endpoint pretends that an unimplemented product capability exists.
 
+## Authentication routes
+
+| Method | Path                           | Authentication | Purpose                                  |
+| ------ | ------------------------------ | -------------- | ---------------------------------------- |
+| POST   | `/api/v1/auth/signup`          | Public         | Create an unverified account             |
+| POST   | `/api/v1/auth/login`           | Public         | Create cookie session after verification |
+| GET    | `/api/v1/auth/me`              | Session cookie | Return the current user and roles        |
+| POST   | `/api/v1/auth/refresh`         | Session + CSRF | Atomically rotate the opaque session     |
+| POST   | `/api/v1/auth/logout`          | Session + CSRF | Revoke and clear the current session     |
+| POST   | `/api/v1/auth/verify-email`    | Public token   | Consume a one-use verification token     |
+| POST   | `/api/v1/auth/forgot-password` | Public         | Request reset without account disclosure |
+| POST   | `/api/v1/auth/reset-password`  | Public token   | Change password and revoke all sessions  |
+| PATCH  | `/api/v1/auth/profile`         | Session + CSRF | Update the profile                       |
+| GET    | `/api/v1/auth/export`          | Session cookie | Export account data                      |
+| DELETE | `/api/v1/auth/account`         | Session + CSRF | Anonymize account and revoke sessions    |
+
+Passwords use Argon2id. Session, verification and reset values are random opaque tokens; only keyed SHA-256 hashes are persisted. Session cookies are HttpOnly and environment-secure. State-changing authenticated requests use a separate double-submit CSRF cookie/header. Login, signup and password-reset requests have Redis-backed limits when the production Redis service is connected. Development may return one-time verification/reset tokens to support local testing; staging and production never do.
+
 ## Error contract
 
 ```json

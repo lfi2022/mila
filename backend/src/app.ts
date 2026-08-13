@@ -1,4 +1,5 @@
 import cors from "@fastify/cors";
+import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
@@ -8,14 +9,18 @@ import { randomUUID } from "node:crypto";
 
 import { installErrorHandler } from "./common/http/error-handler.js";
 import type { DatabaseService } from "./common/database/client.js";
+import type { RedisService } from "./common/redis/client.js";
 import { allowedOrigins, loadConfig, type AppConfig } from "./config/env.js";
 import { healthRoutes, type ReadinessProbe } from "./modules/health/routes.js";
+import { authRoutes } from "./modules/auth/routes.js";
+import { AuthService } from "./modules/auth/service.js";
 import { MODULE_NAMES } from "./modules/index.js";
 
 export type AppOptions = {
   config?: AppConfig;
   readinessProbe?: ReadinessProbe;
   database?: DatabaseService;
+  redis?: RedisService;
   logger?: boolean;
 };
 
@@ -47,6 +52,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
   });
 
   await app.register(helmet, { global: true, contentSecurityPolicy: false });
+  await app.register(cookie);
   await app.register(cors, {
     credentials: true,
     origin(origin, callback) {
@@ -59,6 +65,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
     max: config.RATE_LIMIT_MAX,
     timeWindow: config.RATE_LIMIT_WINDOW_MS,
     keyGenerator: (request) => request.ip,
+    redis: options.redis?.client,
   });
   await app.register(swagger, {
     openapi: {
@@ -74,6 +81,9 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
   if (options.database) {
     app.addHook("onClose", () => options.database?.close());
   }
+  if (options.redis) {
+    app.addHook("onClose", () => options.redis?.close());
+  }
 
   await app.register(
     async (api) => {
@@ -85,12 +95,20 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
       await api.register(
         healthRoutes(
           options.readinessProbe ??
-            (options.database
-              ? async () => ({ database: await options.database!.check() })
+            (options.database || options.redis
+              ? async () => ({
+                  ...(options.database ? { database: await options.database.check() } : {}),
+                  ...(options.redis ? { redis: await options.redis.check() } : {}),
+                })
               : async () => ({ application: "up" })),
         ),
         { prefix: "/health" },
       );
+      if (options.database) {
+        await api.register(authRoutes(new AuthService(options.database.client, config), config), {
+          prefix: "/auth",
+        });
+      }
     },
     { prefix: "/api/v1" },
   );

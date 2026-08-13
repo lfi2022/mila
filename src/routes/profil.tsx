@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { deleteMyAccount, exportMyData } from "@/lib/lists.functions";
 import { formatCents } from "@/lib/money";
 import { getMyReferral, refreshMyReferrals } from "@/lib/rewards.functions";
 
@@ -32,25 +30,17 @@ export const Route = createFileRoute("/profil")({
 });
 
 function ProfilePage() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, updateProfile, exportAccount, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
-  const exportData = useServerFn(exportMyData);
-  const deleteAccount = useServerFn(deleteMyAccount);
 
   useEffect(() => {
     if (!loading && !user) void navigate({ to: "/auth" });
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    if (!user) return;
-    void supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setDisplayName(data?.display_name ?? ""));
+    setDisplayName(user?.displayName ?? "");
   }, [user]);
 
   if (loading || !user) {
@@ -87,13 +77,14 @@ function ProfilePage() {
             disabled={saving}
             onClick={async () => {
               setSaving(true);
-              const { error } = await supabase
-                .from("profiles")
-                .update({ display_name: displayName.trim() || null })
-                .eq("id", user.id);
-              setSaving(false);
-              if (error) toast.error("Enregistrement impossible");
-              else toast.success("Profil mis à jour");
+              try {
+                await updateProfile(displayName.trim() || null);
+                toast.success("Profil mis à jour");
+              } catch {
+                toast.error("Enregistrement impossible");
+              } finally {
+                setSaving(false);
+              }
             }}
           >
             Enregistrer
@@ -111,7 +102,7 @@ function ProfilePage() {
             variant="secondary"
             onClick={async () => {
               try {
-                const data = await exportData();
+                const data = await exportAccount();
                 const blob = new Blob([JSON.stringify(data, null, 2)], {
                   type: "application/json",
                 });
@@ -146,7 +137,6 @@ function ProfilePage() {
               if (!window.confirm("Supprimer définitivement votre compte et vos listes ?")) return;
               try {
                 await deleteAccount();
-                await signOut();
                 void navigate({ to: "/" });
               } catch {
                 toast.error("Suppression impossible pour le moment");

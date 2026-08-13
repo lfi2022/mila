@@ -1,10 +1,12 @@
 import { createApp } from "./app.js";
 import { createDatabase } from "./common/database/client.js";
+import { createRedis } from "./common/redis/client.js";
 import { loadConfig } from "./config/env.js";
 
 const config = loadConfig();
 const database = createDatabase(config);
-const app = await createApp({ config, database });
+const redis = createRedis(config);
+const app = await createApp({ config, database, redis });
 
 const shutdown = async (signal: string) => {
   app.log.info({ signal }, "Shutting down Mila API");

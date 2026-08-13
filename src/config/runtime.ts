@@ -22,6 +22,7 @@ export const runtimeConfig = {
   ),
   apiBaseUrl: String(viteEnv["VITE_API_BASE_URL"] || "/api/v1").replace(/\/$/, ""),
   assetBaseUrl: String(viteEnv["VITE_ASSET_BASE_URL"] || "/assets").replace(/\/$/, ""),
+  authCookieName: String(viteEnv["VITE_AUTH_COOKIE_NAME"] || "mila_session"),
   seoIndexingEnabled:
     String(viteEnv["VITE_SEO_INDEXING_ENABLED"] || serverEnv("SEO_INDEXING_ENABLED") || "false") ===
     "true",
