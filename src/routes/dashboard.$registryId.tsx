@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -31,6 +31,10 @@ import { previewProduct } from "@/features/products/api";
 import { uploadProductImage } from "@/features/storage/api";
 import { Checkbox } from "@/components/ui/checkbox";
 import { queryKeys } from "@/app/query";
+import {
+  createAppearanceSaveQueue,
+  rollbackAppearancePatch,
+} from "@/features/lists/appearance-save";
 
 export const Route = createFileRoute("/dashboard/$registryId")({
   head: () => ({
@@ -314,6 +318,42 @@ function RegistryDetail() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
+  const appearanceSaver = useMemo(
+    () =>
+      createAppearanceSaveQueue<LegacyList>({
+        delayMs: 400,
+        snapshot: () => queryClient.getQueryData<LegacyList>(queryKeys.list(registryId)),
+        optimistic: (patch) => {
+          queryClient.setQueryData<LegacyList>(queryKeys.list(registryId), (current) =>
+            current ? { ...current, ...patch } : current,
+          );
+        },
+        write: async (patch) => {
+          await listApi.update(registryId, fromLegacyPatch(patch));
+        },
+        rollback: (snapshot, failedPatch, pendingPatch) => {
+          queryClient.setQueryData<LegacyList>(queryKeys.list(registryId), (current) =>
+            current
+              ? rollbackAppearancePatch(current, snapshot, failedPatch, pendingPatch)
+              : snapshot,
+          );
+        },
+        onError: (error) =>
+          toast.error(
+            error instanceof Error
+              ? `Apparence non enregistrée : ${error.message}`
+              : "Apparence non enregistrée. Les changements ont été annulés.",
+          ),
+      }),
+    [queryClient, registryId],
+  );
+
+  useEffect(() => () => appearanceSaver.dispose(true), [appearanceSaver]);
+
+  const refreshAppearance = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.list(registryId) });
+  };
 
   const submitCode = useMutation({
     mutationFn: () => {
@@ -629,8 +669,8 @@ function RegistryDetail() {
             <ListAppearanceEditor
               registryId={registryId}
               list={list}
-              onChange={(patch: AppearancePatch) => updateRegistry.mutate(patch as LegacyListPatch)}
-              onCoverUploaded={refresh}
+              onChange={(patch: AppearancePatch) => appearanceSaver.change(patch)}
+              onCoverUploaded={refreshAppearance}
             />
           </div>
         </TabsContent>
@@ -1014,6 +1054,8 @@ function toLegacyList(value: Awaited<ReturnType<typeof listApi.get>>) {
     access_code_hash: value.visibility === "PROTECTED" ? "configured" : null,
   };
 }
+
+type LegacyList = ReturnType<typeof toLegacyList>;
 
 function fromLegacyPatch(patch: LegacyListPatch): ListPatch {
   return {

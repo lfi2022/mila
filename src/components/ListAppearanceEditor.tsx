@@ -15,15 +15,19 @@ import {
   getFontPair,
   getHeroStyle,
   getTheme,
+  type FontPair,
+  type HeroStyle,
+  type ListLayout,
   type ListAppearance,
+  type ThemeId,
 } from "@/lib/list-theme";
 
 export type AppearancePatch = {
-  theme?: string;
+  theme?: ThemeId;
   accent_color?: string | null;
-  hero_style?: string;
-  font_pair?: string;
-  layout?: string;
+  hero_style?: HeroStyle;
+  font_pair?: FontPair;
+  layout?: ListLayout;
   show_progress?: boolean;
   cover_image_url?: string | null;
 };
@@ -157,7 +161,10 @@ export function ListAppearanceEditor({ registryId, list, onChange, onCoverUpload
                 id="accent"
                 type="color"
                 value={customColor}
-                onChange={(event) => setCustomColor(event.target.value)}
+                onChange={(event) => {
+                  setCustomColor(event.target.value);
+                  onChange({ accent_color: event.target.value });
+                }}
                 className="h-10 w-20 p-1"
               />
             </div>
