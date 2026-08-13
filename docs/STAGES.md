@@ -282,6 +282,8 @@ External blocker:
 
 Status: DONE_WITH_EXTERNAL_SCANNER
 
+Commit: `f8db05c`
+
 Implemented:
 
 - private S3-compatible buckets, short-lived signed upload/download, server-generated owner keys, quotas, MIME/signature verification, ownership-checked deletion and cover association;
