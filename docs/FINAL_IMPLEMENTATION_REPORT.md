@@ -1,7 +1,9 @@
 # Mila final implementation report
 
-Date: 2026-08-13  
-Branch: `migration/self-hosted-roadmap`  
+Date: 2026-08-13
+
+Branch: `migration/self-hosted-roadmap`
+
 Technical implementation state: stages 00–20 completed, with external activation gates documented below.
 
 ## Completed scope
