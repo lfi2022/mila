@@ -13,24 +13,40 @@ export class ApiError extends Error {
 
 export async function apiRequest<T>(
   path: string,
-  init: RequestInit & { csrf?: boolean } = {},
+  init: RequestInit & { csrf?: boolean; timeoutMs?: number } = {},
 ): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), init.timeoutMs ?? 15_000);
   const headers = new Headers(init.headers);
   if (init.body && !headers.has("content-type")) headers.set("content-type", "application/json");
   if (init.csrf) {
     const csrf = readCookie(`${runtimeConfig.authCookieName}_csrf`);
     if (csrf) headers.set("x-csrf-token", csrf);
   }
-  const response = await fetch(`${runtimeConfig.apiBaseUrl}${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${runtimeConfig.apiBaseUrl}${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+      signal: init.signal ?? controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError(408, "REQUEST_TIMEOUT", "La requête a expiré.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
   if (response.status === 204) return undefined as T;
   const payload = (await response.json().catch(() => null)) as {
     error?: { code?: string; message?: string };
   } | null;
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("mila:session-expired"));
+    }
     throw new ApiError(
       response.status,
       payload?.error?.code ?? "REQUEST_FAILED",

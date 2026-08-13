@@ -1,11 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-
-import type { TablesUpdate } from "@/integrations/supabase/types";
 
 import { ListAppearanceEditor, type AppearancePatch } from "@/components/ListAppearanceEditor";
 import { ShareCard } from "@/components/ShareCard";
@@ -25,9 +22,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
-import { supabase } from "@/integrations/supabase/client";
-import { inviteCoParent, setListAccessCode } from "@/lib/lists.functions";
-import { previewProductUrl } from "@/lib/products.functions";
+import { listApi, type ListPatch } from "@/features/lists/api";
+import { giftApi } from "@/features/gifts/api";
+import { reservationApi } from "@/features/reservations/api";
+import { previewProduct } from "@/features/products/api";
+import { queryKeys } from "@/app/query";
 
 export const Route = createFileRoute("/dashboard/$registryId")({
   head: () => ({
@@ -79,6 +78,26 @@ const emptyItem = {
   imageUrl: "",
 };
 
+type LegacyListPatch = Partial<{
+  title: string;
+  baby_name: string | null;
+  welcome_message: string | null;
+  due_date: string | null;
+  type: ListPatch["type"];
+  visibility: ListPatch["visibility"];
+  status: ListPatch["status"];
+  surprise_mode: boolean;
+  allow_indexing: boolean;
+  reserved_display: "SHOW" | "HIDE";
+  theme: string;
+  accent_color: string | null;
+  hero_style: "soft" | "cover" | "minimal";
+  font_pair: "baloo" | "serif" | "moderne";
+  layout: "grid" | "list" | "magazine";
+  show_progress: boolean;
+  cover_image_url: string | null;
+}>;
+
 function RegistryDetail() {
   const { registryId } = Route.useParams();
   const { user } = useAuth();
@@ -86,97 +105,87 @@ function RegistryDetail() {
   const [item, setItem] = useState(emptyItem);
   const [accessCode, setAccessCode] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const preview = useServerFn(previewProductUrl);
-  const invite = useServerFn(inviteCoParent);
-  const saveCode = useServerFn(setListAccessCode);
-
   const registry = useQuery({
-    queryKey: ["registry", registryId],
+    queryKey: queryKeys.list(registryId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("registries")
-        .select("*")
-        .eq("id", registryId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      const value = await listApi.get(registryId);
+      return toLegacyList(value);
     },
   });
 
   const items = useQuery({
-    queryKey: ["items", registryId],
+    queryKey: queryKeys.gifts(registryId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("items")
-        .select("*")
-        .eq("registry_id", registryId)
-        .order("position", { ascending: true })
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data;
+      const gifts = await giftApi.list(registryId);
+      return gifts.map((gift) => ({
+        ...gift,
+        reserved_qty: gift.reservedQuantity,
+        store_name: gift.merchant?.name ?? null,
+        price: gift.unitPriceMinor ? Number(gift.unitPriceMinor) / 100 : null,
+      }));
     },
   });
 
   const reservations = useQuery({
-    queryKey: ["reservations", registryId],
+    queryKey: queryKeys.reservations(registryId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select("*, items(title)")
-        .eq("registry_id", registryId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await reservationApi.forList(registryId);
+      return rows.map((row) => ({
+        ...row,
+        guest_name: row.guestName,
+        guest_email: row.guestEmail,
+        items: row.gift,
+        intent: null,
+      }));
     },
   });
 
   const members = useQuery({
-    queryKey: ["members", registryId],
+    queryKey: ["list-members", registryId],
     queryFn: async () => {
-      const [{ data: rows, error }, { data: invitations }] = await Promise.all([
-        supabase
-          .from("list_members")
-          .select("id, user_id, role, created_at")
-          .eq("registry_id", registryId),
-        supabase
-          .from("list_invitations")
-          .select("id, email, role, accepted_at, expires_at")
-          .eq("registry_id", registryId)
-          .order("created_at", { ascending: false }),
-      ]);
-      if (error) throw error;
-      const ids = (rows ?? []).map((row) => row.user_id);
-      const { data: profiles } = ids.length
-        ? await supabase.from("profiles").select("id, display_name").in("id", ids)
-        : { data: [] };
+      const value = await listApi.get(registryId);
       return {
-        members: (rows ?? []).map((row) => ({
-          ...row,
-          displayName: (profiles ?? []).find((p) => p.id === row.user_id)?.display_name ?? "Parent",
+        members: [
+          {
+            id: value.ownerId,
+            user_id: value.ownerId,
+            role: "OWNER" as const,
+            displayName: value.owner?.displayName ?? "Parent",
+          },
+          ...(value.members ?? []).map((member) => ({
+            id: member.id,
+            user_id: member.userId,
+            role: member.role,
+            displayName: member.user.displayName ?? "Parent",
+          })),
+        ],
+        invitations: (value.invitations ?? []).map((invitation) => ({
+          ...invitation,
+          accepted_at: invitation.acceptedAt,
+          expires_at: invitation.expiresAt,
         })),
-        invitations: invitations ?? [],
       };
     },
   });
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["items", registryId] });
-    void queryClient.invalidateQueries({ queryKey: ["reservations", registryId] });
-    void queryClient.invalidateQueries({ queryKey: ["registry", registryId] });
-    void queryClient.invalidateQueries({ queryKey: ["members", registryId] });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.gifts(registryId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.reservations(registryId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.list(registryId) });
+    void queryClient.invalidateQueries({ queryKey: ["list-members", registryId] });
   };
 
   const fetchPreview = useMutation({
     mutationFn: async () => {
       if (!item.url.trim()) throw new Error("Collez d'abord un lien produit");
-      return preview({ data: { url: item.url.trim() } });
+      return previewProduct(item.url.trim());
     },
     onSuccess: (result) => {
       setItem((current) => ({
         ...current,
         title: current.title || (result.title ?? ""),
-        store: current.store || (result.storeName ?? ""),
-        price: current.price || (result.price != null ? String(result.price) : ""),
+        store: current.store || result.brand || new URL(result.url).hostname.replace(/^www\./, ""),
+        price: current.price || (result.priceMinor ? String(Number(result.priceMinor) / 100) : ""),
         imageUrl: result.imageUrl ?? current.imageUrl,
         description: current.description || (result.description ?? ""),
         url: result.url,
@@ -190,18 +199,16 @@ function RegistryDetail() {
     mutationFn: async () => {
       const parsed = itemSchema.safeParse(item);
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Champs invalides");
-      const { error } = await supabase.from("items").insert({
-        registry_id: registryId,
+      await giftApi.create(registryId, {
         title: parsed.data.title,
-        store_name: parsed.data.store || null,
         url: parsed.data.url || null,
-        image_url: parsed.data.imageUrl || null,
-        price: parsed.data.price ? Number(parsed.data.price.replace(",", ".")) : null,
+        imageUrl: parsed.data.imageUrl || null,
+        unitPriceMinor: parsed.data.price
+          ? String(Math.round(Number(parsed.data.price.replace(",", ".")) * 100))
+          : null,
         quantity: parsed.data.quantity,
         description: parsed.data.description || null,
-        kind: parsed.data.url ? "LINK" : "MANUAL",
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       setItem(emptyItem);
@@ -213,10 +220,7 @@ function RegistryDetail() {
   });
 
   const deleteItem = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("items").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => giftApi.remove(registryId, id),
     onSuccess: () => {
       toast.success("Cadeau supprimé");
       refresh();
@@ -225,10 +229,7 @@ function RegistryDetail() {
   });
 
   const releaseReservation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("reservations").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => reservationApi.cancel(registryId, id),
     onSuccess: () => {
       toast.success("Réservation annulée, le cadeau redevient visible.");
       refresh();
@@ -237,10 +238,7 @@ function RegistryDetail() {
   });
 
   const updateRegistry = useMutation({
-    mutationFn: async (patch: TablesUpdate<"registries">) => {
-      const { error } = await supabase.from("registries").update(patch).eq("id", registryId);
-      if (error) throw error;
-    },
+    mutationFn: (patch: LegacyListPatch) => listApi.update(registryId, fromLegacyPatch(patch)),
     onSuccess: () => {
       toast.success("Réglages enregistrés");
       refresh();
@@ -249,33 +247,30 @@ function RegistryDetail() {
   });
 
   const submitCode = useMutation({
-    mutationFn: () => saveCode({ data: { registryId, code: accessCode } }),
-    onSuccess: (result) => {
+    mutationFn: () => {
+      if (accessCode.length < 6) throw new Error("Le code doit contenir au moins 6 caractères.");
+      return listApi.update(registryId, { accessCode });
+    },
+    onSuccess: () => {
       setAccessCode("");
-      toast.success(result.hasCode ? "Code d'accès enregistré" : "Code d'accès supprimé");
+      toast.success("Code d'accès enregistré");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
   const sendInvite = useMutation({
-    mutationFn: () => invite({ data: { registryId, email: inviteEmail, role: "CO_OWNER" } }),
-    onSuccess: (result) => {
+    mutationFn: () => listApi.invite(registryId, inviteEmail, "CO_OWNER"),
+    onSuccess: () => {
       setInviteEmail("");
-      toast.success(
-        result.emailed ? "Invitation envoyée par email" : "Invitation créée, partagez le lien",
-      );
-      if (!result.emailed) void navigator.clipboard.writeText(result.link);
+      toast.success("Invitation créée");
       refresh();
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
   const removeMember = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("list_members").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => listApi.removeMember(registryId, id),
     onSuccess: () => {
       toast.success("Accès retiré");
       refresh();
@@ -318,8 +313,7 @@ function RegistryDetail() {
           <h1 className="text-3xl">{list.title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {list.baby_name ? `Pour ${list.baby_name} · ` : ""}
-            {giftRows.length} cadeau{giftRows.length > 1 ? "x" : ""} · {list.view_count} visite
-            {list.view_count > 1 ? "s" : ""}
+            {giftRows.length} cadeau{giftRows.length > 1 ? "x" : ""}
           </p>
         </div>
         <Badge variant={list.status === "ACTIVE" ? "default" : "secondary"}>
@@ -512,9 +506,7 @@ function RegistryDetail() {
             <ListAppearanceEditor
               registryId={registryId}
               list={list}
-              onChange={(patch: AppearancePatch) =>
-                updateRegistry.mutate(patch as TablesUpdate<"registries">)
-              }
+              onChange={(patch: AppearancePatch) => updateRegistry.mutate(patch as LegacyListPatch)}
               onCoverUploaded={refresh}
             />
           </div>
@@ -642,7 +634,7 @@ function RegistryDetail() {
                 value={list.type}
                 onValueChange={(value) =>
                   updateRegistry.mutate({
-                    type: value as NonNullable<TablesUpdate<"registries">["type"]>,
+                    type: value as NonNullable<ListPatch["type"]>,
                   })
                 }
               >
@@ -677,8 +669,7 @@ function RegistryDetail() {
                 value={list.visibility}
                 onValueChange={(value) =>
                   updateRegistry.mutate({
-                    visibility: value as NonNullable<TablesUpdate<"registries">["visibility"]>,
-                    is_public: value === "PUBLIC",
+                    visibility: value as NonNullable<ListPatch["visibility"]>,
                   })
                 }
               >
@@ -723,7 +714,9 @@ function RegistryDetail() {
               <Label>Lorsqu'un cadeau est réservé</Label>
               <Select
                 value={list.reserved_display === "HIDE" ? "HIDE" : "SHOW"}
-                onValueChange={(value) => updateRegistry.mutate({ reserved_display: value })}
+                onValueChange={(value) =>
+                  updateRegistry.mutate({ reserved_display: value as "SHOW" | "HIDE" })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -787,4 +780,46 @@ function RegistryDetail() {
       </Tabs>
     </main>
   );
+}
+
+function toLegacyList(value: Awaited<ReturnType<typeof listApi.get>>) {
+  return {
+    ...value,
+    baby_name: value.childName,
+    welcome_message: value.welcomeMessage,
+    due_date: value.dueDate?.slice(0, 10) ?? null,
+    surprise_mode: value.surpriseMode,
+    allow_indexing: value.allowIndexing,
+    reserved_display: value.hideReservedGifts ? ("HIDE" as const) : ("SHOW" as const),
+    accent_color: value.accentColor,
+    hero_style: value.heroStyle,
+    font_pair: value.fontPair,
+    show_progress: value.showProgress,
+    cover_image_url: listApi.coverUrl(value),
+    access_code_hash: value.visibility === "PROTECTED" ? "configured" : null,
+  };
+}
+
+function fromLegacyPatch(patch: LegacyListPatch): ListPatch {
+  return {
+    ...(patch.title !== undefined ? { title: patch.title } : {}),
+    ...(patch.baby_name !== undefined ? { childName: patch.baby_name } : {}),
+    ...(patch.welcome_message !== undefined ? { welcomeMessage: patch.welcome_message } : {}),
+    ...(patch.due_date !== undefined ? { dueDate: patch.due_date } : {}),
+    ...(patch.type !== undefined ? { type: patch.type } : {}),
+    ...(patch.visibility !== undefined ? { visibility: patch.visibility } : {}),
+    ...(patch.status !== undefined ? { status: patch.status } : {}),
+    ...(patch.surprise_mode !== undefined ? { surpriseMode: patch.surprise_mode } : {}),
+    ...(patch.allow_indexing !== undefined ? { allowIndexing: patch.allow_indexing } : {}),
+    ...(patch.reserved_display !== undefined
+      ? { hideReservedGifts: patch.reserved_display === "HIDE" }
+      : {}),
+    ...(patch.theme !== undefined ? { theme: patch.theme } : {}),
+    ...(patch.accent_color !== undefined ? { accentColor: patch.accent_color } : {}),
+    ...(patch.hero_style !== undefined ? { heroStyle: patch.hero_style } : {}),
+    ...(patch.font_pair !== undefined ? { fontPair: patch.font_pair } : {}),
+    ...(patch.layout !== undefined ? { layout: patch.layout } : {}),
+    ...(patch.show_progress !== undefined ? { showProgress: patch.show_progress } : {}),
+    ...(patch.cover_image_url === null ? { coverMediaKey: null } : {}),
+  };
 }

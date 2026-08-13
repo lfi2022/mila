@@ -36,6 +36,8 @@ Passwords use Argon2id. Session, verification and reset values are random opaque
 
 Authenticated list management uses `GET/POST /api/v1/lists`, `GET/PATCH/DELETE /api/v1/lists/:listId`, and invitation endpoints below each list. Writes require the session plus CSRF header. Membership authorization is resolved in MySQL for every operation; frontend ownership claims are ignored.
 
+List detail includes owner/member identities and active invitations for authorized editors. `DELETE /api/v1/lists/:listId/members/:memberId` is owner/co-owner protected and refuses owner or self removal. Appearance fields are persisted with the list; non-null cover association is possible only through verified storage upload.
+
 Public reads use `GET /api/v1/public/lists/:slug`. A `PROTECTED` list first requires the throttled `POST /api/v1/public/lists/:slug/unlock`; a successful Argon2id check issues a one-hour HttpOnly signed access cookie. Stored access-code hashes are never selected into public responses. Invitation acceptance is email-bound, expiring, one-use and transactional at `POST /api/v1/invitations/accept`.
 
 ## Gift and product routes
@@ -49,6 +51,8 @@ Gift CRUD is nested below `/api/v1/lists/:listId/gifts`; updates, deletion and o
 `POST /api/v1/public/reservations` creates an account-free reservation using the gift’s opaque public token. A conditional MySQL update and serializable transaction ensure `reserved_quantity + requested <= quantity`; losing concurrent requests return HTTP 409 and create no reservation. The response contains a one-time 256-bit management token whose keyed digest alone is stored.
 
 Management uses body-carried tokens at `/api/v1/public/reservations/manage` and its `message`, `purchased`, and `cancel` actions, keeping tokens out of API path logs. Cancellation decrements inventory only after winning the reservation state transition. The public `/r/:token` page sends `no-referrer` and manages these actions through the API.
+
+Authorized parents use `GET /api/v1/lists/:listId/reservations`; owner/co-owner cancellation uses `DELETE /api/v1/lists/:listId/reservations/:reservationId` with CSRF and the same conditional inventory release.
 
 Authenticated `/api/v1/notifications` and `/api/v1/notification-preferences` endpoints expose in-app state and per-event in-app/email plus digest controls. Reservation events persist in-app notifications and append email work to Redis Streams. Surprise mode replaces guest/gift details with generic copy.
 

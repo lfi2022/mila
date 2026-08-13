@@ -100,12 +100,12 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 09 — Frontend feature architecture
 
-- [ ] Introduce `app`, `routes`, domain `features`, shared components, centralized API services, config, hooks, validations, and types.
-- [ ] Extract auth, lists, gifts, reservations, rewards, payments, orders, and admin from route-level god components.
-- [ ] Remove all direct database/Supabase calls and scattered network access from UI components.
-- [ ] Centralize `/api/v1`, auth/error/timeout behavior, and runtime public/asset URL helpers.
-- [ ] Preserve responsive behavior, loading, empty, and error states.
-- [ ] Eliminate avoidable duplicated validation and route/business coupling.
+- [x] Introduce `app`, `routes`, domain `features`, shared components, centralized API services, config, hooks, validations, and types.
+- [x] Extract auth, lists, gifts, reservations, rewards, payments, orders, and admin from route-level god components.
+- [x] Remove all direct database/Supabase calls and scattered network access from UI components.
+- [x] Centralize `/api/v1`, auth/error/timeout behavior, and runtime public/asset URL helpers.
+- [x] Preserve responsive behavior, loading, empty, and error states.
+- [x] Eliminate avoidable duplicated validation and route/business coupling.
 
 ## Stage 10 — Merchants and affiliation
 

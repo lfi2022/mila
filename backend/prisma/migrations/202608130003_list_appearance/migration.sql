@@ -1,0 +1,4 @@
+ALTER TABLE `gift_lists`
+  ADD COLUMN `hero_style` VARCHAR(32) NOT NULL DEFAULT 'soft',
+  ADD COLUMN `font_pair` VARCHAR(32) NOT NULL DEFAULT 'baloo',
+  ADD COLUMN `layout` VARCHAR(32) NOT NULL DEFAULT 'grid';

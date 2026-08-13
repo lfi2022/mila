@@ -4,6 +4,7 @@ import { AppError } from "../../common/errors/app-error.js";
 import type { AppConfig } from "../../config/env.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
 import type { NotificationQueue } from "../notifications/queue.js";
+import type { ListsService } from "../lists/service.js";
 
 export type ReservationInput = {
   giftToken: string;
@@ -18,6 +19,7 @@ export class ReservationsService {
     private readonly prisma: PrismaClient,
     private readonly config: AppConfig,
     private readonly notifications?: NotificationQueue,
+    private readonly lists?: ListsService,
   ) {}
 
   async create(input: ReservationInput) {
@@ -198,6 +200,49 @@ export class ReservationsService {
         ? "Mode surprise activé : les détails restent cachés."
         : `${record.guestName} a annulé la réservation de « ${record.gift.title} »`,
     );
+  }
+
+  async listForManager(userId: string, listId: string) {
+    if (!this.lists) throw new AppError(503, "MANAGER_ROUTES_UNAVAILABLE", "Service unavailable");
+    await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
+    return this.prisma.reservation.findMany({
+      where: { listId },
+      select: {
+        id: true,
+        guestName: true,
+        guestEmail: true,
+        message: true,
+        quantity: true,
+        status: true,
+        createdAt: true,
+        gift: { select: { title: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async cancelForManager(userId: string, listId: string, reservationId: string): Promise<void> {
+    if (!this.lists) throw new AppError(503, "MANAGER_ROUTES_UNAVAILABLE", "Service unavailable");
+    await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    const record = await this.prisma.reservation.findFirst({
+      where: { id: reservationId, listId },
+      select: { id: true, giftId: true, quantity: true },
+    });
+    if (!record) throw new AppError(404, "RESERVATION_NOT_FOUND", "Reservation not found");
+    await this.prisma.$transaction(async (transaction) => {
+      const changed = await transaction.reservation.updateMany({
+        where: { id: record.id, status: { in: ["RESERVED", "PURCHASED"] } },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
+      });
+      if (changed.count !== 1) {
+        throw new AppError(409, "RESERVATION_STATE_INVALID", "Reservation is already closed");
+      }
+      await transaction.$executeRawUnsafe(
+        "UPDATE gifts SET reserved_quantity = GREATEST(reserved_quantity - ?, 0), status = CASE WHEN status = 'RESERVED' THEN 'AVAILABLE' ELSE status END WHERE id = ?",
+        record.quantity,
+        record.giftId,
+      );
+    });
   }
 
   private async requireToken(token: string) {

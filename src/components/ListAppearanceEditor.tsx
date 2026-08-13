@@ -1,4 +1,3 @@
-import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { uploadListCover } from "@/lib/covers.functions";
+import { uploadListCover } from "@/features/storage/api";
 import {
   FONT_PAIRS,
   HERO_STYLES,
@@ -41,7 +40,6 @@ type Props = {
 };
 
 export function ListAppearanceEditor({ registryId, list, onChange, onCoverUploaded }: Props) {
-  const upload = useServerFn(uploadListCover);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [customColor, setCustomColor] = useState(
@@ -57,14 +55,8 @@ export function ListAppearanceEditor({ registryId, list, onChange, onCoverUpload
     }
     setBusy(true);
     try {
-      const buffer = await file.arrayBuffer();
-      let binary = "";
-      const bytes = new Uint8Array(buffer);
-      for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]!);
-      await upload({
-        data: { registryId, contentType: file.type, base64: btoa(binary) },
-      });
-      toast.success("Photo mise en ligne");
+      await uploadListCover(registryId, file);
+      toast.success("Photo envoyée, analyse de sécurité en cours");
       onCoverUploaded();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Envoi impossible");

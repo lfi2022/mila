@@ -28,6 +28,10 @@ type ListInput = {
   allowIndexing: boolean;
   showProgress: boolean;
   theme: string;
+  heroStyle?: string;
+  fontPair?: string;
+  layout?: string;
+  coverMediaKey?: null;
   accentColor?: string | null;
 };
 
@@ -44,7 +48,10 @@ export class ListsService {
         deletedAt: null,
         OR: [{ ownerId: userId }, { members: { some: { userId } } }],
       },
-      include: { members: { select: { userId: true, role: true } } },
+      include: {
+        members: { select: { userId: true, role: true } },
+        _count: { select: { gifts: true, reservations: true } },
+      },
       orderBy: { updatedAt: "desc" },
     });
   }
@@ -54,7 +61,13 @@ export class ListsService {
     return this.prisma.giftList.findFirstOrThrow({
       where: { id: listId, deletedAt: null },
       include: {
+        owner: { select: { id: true, displayName: true, email: true } },
         members: { include: { user: { select: { id: true, email: true, displayName: true } } } },
+        invitations: {
+          where: { revokedAt: null },
+          select: { id: true, email: true, role: true, acceptedAt: true, expiresAt: true },
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
   }
@@ -106,6 +119,19 @@ export class ListsService {
       where: { id: listId },
       data: { coverMediaKey: storageKey },
     });
+  }
+
+  async removeMember(userId: string, listId: string, memberId: string): Promise<void> {
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    const member = await this.prisma.listMember.findFirst({
+      where: { id: memberId, listId },
+      select: { id: true, role: true, userId: true },
+    });
+    if (!member) throw new AppError(404, "LIST_MEMBER_NOT_FOUND", "List member not found");
+    if (member.role === "OWNER" || member.userId === userId) {
+      throw new AppError(403, "LIST_MEMBER_REMOVE_FORBIDDEN", "This member cannot be removed");
+    }
+    await this.prisma.listMember.delete({ where: { id: member.id } });
   }
 
   async publicList(slug: string, grant?: string) {
@@ -279,5 +305,9 @@ function listData(input: Partial<ListInput>) {
     ...(input.showProgress !== undefined ? { showProgress: input.showProgress } : {}),
     ...(input.theme !== undefined ? { theme: input.theme } : {}),
     ...(input.accentColor !== undefined ? { accentColor: input.accentColor || null } : {}),
+    ...(input.heroStyle !== undefined ? { heroStyle: input.heroStyle } : {}),
+    ...(input.fontPair !== undefined ? { fontPair: input.fontPair } : {}),
+    ...(input.layout !== undefined ? { layout: input.layout } : {}),
+    ...(input.coverMediaKey !== undefined ? { coverMediaKey: null } : {}),
   };
 }

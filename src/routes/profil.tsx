@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { formatCents } from "@/lib/money";
-import { getMyReferral, refreshMyReferrals } from "@/lib/rewards.functions";
+import { getMyReferral, refreshMyReferrals } from "@/features/rewards/api";
 
 export const Route = createFileRoute("/profil")({
   head: () => ({

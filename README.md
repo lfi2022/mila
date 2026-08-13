@@ -6,7 +6,7 @@ The complete execution checklist is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPL
 
 ## Current migration state
 
-The Lovable build preset, runtime auth bridge, preview metadata, and error-reporting hook have been removed. Supabase remains temporarily connected while its auth/data/storage features are replaced stage by stage; it is not part of the target architecture.
+The Lovable build preset, runtime auth bridge, preview metadata, and error-reporting hook have been removed. Browser auth, lists, gifts, reservations, notifications and storage use the self-hosted API. Supabase remains server-only for roadmap domains not yet migrated (notably rewards/admin/public compatibility); it is not part of the target architecture.
 
 Do not use the migration branch as production until the stage journal marks the required technical and product stages complete.
 

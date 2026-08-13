@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
-import { registerReferral } from "@/lib/rewards.functions";
+import { registerReferral } from "@/features/rewards/api";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

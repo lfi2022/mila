@@ -147,7 +147,9 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
         await api.register(productRoutes(auth, config));
         await api.register(
           reservationRoutes(
-            new ReservationsService(options.database.client, config, notifications),
+            new ReservationsService(options.database.client, config, notifications, lists),
+            auth,
+            config,
           ),
         );
       }

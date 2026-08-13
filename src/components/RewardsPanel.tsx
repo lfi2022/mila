@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/money";
-import { getListRewards, listRewardOffers, requestRewardRedemption } from "@/lib/rewards.functions";
+import { getListRewards, listRewardOffers, requestRewardRedemption } from "@/features/rewards/api";
 
 const TYPE_LABELS: Record<string, string> = {
   AFFILIATE_COMMISSION: "Achat depuis votre liste",

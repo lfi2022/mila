@@ -18,8 +18,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
-import { supabase } from "@/integrations/supabase/client";
-import type { TablesInsert } from "@/integrations/supabase/types";
+import { listApi } from "@/features/lists/api";
+import { notificationApi } from "@/features/notifications/api";
+import { queryKeys } from "@/app/query";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({
@@ -56,6 +57,7 @@ const registrySchema = z.object({
   babyName: z.string().trim().max(80),
   welcome: z.string().trim().max(600),
   dueDate: z.string().max(10),
+  accessCode: z.string().max(128),
 });
 
 function slugify(value: string) {
@@ -76,65 +78,46 @@ function DashboardHome() {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<(typeof LIST_TYPES)[number]["value"]>("BIRTH");
   const [visibility, setVisibility] = useState<"PUBLIC" | "UNLISTED" | "PROTECTED">("UNLISTED");
-  const [form, setForm] = useState({ title: "", babyName: "", welcome: "", dueDate: "" });
+  const [form, setForm] = useState({
+    title: "",
+    babyName: "",
+    welcome: "",
+    dueDate: "",
+    accessCode: "",
+  });
 
   const registries = useQuery({
-    queryKey: ["registries", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("registries")
-        .select(
-          "id, title, baby_name, slug, visibility, status, type, due_date, view_count, surprise_mode, items(id, quantity, reserved_qty)",
-        )
-        .eq("is_demo", false)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryKey: queryKeys.lists(user?.id),
+    queryFn: listApi.mine,
   });
 
   const notifications = useQuery({
     queryKey: ["notifications", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("id, title, body, created_at, read_at")
-        .order("created_at", { ascending: false })
-        .limit(8);
-      if (error) throw error;
-      return data;
-    },
+    queryFn: notificationApi.list,
   });
 
   const createRegistry = useMutation({
     mutationFn: async () => {
       const parsed = registrySchema.safeParse(form);
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Champs invalides");
-      const payload: TablesInsert<"registries"> = {
-        owner_id: user!.id,
+      return listApi.create({
         title: parsed.data.title,
-        baby_name: parsed.data.babyName || null,
-        welcome_message: parsed.data.welcome || null,
-        due_date: parsed.data.dueDate || null,
+        childName: parsed.data.babyName || null,
+        welcomeMessage: parsed.data.welcome || null,
+        dueDate: parsed.data.dueDate || null,
         slug: slugify(parsed.data.babyName || parsed.data.title),
         type,
         visibility,
-        is_public: visibility === "PUBLIC",
-      };
-      const { data, error } = await supabase
-        .from("registries")
-        .insert(payload)
-        .select("id")
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+        status: "ACTIVE",
+        ...(visibility === "PROTECTED" ? { accessCode: parsed.data.accessCode } : {}),
+      });
     },
     onSuccess: (created) => {
       track("list_created");
       toast.success("Liste créée");
-      setForm({ title: "", babyName: "", welcome: "", dueDate: "" });
+      setForm({ title: "", babyName: "", welcome: "", dueDate: "", accessCode: "" });
       setOpen(false);
-      void queryClient.invalidateQueries({ queryKey: ["registries"] });
+      void queryClient.invalidateQueries({ queryKey: ["lists"] });
       if (created)
         void navigate({ to: "/dashboard/$registryId", params: { registryId: created.id } });
     },
@@ -142,13 +125,7 @@ function DashboardHome() {
   });
 
   const markRead = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: notificationApi.markRead,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
@@ -178,6 +155,17 @@ function DashboardHome() {
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
               />
             </div>
+            {visibility === "PROTECTED" ? (
+              <div className="space-y-2">
+                <Label htmlFor="access-code">Code d'accès</Label>
+                <Input
+                  id="access-code"
+                  minLength={6}
+                  value={form.accessCode}
+                  onChange={(e) => setForm({ ...form, accessCode: e.target.value })}
+                />
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="baby">Prénom / occasion (optionnel)</Label>
               <Input
@@ -256,8 +244,8 @@ function DashboardHome() {
             </div>
           )}
           {registries.data?.map((registry) => {
-            const items = registry.items ?? [];
-            const reserved = items.filter((item) => item.reserved_qty >= item.quantity).length;
+            const giftCount = registry._count?.gifts ?? 0;
+            const reserved = registry._count?.reservations ?? 0;
             const typeLabel = LIST_TYPES.find((t) => t.value === registry.type)?.label ?? "Liste";
             return (
               <div key={registry.id} className="space-y-2">
@@ -284,11 +272,10 @@ function DashboardHome() {
                     </div>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {items.length} cadeau{items.length > 1 ? "x" : ""} · {reserved} réservé
-                    {reserved > 1 ? "s" : ""} · {registry.view_count} visite
-                    {registry.view_count > 1 ? "s" : ""}
-                    {registry.due_date
-                      ? ` · prévu le ${new Date(registry.due_date).toLocaleDateString("fr-FR")}`
+                    {giftCount} cadeau{giftCount > 1 ? "x" : ""} · {reserved} réservé
+                    {reserved > 1 ? "s" : ""}
+                    {registry.dueDate
+                      ? ` · prévu le ${new Date(registry.dueDate).toLocaleDateString("fr-FR")}`
                       : ""}
                   </p>
                 </Link>
@@ -317,14 +304,14 @@ function DashboardHome() {
               <li
                 key={notification.id}
                 className={`rounded-lg border border-border p-3 ${
-                  notification.read_at ? "opacity-60" : "bg-secondary/50"
+                  notification.readAt ? "opacity-60" : "bg-secondary/50"
                 }`}
               >
                 <p className="text-sm font-medium">{notification.title}</p>
                 {notification.body && (
                   <p className="mt-1 text-xs text-muted-foreground">{notification.body}</p>
                 )}
-                {!notification.read_at && (
+                {!notification.readAt && (
                   <button
                     className="mt-2 text-xs text-primary underline"
                     onClick={() => markRead.mutate(notification.id)}

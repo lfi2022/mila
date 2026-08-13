@@ -34,3 +34,11 @@ export function buildPublicUrl(path = "/"): string {
     ? new URL(normalizedPath, `${runtimeConfig.publicOrigin}/`).toString()
     : normalizedPath;
 }
+
+export function buildAssetUrl(purpose: "list-cover" | "product-image", key: string): string {
+  const safeKey = key
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
+  return `${runtimeConfig.assetBaseUrl}/${purpose}/${safeKey}`;
+}

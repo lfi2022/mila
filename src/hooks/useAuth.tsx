@@ -1,15 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { apiRequest } from "@/services/api/client";
+import { authApi, type MilaUser } from "@/features/auth/api";
 
-export type MilaUser = {
-  id: string;
-  email: string;
-  displayName: string | null;
-  emailVerified: boolean;
-  onboardingCompleted: boolean;
-  roles: Array<"USER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN">;
-};
+export type { MilaUser } from "@/features/auth/api";
 
 type AuthContextValue = {
   user: MilaUser | null;
@@ -32,8 +25,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    void apiRequest<{ user: MilaUser }>("/auth/me")
-      .then(({ user: current }) => {
+    void authApi
+      .me()
+      .then((current) => {
         if (active) setUser(current);
       })
       .catch(() => {
@@ -47,53 +41,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    const expire = () => setUser(null);
+    window.addEventListener("mila:session-expired", expire);
+    return () => window.removeEventListener("mila:session-expired", expire);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       session: user ? { user } : null,
       loading,
       async signIn(email, password) {
-        const response = await apiRequest<{ user: MilaUser }>("/auth/login", {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        });
-        setUser(response.user);
+        setUser(await authApi.login(email, password));
       },
       async signUp(email, password, displayName) {
-        const response = await apiRequest<{ verificationRequired: boolean }>("/auth/signup", {
-          method: "POST",
-          body: JSON.stringify({ email, password, displayName }),
-        });
+        const response = await authApi.signup(email, password, displayName);
         return response.verificationRequired;
       },
       async signOut() {
-        await apiRequest<void>("/auth/logout", { method: "POST", csrf: true });
+        await authApi.logout();
         setUser(null);
       },
       async refresh() {
-        const response = await apiRequest<{ user: MilaUser }>("/auth/refresh", {
-          method: "POST",
-          csrf: true,
-        });
-        setUser(response.user);
+        setUser(await authApi.refresh());
       },
       async updateProfile(displayName) {
-        const response = await apiRequest<{ user: MilaUser }>("/auth/profile", {
-          method: "PATCH",
-          csrf: true,
-          body: JSON.stringify({ displayName }),
-        });
-        setUser(response.user);
+        setUser(await authApi.updateProfile(displayName));
       },
       async exportAccount() {
-        return apiRequest<unknown>("/auth/export");
+        return authApi.exportAccount();
       },
       async deleteAccount() {
-        await apiRequest<void>("/auth/account", {
-          method: "DELETE",
-          csrf: true,
-          body: JSON.stringify({ confirmation: "DELETE" }),
-        });
+        await authApi.deleteAccount();
         setUser(null);
       },
     }),

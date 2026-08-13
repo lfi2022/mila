@@ -306,3 +306,31 @@ External blockers:
 
 - SMTP credentials and sender-domain DNS remain `BLOCKED_EXTERNAL` for real email delivery;
 - the malware scanner service is `BLOCKED_EXTERNAL`; uploads remain pending and public asset delivery fails closed until a scanner marks objects clean.
+
+## Stage 09 — Frontend feature architecture
+
+Status: DONE_WITH_LATER_DOMAIN_ADAPTERS
+
+Implemented:
+
+- explicit `app`, `features`, `routes`, shared UI, config, hook and centralized transport boundaries;
+- typed self-hosted adapters for auth, lists, gifts, reservations, notifications, products and storage;
+- dashboard and notification UI migrated away from browser Supabase/database access without changing responsive presentation states;
+- list appearance persistence, direct signed cover upload and stable asset URL construction;
+- parent reservation reads/cancellation and member removal backed by server-side role checks and CSRF;
+- global API timeout/error/session-expiry behavior and conservative TanStack Query retry policy;
+- feature boundaries for rewards/admin transitional adapters and payment/order types until their dedicated implementation stages;
+- unused browser Supabase client and obsolete list/product/cover server functions removed.
+
+Migration: `202608130003_list_appearance`.
+
+Validation:
+
+- `npm run check`: PASS;
+- frontend tests: 14 PASS, including centralized API success/error behavior;
+- backend tests: 38 PASS, including authorized manager reservation release;
+- Prisma schema validation and migration audit: PASS.
+
+Transition note:
+
+- rewards, admin, public compatibility and affiliate redirect server functions remain isolated legacy Supabase consumers until Stages 10, 11 and 19 expose their self-hosted domain APIs.

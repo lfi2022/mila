@@ -1,76 +1,34 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
-import { useEffect } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-
-type NotificationRow = {
-  id: string;
-  title: string;
-  body: string | null;
-  read_at: string | null;
-  created_at: string;
-  registry_id: string | null;
-};
+import { notificationApi, type Notification } from "@/features/notifications/api";
+import { queryKeys } from "@/app/query";
 
 export function NotificationsBell() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const notificationsQuery = useQuery({
-    queryKey: ["notifications", user?.id],
+    queryKey: queryKeys.notifications(user?.id),
     enabled: Boolean(user),
-    queryFn: async (): Promise<NotificationRow[]> => {
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("id, title, body, read_at, created_at, registry_id")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async (): Promise<Notification[]> => notificationApi.list(),
+    refetchInterval: 30_000,
   });
-
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("notifications-bell")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => queryClient.invalidateQueries({ queryKey: ["notifications", user.id] }),
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [user, queryClient]);
 
   if (!user) return null;
 
   const items = notificationsQuery.data ?? [];
-  const unread = items.filter((item) => !item.read_at);
+  const unread = items.filter((item) => !item.readAt);
 
   const markAllRead = async () => {
     if (unread.length === 0) return;
-    await supabase
-      .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .in(
-        "id",
-        unread.map((item) => item.id),
-      );
-    void queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+    await Promise.all(unread.map((item) => notificationApi.markRead(item.id)));
+    void queryClient.invalidateQueries({ queryKey: queryKeys.notifications(user.id) });
   };
 
   return (
@@ -105,13 +63,13 @@ export function NotificationsBell() {
                 <li key={item.id} className="px-4 py-3">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-medium leading-snug">{item.title}</p>
-                    {!item.read_at ? <Badge className="shrink-0">Nouveau</Badge> : null}
+                    {!item.readAt ? <Badge className="shrink-0">Nouveau</Badge> : null}
                   </div>
                   {item.body ? (
                     <p className="mt-1 text-xs text-muted-foreground">{item.body}</p>
                   ) : null}
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {new Date(item.created_at).toLocaleString("fr-BE", {
+                    {new Date(item.createdAt).toLocaleString("fr-BE", {
                       dateStyle: "medium",
                       timeStyle: "short",
                     })}

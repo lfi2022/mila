@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { RewardsPanel } from "@/components/RewardsPanel";
+import { RewardsPanel } from "@/features/rewards/components";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
 

@@ -30,6 +30,10 @@ const listInput = z.object({
   allowIndexing: z.boolean().default(false),
   showProgress: z.boolean().default(true),
   theme: z.string().min(1).max(64).default("default"),
+  heroStyle: z.enum(["soft", "cover", "minimal"]).default("soft"),
+  fontPair: z.enum(["baloo", "serif", "moderne"]).default("baloo"),
+  layout: z.enum(["grid", "list", "magazine"]).default("grid"),
+  coverMediaKey: z.null().optional(),
   accentColor: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
@@ -117,6 +121,16 @@ export function listRoutes(
         .object({ listId: z.string().uuid(), invitationId: z.string().uuid() })
         .parse(request.params);
       await lists.revokeInvitation(user.id, params.listId, params.invitationId);
+      return reply.status(204).send();
+    });
+
+    app.delete("/lists/:listId/members/:memberId", async (request, reply) => {
+      requireCsrf(request);
+      const user = await current(request);
+      const params = z
+        .object({ listId: z.string().uuid(), memberId: z.string().uuid() })
+        .parse(request.params);
+      await lists.removeMember(user.id, params.listId, params.memberId);
       return reply.status(204).send();
     });
 

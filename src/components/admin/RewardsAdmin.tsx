@@ -25,7 +25,7 @@ import {
   setWalletFlag,
   simulateRewardShare,
   updateRewardSettings,
-} from "@/lib/rewards-admin.functions";
+} from "@/features/admin/api";
 
 function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (

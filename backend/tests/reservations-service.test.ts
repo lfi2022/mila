@@ -122,4 +122,29 @@ describe("ReservationsService", () => {
     expect(updateMany).toHaveBeenCalledOnce();
     expect(execute).toHaveBeenCalledWith(expect.stringContaining("GREATEST"), 2, "gift-1");
   });
+
+  it("authorizes a manager before releasing a reservation", async () => {
+    const assertRole = vi.fn().mockResolvedValue("OWNER");
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const execute = vi.fn().mockResolvedValue(1);
+    const prisma = {
+      reservation: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "reservation-1",
+          giftId: "gift-1",
+          quantity: 1,
+        }),
+      },
+      $transaction: vi
+        .fn()
+        .mockImplementation((callback) =>
+          callback({ reservation: { updateMany }, $executeRawUnsafe: execute }),
+        ),
+    } as unknown as PrismaClient;
+    const service = new ReservationsService(prisma, config, undefined, { assertRole } as never);
+    await service.cancelForManager("owner-1", "list-1", "reservation-1");
+    expect(assertRole).toHaveBeenCalledWith("owner-1", "list-1", ["OWNER", "CO_OWNER"]);
+    expect(updateMany).toHaveBeenCalledOnce();
+    expect(execute).toHaveBeenCalledOnce();
+  });
 });

@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RewardsAdmin } from "@/components/admin/RewardsAdmin";
+import { RewardsAdmin } from "@/features/admin/components";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -38,7 +38,7 @@ import {
   adminSaveMerchant,
   adminTestAffiliateLink,
   getAdminStats,
-} from "@/lib/admin.functions";
+} from "@/features/admin/api";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
