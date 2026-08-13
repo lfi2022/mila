@@ -225,6 +225,8 @@ External/transition blocker:
 
 Status: DONE_WITH_CONNECTOR_CONFIGURATION
 
+Commits: `fc9f2be`, `d47725e`
+
 Implemented:
 
 - role-protected gift CRUD, ordering and soft deletion across all roadmap gift kinds;
