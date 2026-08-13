@@ -30,7 +30,7 @@ export const authApi = {
       body: JSON.stringify({
         email,
         password,
-        displayName,
+        ...(displayName?.trim() ? { displayName: displayName.trim() } : {}),
         termsAccepted: true,
         termsVersion,
         marketingConsent,

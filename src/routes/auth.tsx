@@ -76,6 +76,10 @@ function AuthPage() {
   }, [loading, user, navigate]);
 
   const validate = (withName: boolean) => {
+    if (withName && !name.trim()) {
+      toast.error("Votre prénom est requis pour créer le compte.");
+      return null;
+    }
     const parsed = credentials.safeParse({ email, password, name: withName ? name : undefined });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Champs invalides");
