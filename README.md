@@ -25,6 +25,14 @@ npm run dev
 
 The development server listens on port 8080 by default.
 
+The self-hosted API is a separate workspace:
+
+```sh
+npm run backend:dev
+```
+
+It listens on `PORT` (3000 by default), exposes `/api/v1`, and refuses to start when required base environment configuration is invalid.
+
 ## Validation
 
 ```sh
@@ -32,6 +40,8 @@ npm run check
 ```
 
 Individual commands are available for secret scanning, formatting, linting, type checking, unit tests, and the production build.
+
+API routes and compatibility rules are documented in [`docs/API.md`](docs/API.md).
 
 ## Environment safety
 

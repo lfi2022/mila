@@ -29,13 +29,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 02 — Self-hosted backend bootstrap and API v1
 
-- [ ] Create a modular Node.js/TypeScript/Fastify backend.
-- [ ] Establish `/api/v1` with centralized route registration and OpenAPI documentation.
-- [ ] Add structured errors, request IDs, safe logging, validation, security headers, CORS allowlist, proxy trust, body limits, and rate limiting.
-- [ ] Add modules for auth, users, lists, gifts, reservations, products, merchants, orders, payments, rewards, notifications, media, reports, admin, and webhooks.
-- [ ] Keep business logic outside controllers and frontend components.
-- [ ] Prepare future API version coexistence and deprecation headers.
-- [ ] Add liveness/readiness health endpoints.
+- [x] Create a modular Node.js/TypeScript/Fastify backend.
+- [x] Establish `/api/v1` with centralized route registration and OpenAPI documentation.
+- [x] Add structured errors, request IDs, safe logging, validation, security headers, CORS allowlist, proxy trust, body limits, and rate limiting.
+- [x] Register module boundaries for auth, users, lists, gifts, reservations, products, merchants, orders, payments, rewards, notifications, media, reports, admin, and webhooks.
+- [x] Keep business logic outside controllers and frontend components from the bootstrap onward.
+- [x] Prepare future API version coexistence and document the compatibility/deprecation policy.
+- [x] Add liveness/readiness health endpoints with injectable dependency probes.
 
 ## Stage 03 — Remote MySQL and versioned data model
 

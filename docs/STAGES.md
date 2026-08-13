@@ -78,3 +78,43 @@ Notes:
 
 - Supabase is deliberately still transitional and is removed by the backend/data/auth stages.
 - Final full-size Mila logo artwork is `BLOCKED_EXTERNAL`; the local mark prevents runtime Lovable asset calls.
+
+## Stage 02 — Self-hosted backend bootstrap and API v1
+
+Status: DONE
+
+Commit: pending
+
+Implemented:
+
+- independent `@mila/backend` npm workspace using Node.js, TypeScript and Fastify;
+- validated environment configuration with HTTPS/SEO consistency checks;
+- explicit `/api/v1` root and module registry;
+- liveness and dependency-aware readiness endpoints;
+- OpenAPI generation and interactive documentation;
+- UUID request IDs, structured/redacted logging, normalized errors and 404 contract;
+- Helmet security headers, environment CORS allowlist, request body limit, proxy trust and rate limiting;
+- graceful SIGINT/SIGTERM shutdown;
+- backend unit/injection tests and root quality-pipeline integration.
+
+Tests:
+
+- `npm run backend:typecheck`: PASS;
+- `npm run backend:test`: PASS — 3 tests;
+- `npm run backend:build`: PASS.
+
+Environment:
+
+- `APP_ENV`, `NODE_ENV`, `APP_NAME`, `APP_URL`;
+- `API_PUBLIC_URL`, `ASSET_PUBLIC_URL`;
+- `HOST`, `PORT`, `TRUST_PROXY`, `LOG_LEVEL`;
+- `CORS_ALLOWED_ORIGINS`, `REQUEST_BODY_LIMIT_BYTES`;
+- `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`;
+- `SEO_INDEXING_ENABLED`.
+
+Migration: none.
+
+Notes:
+
+- Rate limiting is process-local for this bootstrap and becomes Redis-backed in the infrastructure stage.
+- Product endpoints are intentionally not exposed as placeholders; each module is activated only when its domain stage satisfies the Definition of Done.

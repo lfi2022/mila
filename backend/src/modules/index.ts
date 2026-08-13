@@ -1,0 +1,17 @@
+export const MODULE_NAMES = [
+  "auth",
+  "users",
+  "lists",
+  "gifts",
+  "reservations",
+  "products",
+  "merchants",
+  "orders",
+  "payments",
+  "rewards",
+  "notifications",
+  "media",
+  "reports",
+  "admin",
+  "webhooks",
+] as const;
