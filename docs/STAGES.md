@@ -161,6 +161,8 @@ External blockers:
 
 Status: CORE_DONE_TRANSITIONAL_CALLERS_REMAIN
 
+Commit: `ac17e2c`
+
 Implemented:
 
 - autonomous `/api/v1/auth` signup, login, current-session, rotation, logout, verification, reset, profile, export and deletion endpoints;
