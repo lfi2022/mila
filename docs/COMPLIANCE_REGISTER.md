@@ -17,7 +17,7 @@ Optional child data (name, due date, photos) is never required for account creat
 
 ## Consent and cookies
 
-Necessary session/CSRF/access cookies are separated from analytics consent. Analytics is denied/unset by default and sends no external event before opt-in. `privacy_consents` records purpose, policy version, decision, source and a pseudonymous subject hash when a server-side consent event is implemented in Stage 18.
+Necessary session/CSRF/access cookies are separated from analytics consent. Analytics is denied/unset by default and sends no event before opt-in. The browser choice remains editable on `/cookies`; accepted product events carry an affirmative flag and are persisted only under keyed visitor/session pseudonyms. `privacy_consents` remains the account-level evidence store for versioned policy decisions, separate from anonymous audience measurement.
 
 ## Rights workflow
 

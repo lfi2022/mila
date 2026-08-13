@@ -65,6 +65,10 @@ Media assets retain exact MIME, size, SHA-256 checksum, scan/transcode state, re
 
 Suspension sets `users.suspended_at` and revokes active sessions. Reports remain separate from risk reviews: a user report is evidence to triage, while a risk row records why manual review was requested and its resolution. `security_incidents` and `data_processors` are operational registers, not claims that an external incident process or processor contract has been approved.
 
+## Product analytics invariants
+
+`202608130012_product_analytics` stores consented allowlisted events separately from operational and financial truth. `subject_hash` and `session_hash` are keyed SHA-256 pseudonyms; raw visitor/session UUIDs are never columns. Event/time and subject/time indexes support bounded staff aggregation. Properties are short primitive JSON values only. Business KPIs continue to come from their authoritative tables, so analytics deletion cannot change payments, reservations, rewards or entitlements.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

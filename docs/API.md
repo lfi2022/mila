@@ -132,6 +132,10 @@ All `/api/v1/admin/*` reads authenticate the session and require moderator/admin
 
 The throttled public `POST /api/v1/public/reports` validates a real list/gift/user/message target and controlled reason. Honeypot, implausibly fast submission, link density and high-risk categories feed a bounded score. Medium-risk submissions create a manual risk review; high-risk submissions use the optional HTTPS adaptive-CAPTCHA hook when configured. Shared-IP use alone is never a ban signal.
 
+## Product analytics routes
+
+`POST /api/v1/analytics/events` accepts only an explicit consent flag, allowlisted event, UUID visitor/session identifiers, a path without query data, a recent timestamp and bounded primitive properties. It persists keyed pseudonyms rather than those UUIDs and always returns a non-identifying acceptance result. `GET /api/v1/admin/analytics?days=30` is staff-protected and combines consented funnel counts with authoritative user, list, gift, reservation, purchase, commission, Premium, referral and activated-family aggregates. Metrics that cannot yet be supported by real records stay null with a reason.
+
 ## Error contract
 
 ```json

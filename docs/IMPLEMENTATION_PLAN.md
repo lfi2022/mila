@@ -179,12 +179,12 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 18 — SEO, analytics, performance, accessibility, and PWA
 
-- [ ] Make indexing environment-driven: local/staging noindex/nofollow and blocking robots; production canonical/sitemap/indexing.
-- [ ] Build useful editorial clusters and structured data without thin/fake content; disclose affiliate links.
-- [ ] Track the documented activation funnel and KPIs without fake production data or unnecessary personal data.
-- [ ] Add performance budgets, image optimization, caching, pagination, DB indexes, compression, and Core Web Vitals monitoring.
-- [ ] Validate contrast, keyboard, focus, labels, ARIA, alt text, form errors, and touch targets.
-- [ ] Add installable PWA manifest/icons, minimal offline behavior, safe caching, native sharing, and optional push.
+- [x] Make indexing environment-driven: local/staging noindex/nofollow and blocking robots; production canonical/sitemap/indexing.
+- [x] Build useful editorial clusters and structured data without thin/fake content; disclose affiliate links.
+- [x] Track the documented activation funnel and KPIs without fake production data or unnecessary personal data.
+- [x] Add performance budgets, image optimization, caching, pagination, DB indexes, compression, and Core Web Vitals monitoring.
+- [x] Validate contrast, keyboard, focus, labels, ARIA, alt text, form errors, and touch targets.
+- [x] Add installable PWA manifest/icons, minimal offline behavior, safe caching, native sharing, and optional push.
 
 ## Stage 19 — Partners and family lifecycle
 
