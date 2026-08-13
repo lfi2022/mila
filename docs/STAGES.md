@@ -478,3 +478,43 @@ External blockers:
 - real third-party-funds collection remains disabled until legal/accounting validation identifies an authorized account and operating process;
 - Mollie Connect, parent onboarding/routing and executable payouts remain `BLOCKED_EXTERNAL` pending the marketplace contract, provider approval, KYC model and production credentials;
 - payout UI/API is intentionally absent until those regulated-flow prerequisites are approved.
+
+## Stage 14 — Price tracking and comparison
+
+Status: DONE_WITH_MERCHANT_FEEDS_CONFIGURATION_PENDING
+
+Commit: `484beba`
+
+Implemented:
+
+- immutable added price plus successful/failed price, availability and link-health snapshots with reliable same-currency differences;
+- background scheduler with atomic leases, global/per-merchant batches, due-date/volatility/status cadence, merchant minimum intervals and failure backoff;
+- explicit price-drop, stock and dead-link opt-ins with in-app/immediate-email preference enforcement;
+- normalized controlled identities using GTIN/EAN, brand+MPN or brand+model, and staff offer ingestion with domain/match provenance checks;
+- user-value ranking based on product plus delivery cost, availability, delivery timing, merchant trust, freshness and match confidence;
+- fixed, suggested and guarded automatic modes, all default-safe and controlled from the parent dashboard;
+- automatic switching gated by global/list/gift consent, 90%+ match, trusted merchant, availability, configurable savings and unreserved state;
+- append-only offer-switch history and public cheaper-offer suggestions; affiliate eligibility never changes the rank.
+
+Migration: `202608130008_price_tracking`.
+
+Validation:
+
+- `npm run check`: PASS;
+- frontend tests: 14 PASS;
+- backend tests: 57 PASS, including cadence/backoff, controlled identity creation and commission-independent offer ranking;
+- frontend and backend production builds: PASS;
+- Prisma validation, legacy migration audit and Docker Compose configuration: PASS;
+- lint: PASS with 8 pre-existing Fast Refresh warnings.
+
+Environment variables:
+
+- `FEATURE_PRICE_TRACKING`, `FEATURE_PRICE_ALERTS`, `FEATURE_PRICE_COMPARISON`;
+- `PRICE_SCHEDULER_INTERVAL_MS`, `PRICE_REFRESH_BATCH_SIZE`, `PRICE_REFRESH_PER_MERCHANT_BATCH`;
+- `PRICE_REFRESH_MIN_HOURS`, `PRICE_REFRESH_MAX_HOURS`, `PRICE_AUTO_SWITCH_MIN_SAVINGS_BPS`.
+
+External configuration:
+
+- official merchant APIs/affiliate feeds, their rate limits and contractual data/image permissions remain configuration work per merchant;
+- without an authorized feed/API, the hardened HTML metadata connector remains conservative and merchant minimum intervals apply;
+- automatic comparison stays feature-flagged off until trusted merchants and controlled offers are populated.

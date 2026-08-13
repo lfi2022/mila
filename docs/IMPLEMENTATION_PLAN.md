@@ -146,12 +146,12 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 14 — Price tracking and comparison
 
-- [ ] Persist price/availability snapshots and reliable added/current price differences.
-- [ ] Schedule respectful refresh based on activity, due date, volatility, merchant rules, and API limits.
-- [ ] Implement opt-in price, stock, and dead-link alerts.
-- [ ] Model ProductIdentity and MerchantOffer using GTIN/EAN, SKU/MPN, brand/model, and controlled matching.
-- [ ] Support fixed merchant, suggested best offer, and guarded automatic switching (off by default).
-- [ ] Rank by total user value including delivery, availability, trust, and timing; never commission alone.
+- [x] Persist price/availability snapshots and reliable added/current price differences.
+- [x] Schedule respectful refresh based on activity, due date, volatility, merchant rules, and API limits.
+- [x] Implement opt-in price, stock, and dead-link alerts.
+- [x] Model ProductIdentity and MerchantOffer using GTIN/EAN, SKU/MPN, brand/model, and controlled matching.
+- [x] Support fixed merchant, suggested best offer, and guarded automatic switching (off by default).
+- [x] Rank by total user value including delivery, availability, trust, and timing; never commission alone.
 
 ## Stage 15 — Order grouping and fulfilment
 
