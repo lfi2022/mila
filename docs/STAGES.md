@@ -311,6 +311,8 @@ External blockers:
 
 Status: DONE_WITH_LATER_DOMAIN_ADAPTERS
 
+Commit: `c9091bb`
+
 Implemented:
 
 - explicit `app`, `features`, `routes`, shared UI, config, hook and centralized transport boundaries;
