@@ -25,7 +25,9 @@ export async function apiRequest<T>(
   }
   let response: Response;
   try {
-    response = await fetch(`${runtimeConfig.apiBaseUrl}${path}`, {
+    const baseUrl =
+      typeof window === "undefined" ? runtimeConfig.apiServerBaseUrl : runtimeConfig.apiBaseUrl;
+    response = await fetch(`${baseUrl}${path}`, {
       ...init,
       headers,
       credentials: "include",

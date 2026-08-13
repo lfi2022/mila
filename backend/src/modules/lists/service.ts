@@ -280,26 +280,63 @@ export class ListsService {
         visibility: true,
         surpriseMode: true,
         hideReservedGifts: true,
+        allowIndexing: true,
         showProgress: true,
         closedAt: true,
         theme: true,
         accentColor: true,
         accessCodeHash: true,
-        gifts: { where: { deletedAt: null }, orderBy: { position: "asc" } },
+        gifts: {
+          where: { deletedAt: null, hiddenByModerator: false },
+          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            publicToken: true,
+            title: true,
+            description: true,
+            kind: true,
+            status: true,
+            url: true,
+            currency: true,
+            unitPriceMinor: true,
+            quantity: true,
+            reservedQuantity: true,
+            fundedAmountMinor: true,
+            contributionTargetMinor: true,
+          },
+        },
       },
     });
     if (!list) throw new AppError(404, "LIST_NOT_FOUND", "List not found");
     if (list.visibility === "PROTECTED" && !this.verifyGrant(list.id, grant)) {
       throw new AppError(403, "LIST_ACCESS_REQUIRED", "This list requires an access code");
     }
-    const { accessCodeHash: _hidden, ...safe } = list;
+    const { accessCodeHash: _hidden, gifts, ...safe } = list;
+    const publicGifts = gifts.map((gift) => ({
+      id: gift.id,
+      publicToken: gift.publicToken,
+      title: gift.title,
+      description: gift.description,
+      kind: gift.kind,
+      status: gift.status,
+      hasLink: Boolean(gift.url),
+      currency: gift.currency,
+      unitPriceMinor: gift.unitPriceMinor?.toString() ?? null,
+      quantity: gift.quantity,
+      reservedQuantity: gift.reservedQuantity,
+      fundedAmountMinor: gift.fundedAmountMinor.toString(),
+      contributionTargetMinor: gift.contributionTargetMinor?.toString() ?? null,
+      isReserved:
+        gift.reservedQuantity >= gift.quantity ||
+        ["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status),
+    }));
     return {
       ...safe,
-      gifts: safe.hideReservedGifts
-        ? safe.gifts.filter(
-            (gift) => !["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status),
-          )
-        : safe.gifts,
+      gifts: safe.hideReservedGifts ? publicGifts.filter((gift) => !gift.isReserved) : publicGifts,
+      totals: {
+        items: publicGifts.length,
+        taken: publicGifts.filter((gift) => gift.isReserved).length,
+      },
     };
   }
 

@@ -1,9 +1,7 @@
-import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import markAsset from "@/assets/mila-mark.png.asset.json";
 import { buildPublicUrl, runtimeConfig } from "@/config/runtime";
@@ -22,19 +20,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LAYOUT_CLASSES, appearanceStyle, getHeroStyle, getLayout } from "@/lib/list-theme";
-import { getPublicList, reserveGift, type PublicGift } from "@/lib/public.functions";
+import {
+  getPublicList,
+  reserveGift,
+  unlockPublicList,
+  type PublicGift,
+} from "@/features/public-list/api";
 import { priceApi } from "@/features/prices/api";
 import { createSecondHandOffer } from "@/features/memories/api";
 import { apiRequest } from "@/services/api/client";
 import { track } from "@/lib/analytics";
 
-const searchSchema = z.object({ code: z.string().max(64).optional() });
-
 export const Route = createFileRoute("/l/$slug")({
-  validateSearch: searchSchema,
-  loaderDeps: ({ search }) => ({ code: search.code }),
-  loader: ({ params, deps }) =>
-    getPublicList({ data: { slug: params.slug, ...(deps.code ? { code: deps.code } : {}) } }),
+  loader: ({ params }) => getPublicList(params.slug),
   head: ({ loaderData }) => {
     if (!loaderData || loaderData.state !== "ok") {
       return {
@@ -99,8 +97,10 @@ function Unavailable() {
 function PublicListPage() {
   const data = Route.useLoaderData();
   const { slug } = Route.useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [code, setCode] = useState("");
+  const [wrongCode, setWrongCode] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
 
   if (data.state === "not_found") return <Unavailable />;
 
@@ -113,9 +113,18 @@ function PublicListPage() {
         </p>
         <form
           className="mt-8 space-y-4"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
-            navigate({ to: "/l/$slug", params: { slug }, search: { code } });
+            setUnlocking(true);
+            setWrongCode(false);
+            try {
+              await unlockPublicList(slug, code);
+              await router.invalidate();
+            } catch {
+              setWrongCode(true);
+            } finally {
+              setUnlocking(false);
+            }
           }}
         >
           <div className="space-y-2">
@@ -128,10 +137,10 @@ function PublicListPage() {
               autoComplete="off"
             />
           </div>
-          {data.wrongCode ? (
+          {data.wrongCode || wrongCode ? (
             <p className="text-sm text-destructive">Code incorrect, réessayez.</p>
           ) : null}
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={unlocking || code.length < 6}>
             Accéder à la liste
           </Button>
         </form>
@@ -330,7 +339,6 @@ function GiftCard({
   isDemo?: boolean;
 }) {
   const router = useRouter();
-  const reserve = useServerFn(reserveGift);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [manageLink, setManageLink] = useState<string | null>(null);
@@ -344,20 +352,17 @@ function GiftCard({
     comment: "",
   });
 
-  const submit = async (intent: "reserve" | "order") => {
+  const submit = async () => {
     setBusy(true);
     try {
-      const result = await reserve({
-        data: {
-          itemId: gift.id,
-          guestName: form.guestName,
-          guestEmail: form.guestEmail,
-          message: form.message,
-          quantity: 1,
-          intent,
-        },
+      const result = await reserveGift({
+        giftToken: gift.public_token,
+        guestName: form.guestName,
+        guestEmail: form.guestEmail,
+        message: form.message,
+        quantity: 1,
       });
-      setManageLink(result.manageLink);
+      setManageLink(`/r/${result.managementToken}`);
       track("first_reservation");
       toast.success("Cadeau réservé, merci !");
       await router.invalidate();
@@ -597,14 +602,10 @@ function GiftCard({
 
                 {!manageLink ? (
                   <DialogFooter className="gap-2">
-                    <Button
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() => void submit("reserve")}
-                    >
+                    <Button variant="outline" disabled={busy} onClick={() => void submit()}>
                       Je réserve
                     </Button>
-                    <Button disabled={busy} onClick={() => void submit("order")}>
+                    <Button disabled={busy} onClick={() => void submit()}>
                       Je réserve et je commande
                     </Button>
                   </DialogFooter>

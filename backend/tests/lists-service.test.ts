@@ -88,6 +88,47 @@ describe("ListsService", () => {
     expect(list).not.toHaveProperty("accessCodeHash");
   });
 
+  it("returns a JSON-safe public gift projection without its merchant URL", async () => {
+    const findFirst = vi.fn().mockResolvedValue({
+      id: "list-1",
+      slug: "naissance",
+      title: "Naissance",
+      visibility: "PUBLIC",
+      status: "ACTIVE",
+      accessCodeHash: null,
+      hideReservedGifts: false,
+      gifts: [
+        {
+          id: "gift-1",
+          publicToken: "a".repeat(64),
+          title: "Poussette",
+          description: null,
+          kind: "LINK",
+          status: "AVAILABLE",
+          url: "https://merchant.invalid/private-target",
+          currency: "EUR",
+          unitPriceMinor: 12_345n,
+          quantity: 2,
+          reservedQuantity: 1,
+          fundedAmountMinor: 500n,
+          contributionTargetMinor: null,
+        },
+      ],
+    });
+    const service = new ListsService(
+      { giftList: { findFirst } } as unknown as PrismaClient,
+      config,
+    );
+    const list = await service.publicList("naissance");
+    expect(() => JSON.stringify(list)).not.toThrow();
+    expect(list.gifts[0]).toMatchObject({
+      unitPriceMinor: "12345",
+      fundedAmountMinor: "500",
+      hasLink: true,
+    });
+    expect(list.gifts[0]).not.toHaveProperty("url");
+  });
+
   it("rejects member writes without an allowed role", async () => {
     const findFirst = vi.fn().mockResolvedValue({ ownerId: "owner", members: [] });
     const service = new ListsService(

@@ -14,13 +14,19 @@ function cleanOrigin(value: string | undefined): string {
   }
 }
 
-export const runtimeConfig = {
-  publicOrigin: cleanOrigin(
-    String(
-      viteEnv["VITE_PUBLIC_APP_URL"] || serverEnv("PUBLIC_APP_URL") || serverEnv("APP_URL") || "",
-    ),
+const publicOrigin = cleanOrigin(
+  String(
+    viteEnv["VITE_PUBLIC_APP_URL"] || serverEnv("PUBLIC_APP_URL") || serverEnv("APP_URL") || "",
   ),
-  apiBaseUrl: String(viteEnv["VITE_API_BASE_URL"] || "/api/v1").replace(/\/$/, ""),
+);
+const apiBaseUrl = String(viteEnv["VITE_API_BASE_URL"] || "/api/v1").replace(/\/$/, "");
+
+export const runtimeConfig = {
+  publicOrigin,
+  apiBaseUrl,
+  apiServerBaseUrl: String(
+    serverEnv("API_INTERNAL_URL") || (publicOrigin ? `${publicOrigin}${apiBaseUrl}` : apiBaseUrl),
+  ).replace(/\/$/, ""),
   assetBaseUrl: String(viteEnv["VITE_ASSET_BASE_URL"] || "/assets").replace(/\/$/, ""),
   authCookieName: String(viteEnv["VITE_AUTH_COOKIE_NAME"] || "mila_session"),
   seoIndexingEnabled:
