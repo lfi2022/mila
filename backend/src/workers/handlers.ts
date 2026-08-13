@@ -3,7 +3,10 @@ import nodemailer from "nodemailer";
 import type { DatabaseService } from "../common/database/client.js";
 import type { AppConfig } from "../config/env.js";
 import type { NotificationJob } from "../modules/notifications/queue.js";
-import { extractProduct } from "../modules/products/extractor.js";
+import type { NotificationQueue } from "../modules/notifications/queue.js";
+import { calculateRefreshHours } from "../modules/prices/scheduler.js";
+import { rankOffers } from "../modules/prices/service.js";
+import { extractProduct, type ProductPreview } from "../modules/products/extractor.js";
 import type { StreamJob, StreamProcessor } from "./stream-worker.js";
 
 export function notificationProcessor(
@@ -43,48 +46,374 @@ export function notificationProcessor(
 export function productRefreshProcessor(
   config: AppConfig,
   database: DatabaseService,
+  notifications?: NotificationQueue,
 ): StreamProcessor {
   return async ({ values }) => {
     const giftId = required(values, "giftId");
     const gift = await database.client.gift.findFirst({
       where: { id: giftId, deletedAt: null, url: { not: null } },
-      select: {
-        id: true,
-        url: true,
-        list: { select: { productAutoRefresh: true, autoUpdatePrice: true } },
+      include: {
+        productIdentity: true,
+        merchant: true,
+        snapshots: { orderBy: { checkedAt: "desc" }, take: 6 },
+        offers: { include: { merchant: true } },
+        list: {
+          include: { members: { select: { userId: true } } },
+        },
       },
     });
     if (!gift?.url || !gift.list.productAutoRefresh) return;
     const kinds = JSON.parse(values["kinds"] ?? "[]") as string[];
-    const product = await extractProduct(gift.url, config);
-    await database.client.$transaction([
-      database.client.gift.update({
+    const now = new Date();
+    try {
+      const product = await extractProduct(gift.url, config);
+      const previous = gift.snapshots[0];
+      const volatilityBps = priceVolatilityBps(
+        gift.snapshots.flatMap((snapshot) =>
+          snapshot.priceMinor !== null && snapshot.currency === product.currency
+            ? [snapshot.priceMinor]
+            : [],
+        ),
+      );
+      const nextHours = calculateRefreshHours({
+        status: gift.status,
+        dueDate: gift.list.dueDate,
+        volatilityBps,
+        merchantMinMinutes: gift.merchant?.refreshMinMinutes ?? 1_440,
+        failureCount: 0,
+        minHours: config.PRICE_REFRESH_MIN_HOURS,
+        maxHours: config.PRICE_REFRESH_MAX_HOURS,
+        now,
+      });
+      await database.client.$transaction(async (tx) => {
+        await tx.gift.update({
+          where: { id: gift.id },
+          data: {
+            canonicalUrl: product.canonicalUrl,
+            unitPriceMinor:
+              gift.list.autoUpdatePrice && kinds.includes("price") && product.priceMinor !== null
+                ? product.priceMinor
+                : undefined,
+            currency:
+              gift.list.autoUpdatePrice && kinds.includes("price") && product.priceMinor !== null
+                ? product.currency
+                : undefined,
+            sku: product.sku,
+            lastAvailability: product.availability,
+            lastLinkHealthy: true,
+            refreshFailureCount: 0,
+            lastRefreshedAt: now,
+            nextRefreshAt: new Date(now.getTime() + nextHours * 3_600_000),
+          },
+        });
+        await tx.priceSnapshot.create({
+          data: {
+            giftId: gift.id,
+            merchantId: gift.merchantId,
+            priceMinor: product.priceMinor,
+            currency: product.currency,
+            availability: product.availability,
+            linkHealthy: true,
+            source: product.source,
+            checkedAt: now,
+          },
+        });
+        if (gift.productIdentityId && gift.merchantId && product.priceMinor !== null) {
+          const confidence = identityConfidence(gift.productIdentity, product);
+          const existing = gift.offers.find(
+            (offer) => offer.merchantId === gift.merchantId && offer.url === product.canonicalUrl,
+          );
+          const data = {
+            giftId: gift.id,
+            productIdentityId: gift.productIdentityId,
+            merchantId: gift.merchantId,
+            url: product.canonicalUrl,
+            sku: product.sku,
+            priceMinor: product.priceMinor,
+            currency: product.currency,
+            available: availability(product.availability),
+            matchConfidence: confidence,
+            matchMethod: confidence >= 100 ? "GTIN" : confidence >= 90 ? "SKU" : "SOURCE_URL",
+            source: product.source,
+            affiliateEligible: gift.merchant?.affiliationEnabled ?? false,
+            checkedAt: now,
+          };
+          if (existing) await tx.merchantOffer.update({ where: { id: existing.id }, data });
+          else await tx.merchantOffer.create({ data });
+        }
+      });
+      if (config.FEATURE_PRICE_ALERTS)
+        await sendProductAlerts(database, notifications, gift, previous, {
+          priceMinor: product.priceMinor,
+          currency: product.currency,
+          availability: product.availability,
+          linkHealthy: true,
+        }).catch((error: unknown) => logRefreshSideEffect("price_alert_failed", gift.id, error));
+      await maybeAutoSwitch(database, config, gift.id).catch((error: unknown) =>
+        logRefreshSideEffect("price_auto_switch_failed", gift.id, error),
+      );
+    } catch {
+      const failureCount = Math.min(gift.refreshFailureCount + 1, 65_535);
+      const nextHours = calculateRefreshHours({
+        status: gift.status,
+        dueDate: gift.list.dueDate,
+        volatilityBps: 0,
+        merchantMinMinutes: gift.merchant?.refreshMinMinutes ?? 1_440,
+        failureCount,
+        minHours: config.PRICE_REFRESH_MIN_HOURS,
+        maxHours: config.PRICE_REFRESH_MAX_HOURS,
+        now,
+      });
+      await database.client.$transaction([
+        database.client.gift.update({
+          where: { id: gift.id },
+          data: {
+            lastLinkHealthy: false,
+            refreshFailureCount: failureCount,
+            lastRefreshedAt: now,
+            nextRefreshAt: new Date(now.getTime() + nextHours * 3_600_000),
+          },
+        }),
+        database.client.priceSnapshot.create({
+          data: {
+            giftId: gift.id,
+            merchantId: gift.merchantId,
+            priceMinor: null,
+            currency: gift.currency,
+            availability: gift.lastAvailability,
+            linkHealthy: false,
+            errorCode: "FETCH_FAILED",
+            source: "REFRESH",
+            checkedAt: now,
+          },
+        }),
+      ]);
+      if (config.FEATURE_PRICE_ALERTS)
+        await sendProductAlerts(database, notifications, gift, gift.snapshots[0], {
+          priceMinor: null,
+          currency: gift.currency,
+          availability: gift.lastAvailability,
+          linkHealthy: false,
+        }).catch((error: unknown) =>
+          logRefreshSideEffect("dead_link_alert_failed", gift.id, error),
+        );
+    }
+  };
+}
+
+function priceVolatilityBps(prices: bigint[]) {
+  if (prices.length < 2) return 0;
+  const minimum = prices.reduce((left, right) => (left < right ? left : right));
+  const maximum = prices.reduce((left, right) => (left > right ? left : right));
+  if (minimum <= 0n) return 0;
+  return Number(((maximum - minimum) * 10_000n) / minimum);
+}
+
+function identityConfidence(
+  identity: { gtin: string | null; ean: string | null; mpn: string | null } | null,
+  product: ProductPreview,
+) {
+  const normalize = (value: string | null) => value?.toUpperCase().replace(/[^A-Z0-9]/g, "") ?? "";
+  const extractedGtin = normalize(product.gtin);
+  if (
+    extractedGtin &&
+    [identity?.gtin, identity?.ean].some((value) => normalize(value ?? null) === extractedGtin)
+  )
+    return 100;
+  const extractedSku = normalize(product.sku);
+  if (extractedSku && normalize(identity?.mpn ?? null) === extractedSku) return 90;
+  return 80;
+}
+
+function availability(value: string | null) {
+  const normalized = value?.toLowerCase() ?? "";
+  if (normalized.includes("outofstock") || normalized.includes("discontinued")) return false;
+  if (normalized.includes("instock") || normalized.includes("preorder")) return true;
+  return null;
+}
+
+type AlertGift = {
+  id: string;
+  listId: string;
+  title: string;
+  currency: string;
+  priceAlertsEnabled: boolean;
+  availabilityAlertsEnabled: boolean;
+  deadLinkAlertsEnabled: boolean;
+  list: { ownerId: string; members: Array<{ userId: string }> };
+};
+
+async function sendProductAlerts(
+  database: DatabaseService,
+  queue: NotificationQueue | undefined,
+  gift: AlertGift,
+  previous:
+    | {
+        priceMinor: bigint | null;
+        currency: string;
+        availability: string | null;
+        linkHealthy: boolean;
+      }
+    | undefined,
+  current: {
+    priceMinor: bigint | null;
+    currency: string;
+    availability: string | null;
+    linkHealthy: boolean;
+  },
+) {
+  const alerts: Array<{ type: string; title: string; body: string }> = [];
+  if (
+    gift.priceAlertsEnabled &&
+    previous?.priceMinor !== null &&
+    previous?.priceMinor !== undefined &&
+    current.priceMinor !== null &&
+    previous.currency === current.currency &&
+    current.priceMinor < previous.priceMinor
+  ) {
+    const drop = previous.priceMinor - current.priceMinor;
+    alerts.push({
+      type: "PRICE_DROP",
+      title: "Baisse de prix",
+      body: `${gift.title} a baissé de ${formatMinor(drop, current.currency)}.`,
+    });
+  }
+  if (
+    gift.availabilityAlertsEnabled &&
+    availability(previous?.availability ?? null) !== false &&
+    availability(current.availability) === false
+  )
+    alerts.push({
+      type: "STOCK_UNAVAILABLE",
+      title: "Produit indisponible",
+      body: `${gift.title} semble désormais indisponible.`,
+    });
+  if (gift.deadLinkAlertsEnabled && previous?.linkHealthy !== false && !current.linkHealthy)
+    alerts.push({
+      type: "DEAD_LINK",
+      title: "Lien à vérifier",
+      body: `Le lien de ${gift.title} ne répond plus correctement.`,
+    });
+  if (!alerts.length) return;
+  const userIds = [
+    ...new Set([gift.list.ownerId, ...gift.list.members.map((member) => member.userId)]),
+  ];
+  const preferences = await database.client.notificationPreference.findMany({
+    where: { userId: { in: userIds }, type: { in: alerts.map((alert) => alert.type) } },
+  });
+  for (const alert of alerts) {
+    for (const userId of userIds) {
+      const preference = preferences.find(
+        (row) => row.userId === userId && row.type === alert.type,
+      );
+      if (preference?.inAppEnabled !== false)
+        await database.client.notification.create({
+          data: {
+            userId,
+            listId: gift.listId,
+            type: alert.type,
+            title: alert.title,
+            body: alert.body,
+            data: { giftId: gift.id },
+          },
+        });
+      if (
+        queue &&
+        preference?.emailEnabled !== false &&
+        (preference?.digest ?? "IMMEDIATE") === "IMMEDIATE"
+      )
+        await queue.enqueue({
+          type: alert.type,
+          userId,
+          listId: gift.listId,
+          payload: { giftId: gift.id, body: alert.body },
+        });
+    }
+  }
+}
+
+async function maybeAutoSwitch(database: DatabaseService, config: AppConfig, giftId: string) {
+  if (!config.FEATURE_PRICE_COMPARISON) return;
+  const gift = await database.client.gift.findUnique({
+    where: { id: giftId },
+    include: { list: true, offers: { include: { merchant: true } } },
+  });
+  if (
+    !gift ||
+    gift.offerPreference !== "AUTO_BEST" ||
+    !gift.list.autoSwitchBetterOffer ||
+    gift.status !== "AVAILABLE" ||
+    gift.unitPriceMinor === null
+  )
+    return;
+  const ranked = rankOffers(
+    gift.offers.map((offer) => ({
+      id: offer.id,
+      priceMinor: offer.priceMinor,
+      deliveryMinor: offer.deliveryMinor,
+      currency: offer.currency,
+      available: offer.available,
+      deliveryEtaDays: offer.deliveryEtaDays,
+      trustScore: offer.merchant.offerTrustScore,
+      matchConfidence: offer.matchConfidence,
+      checkedAt: offer.checkedAt,
+      affiliateEligible: offer.affiliateEligible,
+    })),
+    gift.currency,
+  );
+  const best = ranked[0];
+  if (!best || best.matchConfidence < 90 || best.trustScore < 60 || best.available === false)
+    return;
+  const savings = gift.unitPriceMinor - best.totalMinor;
+  if (
+    savings <= 0n ||
+    (savings * 10_000n) / gift.unitPriceMinor < BigInt(config.PRICE_AUTO_SWITCH_MIN_SAVINGS_BPS)
+  )
+    return;
+  const offer = gift.offers.find((row) => row.id === best.id)!;
+  const fromPriceMinor = gift.unitPriceMinor;
+  await database.client.$transaction(
+    async (tx) => {
+      const current = await tx.gift.findUnique({ where: { id: gift.id } });
+      if (!current || current.status !== "AVAILABLE" || current.unitPriceMinor !== fromPriceMinor)
+        return;
+      await tx.giftOfferSwitch.create({
+        data: {
+          giftId: gift.id,
+          fromMerchantId: gift.merchantId,
+          toMerchantId: offer.merchantId,
+          offerId: offer.id,
+          fromUrl: gift.url,
+          toUrl: offer.url,
+          fromPriceMinor,
+          toTotalMinor: best.totalMinor,
+          savingsMinor: savings,
+          matchConfidence: best.matchConfidence,
+          reason: `user_value_score;min_savings_bps=${config.PRICE_AUTO_SWITCH_MIN_SAVINGS_BPS}`,
+        },
+      });
+      await tx.gift.update({
         where: { id: gift.id },
         data: {
-          canonicalUrl: product.canonicalUrl,
-          unitPriceMinor:
-            gift.list.autoUpdatePrice && kinds.includes("price") ? product.priceMinor : undefined,
-          currency:
-            gift.list.autoUpdatePrice && kinds.includes("price") ? product.currency : undefined,
-          sku: product.sku,
-          lastRefreshedAt: new Date(),
+          merchantId: offer.merchantId,
+          url: offer.url,
+          canonicalUrl: offer.url,
+          unitPriceMinor: offer.priceMinor,
         },
-      }),
-      ...(product.priceMinor === null
-        ? []
-        : [
-            database.client.priceSnapshot.create({
-              data: {
-                giftId: gift.id,
-                priceMinor: product.priceMinor,
-                currency: product.currency,
-                availability: product.availability,
-                source: product.source,
-              },
-            }),
-          ]),
-    ]);
-  };
+      });
+    },
+    { isolationLevel: "Serializable", maxWait: 5_000, timeout: 10_000 },
+  );
+}
+
+function formatMinor(value: bigint, currency: string) {
+  return new Intl.NumberFormat("fr-BE", { style: "currency", currency }).format(
+    Number(value) / 100,
+  );
+}
+
+function logRefreshSideEffect(event: string, giftId: string, error: unknown) {
+  process.stderr.write(`${JSON.stringify({ event, giftId, error: String(error) })}\n`);
 }
 
 export function cleanupProcessor(database: DatabaseService): StreamProcessor {
@@ -182,6 +511,15 @@ function renderEmail(appUrl: string, job: NotificationJob) {
       path: "/invitations/accept",
       text: "Vous avez reçu une invitation Mila.",
     },
+    PRICE_DROP: { subject: "Un prix a baissé sur Mila", text: "Un cadeau a baissé de prix." },
+    STOCK_UNAVAILABLE: {
+      subject: "Un cadeau est indisponible",
+      text: "Un cadeau de votre liste semble indisponible.",
+    },
+    DEAD_LINK: {
+      subject: "Un lien cadeau est à vérifier",
+      text: "Un lien de votre liste ne répond plus correctement.",
+    },
   };
   const definition = definitions[job.type] ?? {
     subject: "Nouvelle notification Mila",
@@ -191,5 +529,6 @@ function renderEmail(appUrl: string, job: NotificationJob) {
     definition.path && token
       ? new URL(`${definition.path}?token=${encodeURIComponent(token)}`, appUrl).toString()
       : appUrl;
-  return { subject: definition.subject, text: `${definition.text}\n\n${link}` };
+  const payloadText = typeof job.payload?.["body"] === "string" ? job.payload["body"] : null;
+  return { subject: definition.subject, text: `${payloadText ?? definition.text}\n\n${link}` };
 }

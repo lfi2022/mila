@@ -10,7 +10,10 @@ describe("GiftsService", () => {
       .fn()
       .mockImplementation(({ data }) => Promise.resolve({ id: "gift-1", ...data }));
     const transactionClient = {
-      productIdentity: { create: vi.fn().mockResolvedValue({ id: "identity-1" }) },
+      productIdentity: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: "identity-1" }),
+      },
       gift: { create: giftCreate },
     };
     const prisma = {

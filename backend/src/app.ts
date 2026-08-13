@@ -39,6 +39,8 @@ import { PaymentsService } from "./modules/payments/service.js";
 import { paymentRoutes } from "./modules/payments/routes.js";
 import { ContributionsService } from "./modules/contributions/service.js";
 import { contributionRoutes } from "./modules/contributions/routes.js";
+import { PricesService } from "./modules/prices/service.js";
+import { priceRoutes } from "./modules/prices/routes.js";
 
 export type AppOptions = {
   config?: AppConfig;
@@ -153,6 +155,9 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
             auth,
             config,
           ),
+        );
+        await api.register(
+          priceRoutes(new PricesService(options.database.client, config, lists), auth, config),
         );
         await api.register(
           contributionRoutes(

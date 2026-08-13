@@ -7,6 +7,7 @@ import { z } from "zod";
 import { ListAppearanceEditor, type AppearancePatch } from "@/components/ListAppearanceEditor";
 import { ShareCard } from "@/components/ShareCard";
 import { ContributionsPanel } from "@/components/ContributionsPanel";
+import { PriceTrackingPanel } from "@/components/PriceTrackingPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -349,6 +350,7 @@ function RegistryDetail() {
           <TabsTrigger value="share">Partage</TabsTrigger>
           <TabsTrigger value="parents">Parents</TabsTrigger>
           <TabsTrigger value="contributions">Contributions</TabsTrigger>
+          <TabsTrigger value="prices">Prix</TabsTrigger>
           <TabsTrigger value="settings">Réglages</TabsTrigger>
         </TabsList>
 
@@ -614,6 +616,10 @@ function RegistryDetail() {
 
         <TabsContent value="contributions" className="mt-6">
           <ContributionsPanel listId={registryId} />
+        </TabsContent>
+
+        <TabsContent value="prices" className="mt-6">
+          <PriceTrackingPanel listId={registryId} />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6 grid gap-8 lg:grid-cols-2">

@@ -64,7 +64,7 @@ export class GiftsService {
     const gift = await this.prisma.$transaction(async (transaction) => {
       const identity =
         input.identity && hasIdentity(input.identity)
-          ? await transaction.productIdentity.create({ data: compactIdentity(input.identity) })
+          ? await controlledIdentity(transaction, input.identity)
           : null;
       return transaction.gift.create({
         data: {
@@ -198,9 +198,39 @@ function hasIdentity(value: NonNullable<GiftInput["identity"]>) {
   return Object.values(value).some(Boolean);
 }
 function compactIdentity(value: NonNullable<GiftInput["identity"]>) {
-  return Object.fromEntries(
+  const compact = Object.fromEntries(
     Object.entries(value).map(([key, item]) => [key, item?.trim() || null]),
   );
+  return { ...compact, identityKey: identityKey(value) };
+}
+function identityKey(value: NonNullable<GiftInput["identity"]>) {
+  const normalize = (item: string | null | undefined) =>
+    item
+      ?.trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "") || null;
+  const gtin = normalize(value.gtin);
+  if (gtin) return `GTIN:${gtin}`;
+  const ean = normalize(value.ean);
+  if (ean) return `EAN:${ean}`;
+  const mpn = normalize(value.mpn);
+  const brand = normalize(value.brand);
+  if (mpn && brand) return `MPN:${brand}:${mpn}`;
+  const model = normalize(value.model);
+  return brand && model ? `MODEL:${brand}:${model}` : null;
+}
+async function controlledIdentity(
+  transaction: Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0],
+  value: NonNullable<GiftInput["identity"]>,
+) {
+  const data = compactIdentity(value);
+  if (data.identityKey) {
+    const existing = await transaction.productIdentity.findUnique({
+      where: { identityKey: data.identityKey },
+    });
+    if (existing) return existing;
+  }
+  return transaction.productIdentity.create({ data });
 }
 function usagePolicy(source: NonNullable<GiftInput["image"]>["source"]) {
   return source === "OFFICIAL_API"

@@ -11,17 +11,22 @@ import {
   productRefreshProcessor,
 } from "./workers/handlers.js";
 import { StreamWorker, type StreamProcessor } from "./workers/stream-worker.js";
+import { ProductRefreshQueue } from "./modules/products/refresh-queue.js";
+import { NotificationQueue } from "./modules/notifications/queue.js";
+import { scheduleDueProductRefreshes } from "./modules/prices/scheduler.js";
 
 const config = loadConfig();
 const database = createDatabase(config);
 const redis = createRedis(config);
 if (redis.client.status === "wait") await redis.client.connect();
+const productRefreshQueue = new ProductRefreshQueue(redis);
+const notificationQueue = new NotificationQueue(redis);
 
 const processors: Record<string, StreamProcessor> = {
   notifications: notificationProcessor(config, database),
   email: notificationProcessor(config, database),
-  "product-refresh": productRefreshProcessor(config, database),
-  prices: productRefreshProcessor(config, database),
+  "product-refresh": productRefreshProcessor(config, database, notificationQueue),
+  prices: productRefreshProcessor(config, database, notificationQueue),
   cleanup: cleanupProcessor(database),
   "token-cleanup": cleanupProcessor(database),
   expiration: cleanupProcessor(database),
@@ -46,8 +51,18 @@ const workers = assignments.map((queue, index) => {
 });
 
 const requestStop = () => {
+  clearInterval(priceScheduler);
   workers.forEach((worker) => worker.stop());
 };
+const runPriceScheduler = () =>
+  scheduleDueProductRefreshes(config, database, productRefreshQueue).catch((error: unknown) => {
+    process.stderr.write(
+      `${JSON.stringify({ event: "price_scheduler_failed", error: String(error) })}\n`,
+    );
+  });
+const priceScheduler = setInterval(runPriceScheduler, config.PRICE_SCHEDULER_INTERVAL_MS);
+priceScheduler.unref();
+void runPriceScheduler();
 process.once("SIGINT", requestStop);
 process.once("SIGTERM", requestStop);
 

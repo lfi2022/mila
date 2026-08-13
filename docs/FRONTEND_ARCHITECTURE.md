@@ -18,6 +18,8 @@ Auth, lists, gifts, reservations, notifications, product preview and cover uploa
 
 Rewards, payments and contributions now use typed feature API clients backed by Fastify, including Premium checkout/return, public bank-transfer instructions, parent contribution history and staff reconciliation/refund views. The contribution form displays gross amount, fees, Mila share and net parent amount before creating an instruction; the full IBAN is never stored in browser configuration. General administration remains behind its transitional server adapter until Stage 19, and orders expose only domain types until Stage 17; no placeholder network call pretends those features exist. Public-list/reporting remains a server-only transitional Supabase consumer; affiliate redirects moved to Fastify in Stage 10.
 
+Price tracking uses the typed `features/prices` boundary. The parent panel distinguishes reliable variation from unavailable comparison, exposes explicit alert/automation controls and shows switch history. Public gift cards request an opaque-token suggestion and display it only when the API has already enforced freshness, identity confidence, availability and user-value ranking; the browser never decides which merchant wins.
+
 ## Media
 
 Cover upload requests a signed private-bucket URL, sends the file directly to the configured public storage origin, and verifies/associates it through the API. UI code never receives storage credentials. The stable display URL is constructed centrally by `buildAssetUrl`; pending malware scans fail closed.

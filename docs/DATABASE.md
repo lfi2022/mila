@@ -39,6 +39,12 @@ Migration deployment must run once before replacing application containers. Appl
 
 `funds_ledger_entries` is distinct from Mila's `financial_ledger_entries`: confirmed parent funds are derived from signed, settled entries, never from `holding_balances.cached_minor`. Pending reservations do not count as held funds. Confirmation expires the pending marker and appends a confirmed entry; a refund appends a negative compensating entry. `payouts` is modeled for the regulated-provider target architecture but remains disabled and has no creation route.
 
+## Price history and product matching
+
+`202608130008_price_tracking` makes price snapshots nullable so failed/dead-link checks remain part of history, with explicit link health and error code. Gift refresh state is operational scheduling data; added price remains immutable while current values come from the latest reliable snapshot. Differences are reported only for matching currencies and healthy checks.
+
+Product identity keys normalize GTIN/EAN first, then brand+MPN or brand+model, and prevent new duplicate controlled identities. Merchant offers retain source, match method/confidence, delivery, availability and check time. Weak, stale or cross-currency offers are excluded. `gift_offer_switches` is an append-only decision history containing both destinations, prices, savings, confidence and policy reason for every guarded automatic change.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

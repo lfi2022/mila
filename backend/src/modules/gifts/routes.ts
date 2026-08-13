@@ -50,8 +50,16 @@ const giftInput = z.object({
     .optional(),
   identity: z
     .object({
-      gtin: z.string().max(32).nullable().optional(),
-      ean: z.string().max(32).nullable().optional(),
+      gtin: z
+        .string()
+        .regex(/^\d{8,14}$/)
+        .nullable()
+        .optional(),
+      ean: z
+        .string()
+        .regex(/^\d{8,14}$/)
+        .nullable()
+        .optional(),
       mpn: z.string().max(120).nullable().optional(),
       brand: z.string().max(120).nullable().optional(),
       model: z.string().max(180).nullable().optional(),

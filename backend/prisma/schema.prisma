@@ -442,6 +442,8 @@ model Merchant {
   rewardShareRateBps    Int?                  @map("reward_share_rate_bps") @db.UnsignedSmallInt
   connectorType         String                @default("MANUAL") @map("connector_type") @db.VarChar(64)
   automationTrustLevel  Int                   @default(0) @map("automation_trust_level") @db.UnsignedTinyInt
+  offerTrustScore       Int                   @default(50) @map("offer_trust_score") @db.UnsignedTinyInt
+  refreshMinMinutes     Int                   @default(1440) @map("refresh_min_minutes") @db.UnsignedSmallInt
   connectorConfig       Json?                 @map("connector_config")
   createdAt             DateTime              @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt             DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
@@ -470,17 +472,19 @@ model MerchantDomain {
 }
 
 model ProductIdentity {
-  id        String          @id @default(uuid()) @db.Char(36)
-  gtin      String?         @db.VarChar(32)
-  ean       String?         @db.VarChar(32)
-  mpn       String?         @db.VarChar(120)
-  brand     String?         @db.VarChar(120)
-  model     String?         @db.VarChar(180)
-  metadata  Json?
-  createdAt DateTime        @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt DateTime        @updatedAt @map("updated_at") @db.DateTime(3)
-  gifts     Gift[]
-  offers    MerchantOffer[]
+  id          String          @id @default(uuid()) @db.Char(36)
+  gtin        String?         @db.VarChar(32)
+  ean         String?         @db.VarChar(32)
+  mpn         String?         @db.VarChar(120)
+  brand       String?         @db.VarChar(120)
+  model       String?         @db.VarChar(180)
+  identityKey String?         @unique @map("identity_key") @db.VarChar(255)
+  matchStatus String          @default("CONTROLLED") @map("match_status") @db.VarChar(32)
+  metadata    Json?
+  createdAt   DateTime        @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.DateTime(3)
+  gifts       Gift[]
+  offers      MerchantOffer[]
 
   @@index([gtin])
   @@index([ean])
@@ -490,41 +494,47 @@ model ProductIdentity {
 }
 
 model Gift {
-  id                        String           @id @default(uuid()) @db.Char(36)
-  listId                    String           @map("list_id") @db.Char(36)
-  merchantId                String?          @map("merchant_id") @db.Char(36)
-  productIdentityId         String?          @map("product_identity_id") @db.Char(36)
-  publicToken               String           @unique @map("public_token") @db.Char(64)
-  title                     String           @db.VarChar(240)
-  description               String?          @db.Text
+  id                        String            @id @default(uuid()) @db.Char(36)
+  listId                    String            @map("list_id") @db.Char(36)
+  merchantId                String?           @map("merchant_id") @db.Char(36)
+  productIdentityId         String?           @map("product_identity_id") @db.Char(36)
+  publicToken               String            @unique @map("public_token") @db.Char(64)
+  title                     String            @db.VarChar(240)
+  description               String?           @db.Text
   kind                      GiftKind
-  status                    GiftStatus       @default(AVAILABLE)
-  url                       String?          @db.VarChar(2048)
-  canonicalUrl              String?          @map("canonical_url") @db.VarChar(2048)
-  sku                       String?          @db.VarChar(120)
-  selectedVariant           Json?            @map("selected_variant")
-  currency                  String           @default("EUR") @db.Char(3)
-  unitPriceMinor            BigInt?          @map("unit_price_minor")
-  priceAtCreationMinor      BigInt?          @map("price_at_creation_minor")
-  quantity                  Int              @default(1) @db.UnsignedSmallInt
-  reservedQuantity          Int              @default(0) @map("reserved_quantity") @db.UnsignedSmallInt
-  fundedAmountMinor         BigInt           @default(0) @map("funded_amount_minor")
-  contributionTargetMinor   BigInt?          @map("contribution_target_minor")
-  secondHandPolicy          SecondHandPolicy @default(NEW_ONLY) @map("second_hand_policy")
-  offerPreference           OfferPreference  @default(FIXED_MERCHANT) @map("offer_preference")
-  position                  Int              @default(0)
-  hiddenByModerator         Boolean          @default(false) @map("hidden_by_moderator")
-  priceAlertsEnabled        Boolean          @default(false) @map("price_alerts_enabled")
-  availabilityAlertsEnabled Boolean          @default(false) @map("availability_alerts_enabled")
-  lastRefreshedAt           DateTime?        @map("last_refreshed_at") @db.DateTime(3)
-  deletedAt                 DateTime?        @map("deleted_at") @db.DateTime(3)
-  createdAt                 DateTime         @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt                 DateTime         @updatedAt @map("updated_at") @db.DateTime(3)
-  list                      GiftList         @relation(fields: [listId], references: [id], onDelete: Cascade)
-  merchant                  Merchant?        @relation(fields: [merchantId], references: [id], onDelete: SetNull)
-  productIdentity           ProductIdentity? @relation(fields: [productIdentityId], references: [id], onDelete: SetNull)
+  status                    GiftStatus        @default(AVAILABLE)
+  url                       String?           @db.VarChar(2048)
+  canonicalUrl              String?           @map("canonical_url") @db.VarChar(2048)
+  sku                       String?           @db.VarChar(120)
+  selectedVariant           Json?             @map("selected_variant")
+  currency                  String            @default("EUR") @db.Char(3)
+  unitPriceMinor            BigInt?           @map("unit_price_minor")
+  priceAtCreationMinor      BigInt?           @map("price_at_creation_minor")
+  quantity                  Int               @default(1) @db.UnsignedSmallInt
+  reservedQuantity          Int               @default(0) @map("reserved_quantity") @db.UnsignedSmallInt
+  fundedAmountMinor         BigInt            @default(0) @map("funded_amount_minor")
+  contributionTargetMinor   BigInt?           @map("contribution_target_minor")
+  secondHandPolicy          SecondHandPolicy  @default(NEW_ONLY) @map("second_hand_policy")
+  offerPreference           OfferPreference   @default(FIXED_MERCHANT) @map("offer_preference")
+  position                  Int               @default(0)
+  hiddenByModerator         Boolean           @default(false) @map("hidden_by_moderator")
+  priceAlertsEnabled        Boolean           @default(false) @map("price_alerts_enabled")
+  availabilityAlertsEnabled Boolean           @default(false) @map("availability_alerts_enabled")
+  deadLinkAlertsEnabled     Boolean           @default(false) @map("dead_link_alerts_enabled")
+  lastAvailability          String?           @map("last_availability") @db.VarChar(64)
+  lastLinkHealthy           Boolean?          @map("last_link_healthy")
+  refreshFailureCount       Int               @default(0) @map("refresh_failure_count") @db.UnsignedSmallInt
+  nextRefreshAt             DateTime?         @map("next_refresh_at") @db.DateTime(3)
+  lastRefreshedAt           DateTime?         @map("last_refreshed_at") @db.DateTime(3)
+  deletedAt                 DateTime?         @map("deleted_at") @db.DateTime(3)
+  createdAt                 DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                 DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+  list                      GiftList          @relation(fields: [listId], references: [id], onDelete: Cascade)
+  merchant                  Merchant?         @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  productIdentity           ProductIdentity?  @relation(fields: [productIdentityId], references: [id], onDelete: SetNull)
   images                    GiftImage[]
   offers                    MerchantOffer[]
+  offerSwitches             GiftOfferSwitch[]
   snapshots                 PriceSnapshot[]
   reservations              Reservation[]
   contributions             Contribution[]
@@ -537,6 +547,7 @@ model Gift {
   @@index([listId, status])
   @@index([merchantId, status])
   @@index([productIdentityId])
+  @@index([nextRefreshAt, status])
   @@map("gifts")
 }
 
@@ -576,6 +587,10 @@ model MerchantOffer {
   deliveryMinor     BigInt?         @map("delivery_minor")
   currency          String          @default("EUR") @db.Char(3)
   available         Boolean?
+  deliveryEtaDays   Int?            @map("delivery_eta_days") @db.UnsignedSmallInt
+  matchConfidence   Int             @default(0) @map("match_confidence") @db.UnsignedTinyInt
+  matchMethod       String          @default("UNVERIFIED") @map("match_method") @db.VarChar(32)
+  source            String          @default("MANUAL") @db.VarChar(32)
   affiliateEligible Boolean         @default(false) @map("affiliate_eligible")
   checkedAt         DateTime        @map("checked_at") @db.DateTime(3)
   createdAt         DateTime        @default(now()) @map("created_at") @db.DateTime(3)
@@ -595,9 +610,11 @@ model PriceSnapshot {
   id           String    @id @default(uuid()) @db.Char(36)
   giftId       String    @map("gift_id") @db.Char(36)
   merchantId   String?   @map("merchant_id") @db.Char(36)
-  priceMinor   BigInt    @map("price_minor")
+  priceMinor   BigInt?   @map("price_minor")
   currency     String    @default("EUR") @db.Char(3)
   availability String?   @db.VarChar(64)
+  linkHealthy  Boolean   @default(true) @map("link_healthy")
+  errorCode    String?   @map("error_code") @db.VarChar(64)
   source       String    @db.VarChar(64)
   checkedAt    DateTime  @default(now()) @map("checked_at") @db.DateTime(3)
   gift         Gift      @relation(fields: [giftId], references: [id], onDelete: Cascade)
@@ -606,6 +623,26 @@ model PriceSnapshot {
   @@index([giftId, checkedAt])
   @@index([merchantId, checkedAt])
   @@map("price_snapshots")
+}
+
+model GiftOfferSwitch {
+  id              String   @id @default(uuid()) @db.Char(36)
+  giftId          String   @map("gift_id") @db.Char(36)
+  fromMerchantId  String?  @map("from_merchant_id") @db.Char(36)
+  toMerchantId    String   @map("to_merchant_id") @db.Char(36)
+  offerId         String   @map("offer_id") @db.Char(36)
+  fromUrl         String?  @map("from_url") @db.VarChar(2048)
+  toUrl           String   @map("to_url") @db.VarChar(2048)
+  fromPriceMinor  BigInt   @map("from_price_minor")
+  toTotalMinor    BigInt   @map("to_total_minor")
+  savingsMinor    BigInt   @map("savings_minor")
+  matchConfidence Int      @map("match_confidence") @db.UnsignedTinyInt
+  reason          String   @db.VarChar(255)
+  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  gift            Gift     @relation(fields: [giftId], references: [id], onDelete: Cascade)
+
+  @@index([giftId, createdAt])
+  @@map("gift_offer_switches")
 }
 
 model Reservation {

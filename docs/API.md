@@ -98,6 +98,14 @@ Staff can reconcile one transfer at `POST /api/v1/admin/bank-transfers/reconcile
 
 All public contribution creation stays disabled unless both `FEATURE_CONTRIBUTIONS` and `FEATURE_BANK_TRANSFERS` are enabled with beneficiary/IBAN configuration. Parent payouts require Mollie Connect and have no executable route until the external regulated-funds model is approved.
 
+## Price tracking and comparison routes
+
+Authorized list editors use `GET /api/v1/lists/:listId/price-tracking` for added/current price, reliable same-currency difference, availability, link health, next refresh, alert choices, ranked alternatives and automatic-switch history. `PATCH /api/v1/lists/:listId/gifts/:giftId/price-tracking` updates per-gift opt-ins and fixed/suggested/automatic offer mode. List-wide refresh, displayed-price, suggestion and guarded-switch choices are updated at `/api/v1/lists/:listId/price-settings`.
+
+`GET /api/v1/public/prices/:giftToken` exposes only a fresh, strongly matched, available and genuinely cheaper suggestion when comparison is enabled. Staff can ingest a controlled offer through `POST /api/v1/admin/product-offers`; the merchant URL must match a configured domain, the gift must have a product identity, and match method/confidence are mandatory.
+
+Scheduled refresh runs outside user requests. It leases due gifts atomically, caps each scheduler batch and each merchant share, respects merchant minimum intervals, backs off repeated failures and slows fulfilled gifts. Successful and failed checks both append snapshots. Alerts require both global `FEATURE_PRICE_ALERTS` and the gift's explicit opt-in. Automatic switching additionally requires global comparison, list and gift opt-ins, an available 90%+ identity match, merchant trust, configured minimum savings and an unreserved gift; every switch is recorded before the gift changes. Affiliate eligibility is returned for attribution but never contributes to ranking score.
+
 ## Error contract
 
 ```json

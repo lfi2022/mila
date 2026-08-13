@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LAYOUT_CLASSES, appearanceStyle, getHeroStyle, getLayout } from "@/lib/list-theme";
 import { getPublicList, reserveGift, type PublicGift } from "@/lib/public.functions";
+import { priceApi } from "@/features/prices/api";
 
 const searchSchema = z.object({ code: z.string().max(64).optional() });
 
@@ -315,6 +317,7 @@ function GiftCard({
               })}
             </p>
           ) : null}
+          {gift.has_link ? <PriceSuggestion giftToken={gift.public_token} /> : null}
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
           {gift.kind === "CONTRIBUTION" ? (
@@ -430,5 +433,24 @@ function GiftCard({
         </CardFooter>
       </div>
     </Card>
+  );
+}
+
+function PriceSuggestion({ giftToken }: { giftToken: string }) {
+  const query = useQuery({
+    queryKey: ["public-price-suggestion", giftToken],
+    queryFn: () => priceApi.suggestion(giftToken),
+    staleTime: 30 * 60_000,
+  });
+  const suggestion = query.data?.suggestion;
+  if (!suggestion) return null;
+  return (
+    <p className="rounded-lg bg-secondary p-2 text-xs">
+      Meilleure offre détectée : {suggestion.merchant} ·{" "}
+      {new Intl.NumberFormat("fr-BE", {
+        style: "currency",
+        currency: suggestion.currency,
+      }).format(Number(suggestion.totalMinor) / 100)}
+    </p>
   );
 }

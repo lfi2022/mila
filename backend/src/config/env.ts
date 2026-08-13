@@ -68,6 +68,9 @@ const envSchema = z
     FEATURE_CONTRIBUTIONS: booleanString,
     FEATURE_BANK_TRANSFERS: booleanString,
     FEATURE_PARENT_PAYOUTS: booleanString,
+    FEATURE_PRICE_TRACKING: booleanString,
+    FEATURE_PRICE_ALERTS: booleanString,
+    FEATURE_PRICE_COMPARISON: booleanString,
     FEATURE_PREMIUM: booleanString,
     MOLLIE_MODE: z.enum(["test", "live"]).default("test"),
     MOLLIE_API_KEY: z.string().optional().default(""),
@@ -86,6 +89,12 @@ const envSchema = z
     BANK_TRANSFER_BENEFICIARY: z.string().trim().optional().default(""),
     BANK_TRANSFER_IBAN_MASKED: z.string().trim().optional().default(""),
     BANK_TRANSFER_IBAN: z.string().trim().optional().default(""),
+    PRICE_SCHEDULER_INTERVAL_MS: z.coerce.number().int().min(60_000).default(300_000),
+    PRICE_REFRESH_BATCH_SIZE: z.coerce.number().int().min(1).max(1_000).default(100),
+    PRICE_REFRESH_PER_MERCHANT_BATCH: z.coerce.number().int().min(1).max(100).default(5),
+    PRICE_REFRESH_MIN_HOURS: z.coerce.number().int().min(1).max(168).default(6),
+    PRICE_REFRESH_MAX_HOURS: z.coerce.number().int().min(6).max(720).default(72),
+    PRICE_AUTO_SWITCH_MIN_SAVINGS_BPS: z.coerce.number().int().min(100).max(5_000).default(500),
     REWARD_DEFAULT_SHARE_RATE_BPS: z.coerce.number().int().min(0).max(10_000).default(2_500),
     REWARD_MIN_REDEMPTION_MINOR: z.coerce.number().int().min(1).default(1_000),
     REFERRAL_REWARD_MINOR: z.coerce.number().int().min(0).default(500),
@@ -247,6 +256,20 @@ const envSchema = z
         code: "custom",
         path: ["CONTRIBUTION_FEE_RATE_BPS"],
         message: "Contribution fee and platform share must total less than 100%",
+      });
+    }
+    if ((env.FEATURE_PRICE_ALERTS || env.FEATURE_PRICE_COMPARISON) && !env.FEATURE_PRICE_TRACKING) {
+      context.addIssue({
+        code: "custom",
+        path: ["FEATURE_PRICE_TRACKING"],
+        message: "Price tracking is required for price alerts and comparison",
+      });
+    }
+    if (env.PRICE_REFRESH_MIN_HOURS > env.PRICE_REFRESH_MAX_HOURS) {
+      context.addIssue({
+        code: "custom",
+        path: ["PRICE_REFRESH_MIN_HOURS"],
+        message: "Minimum price refresh interval cannot exceed maximum",
       });
     }
   });

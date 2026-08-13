@@ -117,4 +117,11 @@ describe("database environment", () => {
       /Mollie Connect/,
     );
   });
+
+  it("requires tracking for price alerts and validates refresh bounds", () => {
+    expect(() => loadConfig({ ...valid, FEATURE_PRICE_ALERTS: "true" })).toThrow(/Price tracking/);
+    expect(() =>
+      loadConfig({ ...valid, PRICE_REFRESH_MIN_HOURS: "72", PRICE_REFRESH_MAX_HOURS: "24" }),
+    ).toThrow(/Minimum price refresh/);
+  });
 });

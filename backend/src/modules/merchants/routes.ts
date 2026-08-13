@@ -36,6 +36,8 @@ const merchantInput = z.object({
   rewardShareRateBps: z.number().int().min(0).max(10_000).nullable().optional(),
   connectorType: z.string().max(64).default("MANUAL"),
   automationTrustLevel: z.number().int().min(0).max(4).default(0),
+  offerTrustScore: z.number().int().min(0).max(100).default(50),
+  refreshMinMinutes: z.number().int().min(60).max(10_080).default(1_440),
   connectorConfig: z.record(z.unknown()).nullable().optional(),
 });
 
