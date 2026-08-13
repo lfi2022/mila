@@ -16,7 +16,7 @@ docker compose up --build -d
 docker compose ps
 ```
 
-The migration command is an explicit deployment step. Run it once against the intended database before replacing API/worker containers. `docker compose --profile local-db up` enables the isolated MySQL development profile only; set `DATABASE_HOST=mysql` and use `mysql` in `DATABASE_URL`. Staging and production must point to their managed remote MySQL instance.
+The migration command is an explicit deployment step. Run it once against the intended database before replacing API/worker containers. `docker compose --profile local-db --profile local-storage up` enables the isolated MySQL and MinIO development services; set `DATABASE_HOST=mysql`, use `mysql` in `DATABASE_URL`, and keep `STORAGE_ENDPOINT=http://minio:9000`. Staging and production must point to their remote MySQL and S3-compatible storage services.
 
 ## Storage
 

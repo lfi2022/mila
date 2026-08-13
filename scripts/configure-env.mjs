@@ -203,7 +203,9 @@ async function runWizard() {
     process.stdout.write("Les secrets ont été générés localement et ne sont pas affichés.\n");
     process.stdout.write("Vérification : npm run config:check\n");
     if (useDocker) {
-      process.stdout.write("Démarrage : docker compose --profile local-db up --build -d\n");
+      process.stdout.write(
+        "Démarrage : docker compose --profile local-db --profile local-storage up --build -d\n",
+      );
     }
   } finally {
     rl?.close();

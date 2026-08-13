@@ -51,7 +51,7 @@ npm run backend:dev
 
 It listens on `PORT` (3000 by default), exposes `/api/v1`, and refuses to start when required base environment configuration is invalid.
 
-The container stack and explicit migration flow are documented in [`docs/INFRASTRUCTURE.md`](docs/INFRASTRUCTURE.md). In short: run `npm run config`, then `docker compose --profile migrate run --rm migrate` and `docker compose --profile local-db up --build -d` for the local Docker profile.
+The container stack and explicit migration flow are documented in [`docs/INFRASTRUCTURE.md`](docs/INFRASTRUCTURE.md). In short: run `npm run config`, then `docker compose --profile migrate run --rm migrate` and `docker compose --profile local-db --profile local-storage up --build -d` for the local Docker profile.
 
 ## Validation
 
