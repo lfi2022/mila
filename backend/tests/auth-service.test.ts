@@ -18,6 +18,7 @@ const config = loadConfig({
   AUTH_SECRET: "test-auth-secret-at-least-32-characters",
   SESSION_SECRET: "test-session-secret-at-least-32-characters",
   REDIS_URL: "redis://cache.test.invalid:6379",
+  PRODUCT_FETCH_USER_AGENT: "MilaTest/1.0",
 });
 
 describe("AuthService", () => {

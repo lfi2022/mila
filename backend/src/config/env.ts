@@ -54,6 +54,10 @@ const envSchema = z
       }),
     QUEUE_PREFIX: z.string().trim().min(1).default("mila"),
     FEATURE_OAUTH: booleanString,
+    PRODUCT_FETCH_USER_AGENT: z.string().trim().min(1).default("MilaBot/1.0"),
+    PRODUCT_FETCH_TIMEOUT_MS: z.coerce.number().int().min(500).max(30_000).default(8_000),
+    PRODUCT_FETCH_MAX_BYTES: z.coerce.number().int().min(1_024).max(2_097_152).default(524_288),
+    PRODUCT_FETCH_MAX_REDIRECTS: z.coerce.number().int().min(0).max(5).default(3),
   })
   .superRefine((env, context) => {
     if (env.APP_ENV !== "development" && !env.APP_URL.startsWith("https://")) {

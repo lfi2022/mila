@@ -16,6 +16,7 @@ import { authRoutes } from "./modules/auth/routes.js";
 import { AuthService } from "./modules/auth/service.js";
 import { listRoutes } from "./modules/lists/routes.js";
 import { ListsService } from "./modules/lists/service.js";
+import { productRoutes } from "./modules/products/routes.js";
 import { MODULE_NAMES } from "./modules/index.js";
 
 export type AppOptions = {
@@ -114,6 +115,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
         await api.register(
           listRoutes(new ListsService(options.database.client, config), auth, config),
         );
+        await api.register(productRoutes(auth, config));
       }
     },
     { prefix: "/api/v1" },

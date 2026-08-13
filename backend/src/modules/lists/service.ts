@@ -48,7 +48,7 @@ export class ListsService {
   }
 
   async getForMember(userId: string, listId: string) {
-    await this.requireRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
     return this.prisma.giftList.findFirstOrThrow({
       where: { id: listId, deletedAt: null },
       include: {
@@ -74,7 +74,7 @@ export class ListsService {
   }
 
   async update(userId: string, listId: string, input: Partial<ListInput>) {
-    await this.requireRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
     const current = await this.prisma.giftList.findUniqueOrThrow({ where: { id: listId } });
     const visibility = input.visibility ?? current.visibility;
     let accessCodeHash = current.accessCodeHash;
@@ -91,7 +91,7 @@ export class ListsService {
   }
 
   async remove(userId: string, listId: string): Promise<void> {
-    await this.requireRole(userId, listId, ["OWNER"]);
+    await this.assertRole(userId, listId, ["OWNER"]);
     await this.prisma.giftList.update({
       where: { id: listId },
       data: { deletedAt: new Date(), status: "DELETED", slug: `deleted-${listId}` },
@@ -143,7 +143,7 @@ export class ListsService {
   }
 
   async invite(userId: string, listId: string, email: string, role: Exclude<ListRole, "OWNER">) {
-    await this.requireRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
     const token = randomBytes(32).toString("base64url");
     const invitation = await this.prisma.listInvitation.create({
       data: {
@@ -187,14 +187,14 @@ export class ListsService {
   }
 
   async revokeInvitation(userId: string, listId: string, invitationId: string): Promise<void> {
-    await this.requireRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
     await this.prisma.listInvitation.updateMany({
       where: { id: invitationId, listId, acceptedAt: null },
       data: { revokedAt: new Date() },
     });
   }
 
-  private async requireRole(userId: string, listId: string, allowed: ListRole[]) {
+  async assertRole(userId: string, listId: string, allowed: ListRole[]) {
     const list = await this.prisma.giftList.findFirst({
       where: { id: listId, deletedAt: null },
       select: { ownerId: true, members: { where: { userId }, select: { role: true } } },
