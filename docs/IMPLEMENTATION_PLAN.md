@@ -117,13 +117,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 11 — Rewards, referrals, and unified ledger
 
-- [ ] Implement one wallet per list derived from immutable/auditable ledger entries.
-- [ ] Support affiliate, referral, Premium, partner, promotion, redemption, and compensating adjustment entries.
-- [ ] Expose available, pending, lifetime earned, lifetime used, history, and explanation.
-- [ ] Resolve configurable global/network/merchant/campaign rates with caps and profitability guardrails.
-- [ ] Implement referrals with pending/qualified/rewarded/cancelled lifecycle, qualification rules, caps, risk signals, and manual review.
-- [ ] Implement redemptions and audited admin adjustment; keep bank payout and marketplace behind flags.
-- [ ] Add anomaly, revenue, margin, and program-cost administration.
+- [x] Implement one wallet per list derived from immutable/auditable ledger entries.
+- [x] Support affiliate, referral, Premium, partner, promotion, redemption, and compensating adjustment entries.
+- [x] Expose available, pending, lifetime earned, lifetime used, history, and explanation.
+- [x] Resolve configurable global/network/merchant/campaign rates with caps and profitability guardrails.
+- [x] Implement referrals with pending/qualified/rewarded/cancelled lifecycle, qualification rules, caps, risk signals, and manual review.
+- [x] Implement redemptions and audited admin adjustment; keep bank payout and marketplace behind flags.
+- [x] Add anomaly, revenue, margin, and program-cost administration.
 
 ## Stage 12 — Mollie payments and Premium
 

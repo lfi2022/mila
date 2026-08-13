@@ -8,6 +8,7 @@ import type { PrismaClient } from "../../generated/prisma/client.js";
 export type CommissionInput = {
   network: string;
   externalId: string;
+  campaignId?: string;
   clickToken?: string;
   orderReference?: string;
   orderAmountMinor?: string;
@@ -21,6 +22,7 @@ export class AffiliationService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly config: AppConfig,
+    private readonly onCommission?: (commissionId: string) => Promise<void>,
   ) {}
 
   async redirect(giftToken: string, ip: string, source?: string) {
@@ -78,7 +80,7 @@ export class AffiliationService {
     const occurredAt = new Date(input.occurredAt);
     if (Number.isNaN(occurredAt.valueOf()))
       throw new AppError(400, "EVENT_DATE_INVALID", "Invalid event date");
-    return this.prisma.$transaction(async (transaction) => {
+    const commission = await this.prisma.$transaction(async (transaction) => {
       const existing = await transaction.affiliateCommission.findUnique({
         where: { network_externalId: { network: input.network, externalId: input.externalId } },
       });
@@ -113,6 +115,8 @@ export class AffiliationService {
             data: { network: input.network, externalId: input.externalId, ...data },
           });
     });
+    await this.onCommission?.(commission.id);
+    return commission;
   }
 
   verifySignature(timestamp: string, signature: string, body: unknown): void {

@@ -10,23 +10,3 @@ export {
   adminTestAffiliateLink,
   getAdminStats,
 } from "@/lib/admin.functions";
-
-export {
-  adjustWallet,
-  getRewardSettings,
-  getRewardStats,
-  listCommissions,
-  listOffersAdmin,
-  listRedemptions,
-  listReferralsForReview,
-  listWallets,
-  recordAffiliateCommission,
-  reviewReferral,
-  setCommissionStatus,
-  setRedemptionStatus,
-  setWalletFlag,
-  simulateRewardShare,
-  updateMerchantRewardConfig,
-  updateRewardSettings,
-  upsertOffer,
-} from "@/lib/rewards-admin.functions";

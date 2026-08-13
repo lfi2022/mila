@@ -61,7 +61,7 @@ function AuthPage() {
       go();
       return;
     }
-    void registerReferral({ data: { code } })
+    void registerReferral(code)
       .catch(() => undefined)
       .finally(() => {
         window.localStorage.removeItem("mila_referral");

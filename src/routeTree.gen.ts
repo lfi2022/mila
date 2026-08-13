@@ -35,7 +35,6 @@ import { Route as ListeSlugRouteImport } from './routes/liste.$slug'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as RecompensesIndexRouteImport } from './routes/recompenses.index'
 import { Route as RecompensesRegistryIdRouteImport } from './routes/recompenses.$registryId'
-import { Route as ApiPublicAffiliateWebhookRouteImport } from './routes/api/public/affiliate-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -167,12 +166,6 @@ const RecompensesRegistryIdRoute = RecompensesRegistryIdRouteImport.update({
   path: '/recompenses/$registryId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAffiliateWebhookRoute =
-  ApiPublicAffiliateWebhookRouteImport.update({
-    id: '/api/public/affiliate-webhook',
-    path: '/api/public/affiliate-webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -201,7 +194,6 @@ export interface FileRoutesByFullPath {
   '/recompenses/$registryId': typeof RecompensesRegistryIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/recompenses/': typeof RecompensesIndexRoute
-  '/api/public/affiliate-webhook': typeof ApiPublicAffiliateWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -229,7 +221,6 @@ export interface FileRoutesByTo {
   '/recompenses/$registryId': typeof RecompensesRegistryIdRoute
   '/dashboard': typeof DashboardIndexRoute
   '/recompenses': typeof RecompensesIndexRoute
-  '/api/public/affiliate-webhook': typeof ApiPublicAffiliateWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -259,7 +250,6 @@ export interface FileRoutesById {
   '/recompenses/$registryId': typeof RecompensesRegistryIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/recompenses/': typeof RecompensesIndexRoute
-  '/api/public/affiliate-webhook': typeof ApiPublicAffiliateWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -290,7 +280,6 @@ export interface FileRouteTypes {
     | '/recompenses/$registryId'
     | '/dashboard/'
     | '/recompenses/'
-    | '/api/public/affiliate-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -318,7 +307,6 @@ export interface FileRouteTypes {
     | '/recompenses/$registryId'
     | '/dashboard'
     | '/recompenses'
-    | '/api/public/affiliate-webhook'
   id:
     | '__root__'
     | '/'
@@ -347,7 +335,6 @@ export interface FileRouteTypes {
     | '/recompenses/$registryId'
     | '/dashboard/'
     | '/recompenses/'
-    | '/api/public/affiliate-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -375,7 +362,6 @@ export interface RootRouteChildren {
   RTokenRoute: typeof RTokenRoute
   RecompensesRegistryIdRoute: typeof RecompensesRegistryIdRoute
   RecompensesIndexRoute: typeof RecompensesIndexRoute
-  ApiPublicAffiliateWebhookRoute: typeof ApiPublicAffiliateWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -562,13 +548,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecompensesRegistryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/affiliate-webhook': {
-      id: '/api/public/affiliate-webhook'
-      path: '/api/public/affiliate-webhook'
-      fullPath: '/api/public/affiliate-webhook'
-      preLoaderRoute: typeof ApiPublicAffiliateWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -611,7 +590,6 @@ const rootRouteChildren: RootRouteChildren = {
   RTokenRoute: RTokenRoute,
   RecompensesRegistryIdRoute: RecompensesRegistryIdRoute,
   RecompensesIndexRoute: RecompensesIndexRoute,
-  ApiPublicAffiliateWebhookRoute: ApiPublicAffiliateWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

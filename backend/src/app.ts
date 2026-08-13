@@ -31,6 +31,8 @@ import { MODULE_NAMES } from "./modules/index.js";
 import { AffiliationService } from "./modules/affiliation/service.js";
 import { affiliationRoutes } from "./modules/affiliation/routes.js";
 import { merchantRoutes } from "./modules/merchants/routes.js";
+import { RewardsService } from "./modules/rewards/service.js";
+import { rewardRoutes } from "./modules/rewards/routes.js";
 
 export type AppOptions = {
   config?: AppConfig;
@@ -132,6 +134,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
           prefix: "/auth",
         });
         const lists = new ListsService(options.database.client, config, notifications);
+        const rewards = new RewardsService(options.database.client, config, lists);
         await api.register(listRoutes(lists, auth, config));
         await api.register(
           giftRoutes(
@@ -149,8 +152,13 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
           await api.register(storageRoutes(options.storage, auth, config, lists));
         await api.register(productRoutes(auth, config));
         await api.register(
-          affiliationRoutes(new AffiliationService(options.database.client, config)),
+          affiliationRoutes(
+            new AffiliationService(options.database.client, config, (id) =>
+              rewards.reconcileCommission(id),
+            ),
+          ),
         );
+        await api.register(rewardRoutes(rewards, auth, config));
         await api.register(merchantRoutes(options.database.client, auth, config));
         await api.register(
           reservationRoutes(

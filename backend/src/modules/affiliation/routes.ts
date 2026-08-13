@@ -6,6 +6,7 @@ import { AffiliationService } from "./service.js";
 const commission = z.object({
   network: z.string().trim().min(1).max(120),
   externalId: z.string().trim().min(1).max(255),
+  campaignId: z.string().trim().min(1).max(255).optional(),
   clickToken: z.string().length(64).optional(),
   orderReference: z.string().max(255).optional(),
   orderAmountMinor: z.string().regex(/^\d+$/).optional(),

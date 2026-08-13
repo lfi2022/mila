@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -152,15 +151,13 @@ function ProfilePage() {
 }
 
 function ReferralSection() {
-  const fetchReferral = useServerFn(getMyReferral);
-  const refresh = useServerFn(refreshMyReferrals);
-  const [state, setState] = useState<Awaited<ReturnType<typeof fetchReferral>> | null>(null);
+  const [state, setState] = useState<Awaited<ReturnType<typeof getMyReferral>> | null>(null);
 
   useEffect(() => {
-    void fetchReferral()
+    void getMyReferral()
       .then(setState)
       .catch(() => setState(null));
-  }, [fetchReferral]);
+  }, []);
 
   if (!state?.enabled || !state.code) return null;
   const link = `${window.location.origin}/auth?parrain=${state.code}`;
@@ -189,8 +186,8 @@ function ReferralSection() {
         <Button
           variant="outline"
           onClick={async () => {
-            await refresh();
-            setState(await fetchReferral());
+            await refreshMyReferrals();
+            setState(await getMyReferral());
             toast.success("Parrainages actualisés");
           }}
         >

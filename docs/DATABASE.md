@@ -27,6 +27,10 @@ npm run db:seed --workspace @mila/backend
 
 Migration deployment must run once before replacing application containers. Application replicas use `mila_app`; they never run `migrate dev` or generate migrations. The readiness endpoint performs `SELECT 1` and returns HTTP 503 when MySQL is unavailable.
 
+## Reward ledger invariants
+
+`reward_wallets.list_id` is unique, so a list has at most one wallet. `reward_transactions.idempotency_key` is globally unique and every monetary value is a signed `BIGINT` minor-unit amount. Available and pending balances are always recomputed from ledger status and amount; cached wallet columns are optional projections only. Corrections, cancelled commissions and rejected redemptions append idempotent compensating entries instead of updating or deleting settled entries. Referral ownership codes are normalized in `202608130005_referral_codes` and are unique per user and globally.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

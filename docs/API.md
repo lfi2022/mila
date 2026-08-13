@@ -70,6 +70,16 @@ Stable public reads use `/assets/list-cover/<key>` or `/assets/product-image/<ke
 
 `POST /api/v1/webhooks/affiliation` requires `FEATURE_AFFILIATION`, a timestamp no older than five minutes and `HMAC-SHA256(AFFILIATE_WEBHOOK_SECRET, timestamp + "." + canonical JSON body)`. `(network, externalId)` is unique, older events are ignored and pending events cannot regress confirmed/cancelled commission state.
 
+## Reward routes
+
+Authenticated list members read their ledger-derived balance and history at `GET /api/v1/rewards/lists/:listId`. The response exposes available, pending, lifetime-earned and lifetime-used minor units; cached wallet columns are never authoritative. `GET /api/v1/rewards/offers` and CSRF-protected `POST /api/v1/rewards/lists/:listId/redemptions` expose only conversion types enabled by feature flags.
+
+Referral code/status uses `GET /api/v1/rewards/referral`; registration and qualification refresh are CSRF-protected writes below that path. Registration is capped, self-referral is rejected, same-domain/new-account signals are retained, and suspicious cases wait for staff review. Qualification requires a verified referred account with a non-empty list before an idempotent credit is appended.
+
+Staff reward routes expose analytics, the review queue, audited adjustments, typed Premium/partner/promotion grants, and referral/redemption decisions below `/api/v1/admin/rewards`. Rejecting a redemption appends a compensating credit; it never edits or deletes the reservation debit. Commission cancellation follows the same append-only rule. Bank payout and the reward marketplace remain disabled unless their dedicated flags are enabled.
+
+Reward policy is read from the `rewards` feature-flag JSON config. `networkRates` and `campaignRates` map identifiers to basis points; merchant rates override network rates, campaign rates override all other rates, and `maxShareRateBps` plus `maxRewardMinor` are profitability guardrails. Environment defaults remain the final fallback.
+
 ## Error contract
 
 ```json

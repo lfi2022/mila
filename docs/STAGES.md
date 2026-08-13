@@ -363,3 +363,36 @@ Validation:
 External blockers:
 
 - every real affiliate network remains `BLOCKED_EXTERNAL` until contract, publisher ID, tracking host/template, webhook schema/signing convention and API credentials are supplied and verified.
+
+## Stage 11 — Rewards, referrals, and unified ledger
+
+Status: DONE_WITH_FLAGGED_EXTERNAL_PRODUCTS
+
+Implemented:
+
+- one wallet per list with balances derived exclusively from signed immutable ledger entries;
+- affiliate, referral, Premium, partner, promotion, redemption and compensating adjustment sources with idempotency keys;
+- confirmed/pending/lifetime/history/explanation parent UI backed by the versioned API;
+- global, network, merchant and campaign basis-point resolution with per-entry and share-rate profitability caps;
+- referral codes, caps, risk signals, manual review and pending/qualified/rewarded/cancelled lifecycle;
+- conversion balance reservation, audited approve/reject workflow, compensating rejection entry and audited staff adjustment;
+- staff revenue, reward cost, margin, flagged-wallet, negative-balance and review-queue views;
+- removal of the legacy Supabase reward functions and duplicate legacy affiliate webhook.
+
+Migration: `202608130005_referral_codes`.
+
+Validation:
+
+- frontend and backend typecheck: PASS;
+- backend tests: 43 PASS, including immutable ledger balance and compensation behavior;
+- frontend and backend production builds: PASS;
+- lint: PASS with 8 pre-existing Fast Refresh warnings.
+
+Environment variables:
+
+- reward feature flags plus `REWARD_DEFAULT_SHARE_RATE_BPS`, `REWARD_MIN_REDEMPTION_MINOR`, `REFERRAL_REWARD_MINOR`, and `REFERRAL_MAX_PER_USER`.
+
+External blockers:
+
+- bank payout remains `BLOCKED_EXTERNAL` pending a regulated provider flow, legal/accounting validation and credentials;
+- real marketplace offers, partner campaigns and production Premium funding remain disabled until commercial catalogs/contracts and the Stage 12 payment provider are configured.

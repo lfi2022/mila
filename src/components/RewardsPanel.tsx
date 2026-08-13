@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,19 +28,14 @@ const STATUS_LABELS: Record<
 
 export function RewardsPanel({ registryId }: { registryId: string }) {
   const queryClient = useQueryClient();
-  const fetchRewards = useServerFn(getListRewards);
-  const fetchOffers = useServerFn(listRewardOffers);
-  const redeem = useServerFn(requestRewardRedemption);
-
   const rewards = useQuery({
     queryKey: ["rewards", registryId],
-    queryFn: () => fetchRewards({ data: { registryId } }),
+    queryFn: () => getListRewards(registryId),
   });
-  const offers = useQuery({ queryKey: ["reward-offers"], queryFn: () => fetchOffers() });
+  const offers = useQuery({ queryKey: ["reward-offers"], queryFn: listRewardOffers });
 
   const redeemMutation = useMutation({
-    mutationFn: (offerId?: string) =>
-      redeem({ data: { registryId, ...(offerId ? { offerId } : {}) } }),
+    mutationFn: (offerId?: string) => requestRewardRedemption(registryId, offerId),
     onSuccess: (result) => {
       toast.success(`Demande enregistrée : ${result.label} (${formatCents(result.amountCents)})`);
       void queryClient.invalidateQueries({ queryKey: ["rewards", registryId] });

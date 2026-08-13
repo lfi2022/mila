@@ -261,6 +261,7 @@ model User {
   requestedRedemptions    RewardRedemption[]
   sentReferrals           Referral[]               @relation("Referrer")
   receivedReferral        Referral?                @relation("Referred")
+  referralCode            ReferralCode?
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
   messages                Message[]
@@ -785,6 +786,18 @@ model Referral {
   @@unique([referrerUserId, code])
   @@index([status, createdAt])
   @@map("referrals")
+}
+
+model ReferralCode {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @unique @map("user_id") @db.Char(36)
+  code      String   @unique @db.VarChar(16)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("referral_codes")
 }
 
 model Partner {
