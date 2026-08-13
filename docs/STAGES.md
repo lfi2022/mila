@@ -123,6 +123,8 @@ Notes:
 
 Status: DONE_WITH_EXTERNAL_BLOCKERS
 
+Commit: `83b8aad`
+
 Implemented:
 
 - validated remote MySQL host, port, database, user, password, URL, TLS, pool and timeout configuration;
