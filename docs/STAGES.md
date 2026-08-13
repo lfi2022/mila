@@ -197,6 +197,8 @@ External/transition blockers:
 
 Status: CORE_DONE_STORAGE_PENDING
 
+Commit: `49db1bc`
+
 Implemented:
 
 - authenticated list create/read/update/soft-delete and user list collection endpoints;
