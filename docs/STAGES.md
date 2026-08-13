@@ -635,3 +635,52 @@ External blockers:
 - Premium, rewards, referrals, affiliation, contributions, payment, tax/accounting and third-party-funds terms remain `BLOCKED_EXTERNAL` pending professional approval;
 - production CAPTCHA activation requires an approved processor, credentials, privacy review and accessibility fallback;
 - incident ownership, notification contacts, processor contracts and the final retention/child-media schedule require named operators and professional approval.
+
+## Stage 18 — SEO, analytics, performance, accessibility, and PWA
+
+Status: DONE_WITH_PRODUCTION_DOMAIN_AND_MONITORING_BLOCKED_EXTERNAL
+
+Commits: `9385151`, `5783c22`
+
+Implemented:
+
+- environment-driven indexing, robots, canonical URLs and sitemap behavior;
+- useful editorial guide routes with structured data and transparent affiliate language;
+- consented, first-party, pseudonymous product analytics plus real-data admin KPIs;
+- production bundle budgets, compressed responses, image optimization and Core Web Vitals capture;
+- keyboard skip navigation, visible focus, accessible labels and responsive touch targets;
+- installable manifest/icons, narrow safe offline caching and native sharing.
+
+Validation: full `npm run check`, Prisma validation, migration audit, production builds and Docker Compose configuration passed; 18 frontend and 68 backend tests passed. Production DNS, certificates, final public origin, monitoring provider and alert destinations remain `BLOCKED_EXTERNAL`.
+
+## Stage 19 — Partners and family lifecycle
+
+Status: DONE_WITH_REAL_PARTNER_ACTIVATION_BLOCKED_EXTERNAL
+
+Commit: `e9fe0c8`
+
+Implemented:
+
+- pending-by-default partners and inactive-by-default campaigns with contract-gated activation and automatic campaign shutdown on partner deactivation;
+- read-only verified local landing pages, locally generated campaign QR codes, and explicit-click 30-day pseudonymous attribution;
+- serializable, idempotent campaign cost/reward/revenue ledger entries with currency, attribution, and budget invariants;
+- administrator creation, activation, attribution counts, budget/cost/revenue views, and immutable audit reasons;
+- all six family-event types in the data contract, with environment allowlisting and only birth/birthday exposed for launch;
+- idempotent close/archive actions, reservation blocking, memory/thank-you/reward handoff, lifecycle history, and separate future birthday drafts without copied guest data;
+- explicit exclusion of unsupported regions, native/social expansion, and a full marketplace.
+
+Migration: `202608130013_partners_and_family_lifecycle`.
+
+Validation:
+
+- format, frontend/backend typecheck, Prisma validation and migration audit: PASS;
+- frontend tests: 18 PASS;
+- backend tests: 72 PASS, including unpublished partners, exhausted budgets, hashed attribution, and disabled launch types;
+- frontend production build and Docker Compose configuration: PASS;
+- lint: PASS with 8 pre-existing Fast Refresh warnings.
+
+External blockers:
+
+- no production partner or campaign is activated without a real signed contract, approved public copy, exact budget, accounting treatment, and operational owner;
+- partner-funded reward and revenue imports require approved reconciliation sources and finance policy;
+- new event types and geographic/language expansion remain disabled until product, legal, and market validation.

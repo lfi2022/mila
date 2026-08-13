@@ -136,6 +136,14 @@ The throttled public `POST /api/v1/public/reports` validates a real list/gift/us
 
 `POST /api/v1/analytics/events` accepts only an explicit consent flag, allowlisted event, UUID visitor/session identifiers, a path without query data, a recent timestamp and bounded primitive properties. It persists keyed pseudonyms rather than those UUIDs and always returns a non-identifying acceptance result. `GET /api/v1/admin/analytics?days=30` is staff-protected and combines consented funnel counts with authoritative user, list, gift, reservation, purchase, commission, Premium, referral and activated-family aggregates. Metrics that cannot yet be supported by real records stay null with a reason.
 
+## Partner and family-lifecycle routes
+
+`GET /api/v1/public/partners/:slug?campaign=<code>` is a read-only, throttled landing response. It returns only an active contracted partner and an optional active, current, non-exhausted campaign. `POST /api/v1/public/partners/:slug/attributions` requires explicit `accepted: true`, creates a random 30-day pseudonymous attribution, and sets its raw token only in an HttpOnly SameSite cookie. The first authenticated `POST /api/v1/lists` consumes and clears that cookie.
+
+Staff create pending partners and inactive campaigns, change partner status, activate/deactivate campaigns, and append benefit-cost, reward-cost, or revenue facts below `/api/v1/admin/partners` and `/api/v1/admin/partner-campaigns`. All writes require CSRF, administrator role, and an audit reason. Positive minor units, matching currency, idempotency, campaign/attribution ownership, and serializable budget enforcement are server-side invariants.
+
+Authenticated members read the post-event handoff at `GET /api/v1/lists/:listId/lifecycle`. `POST .../close` blocks future reservations; owner-only `POST .../archive` hides the public list; `POST .../future` creates a separate unlisted draft linked to the source without copying gifts or guest data. Environment allowlisting applies to normal edits and future events as well as creation.
+
 ## Error contract
 
 ```json

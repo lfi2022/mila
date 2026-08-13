@@ -188,11 +188,11 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 19 — Partners and family lifecycle
 
-- [ ] Implement real partners/campaigns, attribution, budgets, advantages, reward/revenue tracking, and local partner QR/landing support.
-- [ ] Never display fictional partners or campaigns.
-- [ ] Support list types for birth, birthday, christening, Christmas, wedding, and other while exposing only validated launch types.
-- [ ] Implement close/archive, memory/reward/thank-you handoff, and creation of future family events.
-- [ ] Keep NL, Luxembourg, France, native apps, social network, and full second-hand marketplace out of the initial launch scope until usage validates them.
+- [x] Implement real partners/campaigns, attribution, budgets, advantages, reward/revenue tracking, and local partner QR/landing support.
+- [x] Never display fictional partners or campaigns.
+- [x] Support list types for birth, birthday, christening, Christmas, wedding, and other while exposing only validated launch types.
+- [x] Implement close/archive, memory/reward/thank-you handoff, and creation of future family events.
+- [x] Keep NL, Luxembourg, France, native apps, social network, and full second-hand marketplace out of the initial launch scope until usage validates them.
 
 ## Stage 20 — Observability, security verification, and release
 

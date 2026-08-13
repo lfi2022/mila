@@ -69,6 +69,14 @@ Suspension sets `users.suspended_at` and revokes active sessions. Reports remain
 
 `202608130012_product_analytics` stores consented allowlisted events separately from operational and financial truth. `subject_hash` and `session_hash` are keyed SHA-256 pseudonyms; raw visitor/session UUIDs are never columns. Event/time and subject/time indexes support bounded staff aggregation. Properties are short primitive JSON values only. Business KPIs continue to come from their authoritative tables, so analytics deletion cannot change payments, reservations, rewards or entitlements.
 
+## Partner and family-lifecycle invariants
+
+`202608130013_partners_and_family_lifecycle` adds stable unique partner slugs and campaign codes, pseudonymous expiring attributions, an append-only campaign ledger, list closure, source/future-list links, and lifecycle events. Existing partner/campaign rows receive deterministic backfill identifiers but remain unpublished unless an administrator supplies a contract and activates them.
+
+An attribution token is stored only as a keyed SHA-256 HMAC. `list_id` is unique, so a list can have at most one partner attribution. Campaign ledger idempotency keys are globally unique, values are positive `BIGINT` minor units at the API boundary, and cost/reward writes execute serializably against the campaign budget. Revenue, benefit cost, and reward cost are distinct kinds and are never inferred from a landing-page visit.
+
+`lists.closed_at` blocks new reservations independently of archival status. `source_list_id` links a future family event without ownership of copied domain data, and `list_lifecycle_events` preserves actor/action/time history. Future-list creation copies presentation columns only; relational gift, reservation, contribution, message, memory, and visitor records remain attached to the source.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

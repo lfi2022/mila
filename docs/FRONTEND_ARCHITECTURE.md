@@ -33,3 +33,7 @@ Administration now uses `features/admin` and role-protected Fastify endpoints; t
 SEO metadata uses the configured public origin and indexing switch. The editorial routes are normal route-split pages with canonical/Open Graph and JSON-LD metadata. `lib/analytics` is the single consent-gated first-party event transport; it strips queries and non-primitive properties. `ConsentBanner` never buffers events before a decision, and `/cookies` lets the visitor change that decision.
 
 The root registers the production-only service worker, exposes a keyboard skip link and reports consented LCP/CLS observations. The PWA cache is deliberately narrower than the router: only immutable bundles and an explicit generic public-page allowlist can be used offline. `lib/pwa` owns native sharing and its feature detection.
+
+`features/partners` owns the public verified-landing and explicit attribution-start calls. `/p/$slug` is route-split, noindex, and builds campaign QR codes locally in the browser. Page loading never writes attribution state; the CTA explains the first-party 30-day pseudonym before starting attribution and moving to authentication.
+
+`features/lists` owns the family-lifecycle summary and close/archive/future actions. The dashboard handoff keeps thank-yous, memory-book counts, and real reward balance visible after closure, while a future birthday becomes a separate unlisted draft. Only birth and birthday are exposed at launch even though the shared type contract models later event families.
