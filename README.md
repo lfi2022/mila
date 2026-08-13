@@ -6,7 +6,7 @@ The complete execution checklist is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPL
 
 ## Current migration state
 
-The Lovable build preset, runtime auth bridge, preview metadata, and error-reporting hook have been removed. Browser auth, lists, gifts, reservations, notifications, storage, affiliation, rewards, payments, and Premium use the self-hosted API. Supabase remains server-only in admin/public compatibility domains scheduled for later roadmap stages; it is not part of the target architecture.
+The Lovable build preset, runtime auth bridge, preview metadata, and error-reporting hook have been removed. Browser auth, lists, gifts, reservations, notifications, storage, affiliation, rewards, payments, and Premium use the self-hosted API. Supabase is retained only as historical migration evidence and is not a runtime dependency.
 
 Do not use the migration branch as production until the stage journal marks the required technical and product stages complete.
 
@@ -14,7 +14,25 @@ Do not use the migration branch as production until the stage journal marks the 
 
 - Node.js 22.12 or newer
 - npm 11 or newer
-- environment values copied from `.env.example`
+- an environment file generated with the configuration wizard
+
+## Configuration wizard
+
+Run the interactive assistant from the repository root:
+
+```sh
+npm run config
+```
+
+It selects the local, staging, or production template; configures URLs and infrastructure; optionally enables SMTP, observability, and Mollie; generates independent secrets; checks dependencies; and writes `.env` atomically. Existing `.env` files are preserved unless overwrite is explicitly confirmed. Sensitive answers are masked.
+
+Validate the current file at any time:
+
+```sh
+npm run config:check
+```
+
+For automated disposable local environments, `npm run config -- --profile local --defaults --force` creates a complete Docker-oriented configuration without prompts. `--defaults` is intentionally unavailable for staging and production.
 
 ## Development
 
@@ -33,7 +51,7 @@ npm run backend:dev
 
 It listens on `PORT` (3000 by default), exposes `/api/v1`, and refuses to start when required base environment configuration is invalid.
 
-The container stack and explicit migration flow are documented in [`docs/INFRASTRUCTURE.md`](docs/INFRASTRUCTURE.md). In short: copy `.env.local.example` to `.env`, fill its placeholders, run `docker compose --profile migrate run --rm migrate`, then `docker compose up --build -d`.
+The container stack and explicit migration flow are documented in [`docs/INFRASTRUCTURE.md`](docs/INFRASTRUCTURE.md). In short: run `npm run config`, then `docker compose --profile migrate run --rm migrate` and `docker compose --profile local-db up --build -d` for the local Docker profile.
 
 ## Validation
 
