@@ -11,6 +11,7 @@ export const MODULE_NAMES = [
   "rewards",
   "notifications",
   "media",
+  "memories",
   "reports",
   "admin",
   "webhooks",

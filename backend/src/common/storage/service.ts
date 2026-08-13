@@ -4,12 +4,13 @@ import {
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
+  CopyObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { fileTypeFromBuffer } from "file-type";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import { AppError } from "../errors/app-error.js";
 import type { AppConfig } from "../../config/env.js";
@@ -68,7 +69,7 @@ export class StorageService {
       "media-message": {
         bucket: config.STORAGE_BUCKET_MEDIA_MESSAGES,
         mime: /^(audio\/(mpeg|mp4|ogg|webm)|video\/(mp4|webm))$/,
-        maxBytes: Math.min(config.STORAGE_MAX_UPLOAD_BYTES, 104_857_600),
+        maxBytes: config.MEDIA_VIDEO_MAX_BYTES,
         extensions: ["mp3", "mp4", "ogg", "webm"],
       },
       export: {
@@ -163,6 +164,14 @@ export class StorageService {
       );
     if (!detected && !["application/json", "text/csv"].includes(mimeType))
       throw new AppError(415, "UPLOAD_SIGNATURE_UNKNOWN", "File signature could not be validated");
+    const complete = await this.client.send(
+      new GetObjectCommand({ Bucket: policy.bucket, Key: key }),
+    );
+    const checksum = createHash("sha256")
+      .update(
+        complete.Body ? Buffer.from(await complete.Body.transformToByteArray()) : Buffer.alloc(0),
+      )
+      .digest("hex");
     if (this.redis) {
       if (this.redis.client.status === "wait") await this.redis.client.connect();
       await this.redis.client.xadd(
@@ -178,7 +187,7 @@ export class StorageService {
         new Date().toISOString(),
       );
     }
-    return { bucket: policy.bucket, key, scanStatus: "PENDING" as const };
+    return { bucket: policy.bucket, key, checksum, scanStatus: "PENDING" as const };
   }
 
   async signedDownload(purpose: UploadPurpose, key: string) {
@@ -187,6 +196,31 @@ export class StorageService {
       this.signingClient,
       new GetObjectCommand({ Bucket: policy.bucket, Key: key }),
       { expiresIn: this.config.STORAGE_SIGNED_URL_TTL_SECONDS },
+    );
+  }
+
+  async signedCleanDownload(purpose: UploadPurpose, key: string) {
+    const policy = this.policies[purpose];
+    const head = await this.client.send(new HeadObjectCommand({ Bucket: policy.bucket, Key: key }));
+    if (head.Metadata?.["scan"] !== "clean") {
+      throw new AppError(409, "MEDIA_SCAN_PENDING", "Media is unavailable until scanning succeeds");
+    }
+    return this.signedDownload(purpose, key);
+  }
+
+  async markScanStatus(bucket: string, key: string, status: "clean" | "infected") {
+    const allowed = new Set(Object.values(this.policies).map((policy) => policy.bucket));
+    if (!allowed.has(bucket)) throw new AppError(400, "STORAGE_BUCKET_INVALID", "Unknown bucket");
+    const head = await this.client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        CopySource: `${bucket}/${encodeURIComponent(key).replace(/%2F/g, "/")}`,
+        ContentType: head.ContentType,
+        MetadataDirective: "REPLACE",
+        Metadata: { ...head.Metadata, scan: status },
+      }),
     );
   }
 

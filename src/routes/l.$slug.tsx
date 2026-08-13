@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LAYOUT_CLASSES, appearanceStyle, getHeroStyle, getLayout } from "@/lib/list-theme";
 import { getPublicList, reserveGift, type PublicGift } from "@/lib/public.functions";
 import { priceApi } from "@/features/prices/api";
+import { createSecondHandOffer } from "@/features/memories/api";
 
 const searchSchema = z.object({ code: z.string().max(64).optional() });
 
@@ -248,6 +249,14 @@ function GiftCard({
   const [busy, setBusy] = useState(false);
   const [manageLink, setManageLink] = useState<string | null>(null);
   const [form, setForm] = useState({ guestName: "", guestEmail: "", message: "" });
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [offerFile, setOfferFile] = useState<File | undefined>();
+  const [offer, setOffer] = useState({
+    proposerName: "",
+    proposerEmail: "",
+    condition: "VERY_GOOD" as "LIKE_NEW" | "VERY_GOOD" | "GOOD" | "FAIR",
+    comment: "",
+  });
 
   const submit = async (intent: "reserve" | "order") => {
     setBusy(true);
@@ -337,6 +346,92 @@ function GiftCard({
                 Voir en boutique
               </a>
             </Button>
+          ) : null}
+          {!gift.is_reserved && !isDemo ? (
+            <Dialog open={offerOpen} onOpenChange={setOfferOpen}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-10"
+                onClick={() => setOfferOpen(true)}
+              >
+                Proposer d’occasion
+              </Button>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Proposer « {gift.title} » d’occasion</DialogTitle>
+                  <DialogDescription>
+                    Les parents vérifieront l’état, la photo et votre commentaire avant toute
+                    acceptation.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <Label>Votre prénom</Label>
+                  <Input
+                    value={offer.proposerName}
+                    onChange={(event) => setOffer({ ...offer, proposerName: event.target.value })}
+                  />
+                  <Label>Email (optionnel)</Label>
+                  <Input
+                    type="email"
+                    value={offer.proposerEmail}
+                    onChange={(event) => setOffer({ ...offer, proposerEmail: event.target.value })}
+                  />
+                  <Label>État</Label>
+                  <select
+                    className="h-10 w-full rounded-md border bg-background px-3"
+                    value={offer.condition}
+                    onChange={(event) =>
+                      setOffer({
+                        ...offer,
+                        condition: event.target.value as typeof offer.condition,
+                      })
+                    }
+                  >
+                    <option value="LIKE_NEW">Comme neuf</option>
+                    <option value="VERY_GOOD">Très bon état</option>
+                    <option value="GOOD">Bon état</option>
+                    <option value="FAIR">État correct</option>
+                  </select>
+                  <Label>Commentaire</Label>
+                  <Textarea
+                    value={offer.comment}
+                    onChange={(event) => setOffer({ ...offer, comment: event.target.value })}
+                  />
+                  <Label>Photo privée (8 Mo max)</Label>
+                  <Input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => setOfferFile(event.target.files?.[0])}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    disabled={busy || !offer.proposerName.trim()}
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        await createSecondHandOffer({
+                          giftToken: gift.public_token,
+                          ...offer,
+                          ...(offerFile ? { file: offerFile } : {}),
+                        });
+                        toast.success("Proposition transmise aux parents");
+                        setOfferOpen(false);
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error ? error.message : "Proposition impossible",
+                        );
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    Transmettre la proposition
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           ) : null}
           {gift.is_reserved ? (
             <Button size="sm" className="min-h-10" disabled>

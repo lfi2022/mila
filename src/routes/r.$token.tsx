@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/services/api/client";
+import { createReservationMemoryMessage } from "@/features/memories/api";
 
 type Reservation = {
   id: string;
@@ -35,6 +36,8 @@ function ReservationPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [memoryMessage, setMemoryMessage] = useState("");
+  const [media, setMedia] = useState<File | undefined>();
 
   const load = useCallback(async () => {
     const result = await apiRequest<{ reservation: Reservation }>("/public/reservations/manage", {
@@ -109,6 +112,43 @@ function ReservationPage() {
           >
             Enregistrer le message
           </Button>
+          <div className="space-y-3 border-t pt-5">
+            <h2 className="font-medium">Ajouter un message souvenir privé</h2>
+            <p className="text-sm text-muted-foreground">
+              Audio jusqu’à 15 Mo, vidéo jusqu’à 50 Mo. Le média ne sera visible qu’après analyse de
+              sécurité et ne rejoindra le livre qu’avec l’accord des parents.
+            </p>
+            <Textarea
+              value={memoryMessage}
+              maxLength={5000}
+              placeholder="Votre message pour les parents"
+              onChange={(event) => setMemoryMessage(event.target.value)}
+            />
+            <input
+              type="file"
+              accept="audio/mpeg,audio/mp4,audio/ogg,audio/webm,video/mp4,video/webm"
+              onChange={(event) => setMedia(event.target.files?.[0])}
+            />
+            <Button
+              variant="secondary"
+              disabled={busy || !memoryMessage.trim() || reservation.status === "CANCELLED"}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await createReservationMemoryMessage(token, memoryMessage, media);
+                  setMemoryMessage("");
+                  setMedia(undefined);
+                  toast.success("Message souvenir transmis aux parents");
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Envoi impossible");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Envoyer pour validation
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-3 border-t pt-5">
             {!purchased && reservation.status !== "CANCELLED" && (
               <Button

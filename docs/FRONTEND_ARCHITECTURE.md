@@ -25,3 +25,5 @@ Orders use the typed `features/orders` boundary and the static `/dashboard/order
 ## Media
 
 Cover upload requests a signed private-bucket URL, sends the file directly to the configured public storage origin, and verifies/associates it through the API. UI code never receives storage credentials. The stable display URL is constructed centrally by `buildAssetUrl`; pending malware scans fail closed.
+
+`features/memories` owns second-hand proposals, reservation messages/media, thank-you tracking and memory-book calls. Public gift and reservation pages expose the token-scoped contribution flows without putting management tokens in URLs sent to the API. `/dashboard/memories` is the parent-controlled review surface: accepting an offer, authorizing a message for the book, approving a draft/card and selecting every memory are separate explicit actions. CSV and print/PDF preparation are authenticated downloads; private media is opened only through short-lived URLs returned after backend authorization and scan checks.

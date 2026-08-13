@@ -114,6 +114,16 @@ Before submission, parents can update quantity/variant/inclusion at `PATCH /api/
 
 Manual mode provides merchant links and a checklist. Assisted mode prepares the same structured handoff for a future authorized connector. `AUTOMATIC_PLATFORM` requires its global feature flag plus a trusted merchant connector explicitly marked contract-authorized, and submission still returns `AUTOMATIC_ORDER_BLOCKED_EXTERNAL` because no production ordering connector exists. No endpoint runs browser automation or scraping to purchase products.
 
+## Second-hand, messages, thank-yous, and memory routes
+
+The public `POST /api/v1/public/second-hand-offers` accepts only gifts whose explicit policy allows or prefers second hand. The response contains an expiring management token; its keyed hash alone is stored. Token-protected photo presign/verify and withdrawal routes coordinate a private JPEG/PNG/WebP upload. Parents list and review proposals below `/api/v1/lists/:listId/second-hand-offers`; acceptance serializably claims one available gift quantity and rejects competing pending proposals. Photo download requires list membership, a short-lived signed URL, and clean scan metadata.
+
+Reservation-token holders create private text messages and attach controlled audio/video at `/api/v1/public/reservations/manage/messages`. MIME signatures, exact size, duration, SHA-256 checksum, owner prefix, retention date and scan/transcode state are persisted. Parent media download fails closed until the object scanner marks it clean. Deletion immediately hides the database association and attempts private-object removal. Transcoding state is optional and remains pending only when its dedicated flag is enabled.
+
+Authorized list members use `/api/v1/lists/:listId/thank-yous` to filter purchased gifts and track receipt/thanks. Draft edits clear prior approval; a digital card is exposed only after an explicit parent approval action. CSV export is authenticated. No generated draft is sent automatically.
+
+`/api/v1/lists/:listId/memory-book` persists theme, introduction and retention choice. Only parent-approved visible messages and gifts belonging to the same list can become items. Print export produces authenticated A4-ready HTML for browser PDF/printing; clean private media receives short-lived signed links, unscanned media stays unavailable, and gift images must have an allowed usage policy.
+
 ## Error contract
 
 ```json

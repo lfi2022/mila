@@ -29,6 +29,7 @@ import { Route as VerificationEmailRouteImport } from './routes/verification-ema
 import { Route as ContribuerGiftTokenRouteImport } from './routes/contribuer.$giftToken'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardRegistryIdRouteImport } from './routes/dashboard.$registryId'
+import { Route as DashboardMemoriesRouteImport } from './routes/dashboard.memories'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as GoTokenRouteImport } from './routes/go.$token'
 import { Route as InvitationTokenRouteImport } from './routes/invitation.$token'
@@ -140,6 +141,11 @@ const DashboardRegistryIdRoute = DashboardRegistryIdRouteImport.update({
   path: '/$registryId',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMemoriesRoute = DashboardMemoriesRouteImport.update({
+  id: '/memories',
+  path: '/memories',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/verification-email': typeof VerificationEmailRoute
   '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
+  '/dashboard/memories': typeof DashboardMemoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/verification-email': typeof VerificationEmailRoute
   '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
+  '/dashboard/memories': typeof DashboardMemoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -275,6 +283,7 @@ export interface FileRoutesById {
   '/verification-email': typeof VerificationEmailRoute
   '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
+  '/dashboard/memories': typeof DashboardMemoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/verification-email'
     | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
+    | '/dashboard/memories'
     | '/dashboard/orders'
     | '/go/$token'
     | '/invitation/$token'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/verification-email'
     | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
+    | '/dashboard/memories'
     | '/dashboard/orders'
     | '/go/$token'
     | '/invitation/$token'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/verification-email'
     | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
+    | '/dashboard/memories'
     | '/dashboard/orders'
     | '/go/$token'
     | '/invitation/$token'
@@ -557,6 +569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRegistryIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/memories': {
+      id: '/dashboard/memories'
+      path: '/memories'
+      fullPath: '/dashboard/memories'
+      preLoaderRoute: typeof DashboardMemoriesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/orders': {
       id: '/dashboard/orders'
       path: '/orders'
@@ -632,12 +651,14 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardRegistryIdRoute: typeof DashboardRegistryIdRoute
+  DashboardMemoriesRoute: typeof DashboardMemoriesRoute
   DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardRegistryIdRoute: DashboardRegistryIdRoute,
+  DashboardMemoriesRoute: DashboardMemoriesRoute,
   DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }

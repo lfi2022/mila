@@ -236,6 +236,20 @@ enum MediaKind {
   DOCUMENT
 }
 
+enum SecondHandCondition {
+  LIKE_NEW
+  VERY_GOOD
+  GOOD
+  FAIR
+}
+
+enum SecondHandOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
 model User {
   id                      String                    @id @default(uuid()) @db.Char(36)
   email                   String                    @unique @db.VarChar(255)
@@ -269,6 +283,9 @@ model User {
   messages                Message[]
   uploadedMedia           MediaAsset[]
   thankYous               ThankYou[]
+  approvedMessages        Message[]                  @relation("MessageApprover")
+  reviewedSecondHandOffers SecondHandOffer[]          @relation("SecondHandReviewer")
+  approvedMemoryItems     MemoryBookItem[]            @relation("MemoryItemApprover")
   reports                 Report[]                  @relation("Reporter")
   auditLogs               AdminAuditLog[]           @relation("AuditActor")
 
@@ -385,6 +402,8 @@ model GiftList {
   thankYous                ThankYou[]
   reports                  Report[]
   entitlement              ListEntitlement?
+  secondHandOffers         SecondHandOffer[]
+  memoryBook               MemoryBook?
 
   @@index([ownerId, status])
   @@index([visibility, status])
@@ -543,6 +562,7 @@ model Gift {
   orderItems                OrderGroupItem[]
   messages                  Message[]
   thankYous                 ThankYou[]
+  secondHandOffers          SecondHandOffer[]
 
   @@index([listId, position])
   @@index([listId, status])
@@ -1211,12 +1231,16 @@ model Message {
   authorUserId  String?      @map("author_user_id") @db.Char(36)
   guestName     String?      @map("guest_name") @db.VarChar(120)
   text          String?      @db.Text
+  approvedForMemory Boolean  @default(false) @map("approved_for_memory")
+  approvedById  String?      @map("approved_by_id") @db.Char(36)
+  approvedAt    DateTime?    @map("approved_at") @db.DateTime(3)
   hiddenAt      DateTime?    @map("hidden_at") @db.DateTime(3)
   createdAt     DateTime     @default(now()) @map("created_at") @db.DateTime(3)
   list          GiftList     @relation(fields: [listId], references: [id], onDelete: Cascade)
   gift          Gift?        @relation(fields: [giftId], references: [id], onDelete: SetNull)
   reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
   author        User?        @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+  approvedBy    User?        @relation("MessageApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   media         MediaAsset[]
 
   @@index([listId, createdAt])
@@ -1233,6 +1257,10 @@ model MediaAsset {
   sizeBytes    BigInt    @map("size_bytes")
   checksum     String    @db.Char(64)
   scanStatus   String    @default("PENDING") @map("scan_status") @db.VarChar(32)
+  transcodeStatus String  @default("NOT_REQUIRED") @map("transcode_status") @db.VarChar(32)
+  transcodedStorageKey String? @map("transcoded_storage_key") @db.VarChar(512)
+  durationSeconds Int?   @map("duration_seconds") @db.UnsignedSmallInt
+  retentionUntil DateTime? @map("retention_until") @db.DateTime(3)
   metadata     Json?
   deletedAt    DateTime? @map("deleted_at") @db.DateTime(3)
   createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
@@ -1253,6 +1281,10 @@ model ThankYou {
   receivedAt    DateTime?    @map("received_at") @db.DateTime(3)
   thankedAt     DateTime?    @map("thanked_at") @db.DateTime(3)
   draft         String?      @db.Text
+  draftApprovedAt DateTime?  @map("draft_approved_at") @db.DateTime(3)
+  cardTheme     String?      @map("card_theme") @db.VarChar(64)
+  cardMessage   String?      @map("card_message") @db.Text
+  cardCreatedAt DateTime?    @map("card_created_at") @db.DateTime(3)
   createdAt     DateTime     @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt     DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
   list          GiftList     @relation(fields: [listId], references: [id], onDelete: Cascade)
@@ -1262,6 +1294,69 @@ model ThankYou {
 
   @@index([listId, thankedAt])
   @@map("thank_yous")
+}
+
+model SecondHandOffer {
+  id                  String                @id @default(uuid()) @db.Char(36)
+  listId              String                @map("list_id") @db.Char(36)
+  giftId              String                @map("gift_id") @db.Char(36)
+  proposerName        String                @map("proposer_name") @db.VarChar(120)
+  proposerEmail       String?               @map("proposer_email") @db.VarChar(255)
+  condition           SecondHandCondition
+  comment             String?               @db.VarChar(2000)
+  photoStorageKey     String?               @map("photo_storage_key") @db.VarChar(512)
+  photoMimeType       String?               @map("photo_mime_type") @db.VarChar(120)
+  photoSizeBytes      BigInt?                @map("photo_size_bytes")
+  photoScanStatus     String?               @map("photo_scan_status") @db.VarChar(32)
+  status              SecondHandOfferStatus @default(PENDING)
+  managementTokenHash String                @unique @map("management_token_hash") @db.Char(64)
+  tokenExpiresAt      DateTime              @map("token_expires_at") @db.DateTime(3)
+  reviewedById        String?               @map("reviewed_by_id") @db.Char(36)
+  reviewedAt          DateTime?             @map("reviewed_at") @db.DateTime(3)
+  reviewComment       String?               @map("review_comment") @db.VarChar(1000)
+  createdAt           DateTime              @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt           DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
+  list                GiftList              @relation(fields: [listId], references: [id], onDelete: Cascade)
+  gift                Gift                  @relation(fields: [giftId], references: [id], onDelete: Cascade)
+  reviewedBy          User?                 @relation("SecondHandReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([listId, status, createdAt])
+  @@index([giftId, status])
+  @@map("second_hand_offers")
+}
+
+model MemoryBook {
+  id               String           @id @default(uuid()) @db.Char(36)
+  listId           String           @unique @map("list_id") @db.Char(36)
+  theme            String           @default("soft") @db.VarChar(64)
+  title            String?          @db.VarChar(180)
+  introduction     String?          @db.Text
+  retentionMonths  Int              @default(24) @map("retention_months") @db.UnsignedSmallInt
+  exportPreparedAt DateTime?        @map("export_prepared_at") @db.DateTime(3)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.DateTime(3)
+  list             GiftList         @relation(fields: [listId], references: [id], onDelete: Cascade)
+  items            MemoryBookItem[]
+
+  @@map("memory_books")
+}
+
+model MemoryBookItem {
+  id           String     @id @default(uuid()) @db.Char(36)
+  memoryBookId String     @map("memory_book_id") @db.Char(36)
+  sourceType   String     @map("source_type") @db.VarChar(32)
+  sourceId     String     @map("source_id") @db.Char(36)
+  caption      String?    @db.VarChar(1000)
+  position     Int        @default(0)
+  approvedById String     @map("approved_by_id") @db.Char(36)
+  approvedAt   DateTime   @default(now()) @map("approved_at") @db.DateTime(3)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.DateTime(3)
+  memoryBook   MemoryBook @relation(fields: [memoryBookId], references: [id], onDelete: Cascade)
+  approvedBy   User       @relation("MemoryItemApprover", fields: [approvedById], references: [id], onDelete: Restrict)
+
+  @@unique([memoryBookId, sourceType, sourceId])
+  @@index([memoryBookId, position])
+  @@map("memory_book_items")
 }
 
 model Report {

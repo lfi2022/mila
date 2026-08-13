@@ -68,6 +68,7 @@ const itemSchema = z.object({
   quantity: z.number().int().min(1).max(50),
   description: z.string().trim().max(400),
   imageUrl: z.string().trim().max(2000),
+  secondHandPolicy: z.enum(["NEW_ONLY", "SECOND_HAND_ALLOWED", "SECOND_HAND_PREFERRED"]),
 });
 
 const emptyItem = {
@@ -78,6 +79,7 @@ const emptyItem = {
   quantity: 1,
   description: "",
   imageUrl: "",
+  secondHandPolicy: "NEW_ONLY" as const,
 };
 
 type LegacyListPatch = Partial<{
@@ -210,6 +212,7 @@ function RegistryDetail() {
           : null,
         quantity: parsed.data.quantity,
         description: parsed.data.description || null,
+        secondHandPolicy: parsed.data.secondHandPolicy,
       });
     },
     onSuccess: () => {
@@ -431,6 +434,24 @@ function RegistryDetail() {
                     onChange={(e) => setItem({ ...item, description: e.target.value })}
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Préférence seconde main</Label>
+                <Select
+                  value={item.secondHandPolicy}
+                  onValueChange={(value) =>
+                    setItem({ ...item, secondHandPolicy: value as typeof item.secondHandPolicy })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NEW_ONLY">Neuf uniquement</SelectItem>
+                    <SelectItem value="SECOND_HAND_ALLOWED">Seconde main acceptée</SelectItem>
+                    <SelectItem value="SECOND_HAND_PREFERRED">Seconde main préférée</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button disabled={addItem.isPending} onClick={() => addItem.mutate()}>
                 Ajouter à la liste

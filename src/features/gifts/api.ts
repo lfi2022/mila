@@ -9,6 +9,7 @@ export type Gift = {
   reservedQuantity: number;
   unitPriceMinor: string | null;
   status: string;
+  secondHandPolicy: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
   merchant: { name: string } | null;
   images: Array<{ sourceUrl: string | null; storageKey: string | null }>;
 };
@@ -26,6 +27,7 @@ export const giftApi = {
       quantity: number;
       unitPriceMinor?: string | null;
       imageUrl?: string | null;
+      secondHandPolicy?: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
     },
   ) {
     return (
@@ -39,6 +41,7 @@ export const giftApi = {
           quantity: input.quantity,
           unitPriceMinor: input.unitPriceMinor,
           kind: input.url ? "LINK" : "FREE_GIFT",
+          secondHandPolicy: input.secondHandPolicy ?? "NEW_ONLY",
           ...(input.imageUrl ? { image: { url: input.imageUrl, source: "REMOTE" } } : {}),
         }),
       })

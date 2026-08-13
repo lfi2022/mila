@@ -51,6 +51,14 @@ Product identity keys normalize GTIN/EAN first, then brand+MPN or brand+model, a
 
 An item contribution amount is a reversible budget plan, not a payment or ledger settlement. Available planning capacity is derived from confirmed `funds_ledger_entries` minus allocations in active groups under serializable isolation. Cancelling a group clears its plans. Only a later authorized provider/merchant payment stage may append an `ORDER_PAYMENT` movement; Stage 15 does not mislabel a parent checklist as a financial settlement.
 
+## Private media and memory invariants
+
+`202608130010_memories_and_second_hand` separates proposals, messages/media, thank-you workflow and selected memory-book items. Second-hand management tokens are stored only as keyed hashes, expire, and cannot bypass the gift's `NEW_ONLY` policy. Accepting an offer conditionally claims inventory under serializable isolation.
+
+Media assets retain exact MIME, size, SHA-256 checksum, scan/transcode state, retention deadline and private storage key. Database approval never makes an unscanned object public: signed download also checks clean object metadata. Deletion is soft in MySQL before best-effort object deletion so an unavailable storage provider cannot leave a visible association.
+
+`approved_for_memory`, approver and timestamp make message consent explicit. A memory item additionally records the approving parent and has a unique `(book, source type, source ID)` constraint. Source membership and approval are revalidated when adding it. Thank-you draft approval and card creation timestamps are separate from `thanked_at`; saving a changed draft clears approval, and no database state represents an automatic send.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

@@ -53,6 +53,9 @@ export function SiteHeader() {
               <Button asChild variant="ghost" size="sm">
                 <Link to="/dashboard/orders">À commander</Link>
               </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/dashboard/memories">Souvenirs</Link>
+              </Button>
               <Button asChild size="sm">
                 <Link to="/dashboard">Mon espace</Link>
               </Button>
@@ -105,6 +108,9 @@ export function SiteHeader() {
                     </Button>
                     <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
                       <Link to="/dashboard/orders">À commander</Link>
+                    </Button>
+                    <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
+                      <Link to="/dashboard/memories">Souvenirs</Link>
                     </Button>
                     <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
                       <Link to="/profil">Profil</Link>
