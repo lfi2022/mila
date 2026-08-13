@@ -10,6 +10,11 @@ const config = loadConfig({
   API_PUBLIC_URL: "/api/v1",
   CORS_ALLOWED_ORIGINS: "https://test.example.com",
   SEO_INDEXING_ENABLED: "false",
+  DATABASE_HOST: "db.test.invalid",
+  DATABASE_NAME: "mila_test",
+  DATABASE_USER: "mila_test",
+  DATABASE_PASSWORD: "test-only-password",
+  DATABASE_URL: "mysql://mila_test:test-only-password@db.test.invalid:3306/mila_test",
 });
 
 describe("Mila API bootstrap", () => {

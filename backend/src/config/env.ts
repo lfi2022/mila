@@ -24,6 +24,16 @@ const envSchema = z
     RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
     REQUEST_BODY_LIMIT_BYTES: z.coerce.number().int().min(1_024).max(5_242_880).default(1_048_576),
     SEO_INDEXING_ENABLED: booleanString,
+    DATABASE_HOST: z.string().trim().min(1),
+    DATABASE_PORT: z.coerce.number().int().min(1).max(65_535).default(3306),
+    DATABASE_NAME: z.string().trim().min(1),
+    DATABASE_USER: z.string().trim().min(1),
+    DATABASE_PASSWORD: z.string().min(1),
+    DATABASE_URL: z.string().url().startsWith("mysql://"),
+    DATABASE_SSL_MODE: z.enum(["disabled", "preferred", "required"]).default("required"),
+    DATABASE_POOL_MIN: z.coerce.number().int().min(0).default(2),
+    DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+    DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   })
   .superRefine((env, context) => {
     if (env.APP_ENV !== "development" && !env.APP_URL.startsWith("https://")) {
@@ -38,6 +48,13 @@ const envSchema = z
         code: "custom",
         path: ["SEO_INDEXING_ENABLED"],
         message: "SEO indexing can only be enabled in production",
+      });
+    }
+    if (env.DATABASE_POOL_MIN > env.DATABASE_POOL_MAX) {
+      context.addIssue({
+        code: "custom",
+        path: ["DATABASE_POOL_MIN"],
+        message: "DATABASE_POOL_MIN cannot exceed DATABASE_POOL_MAX",
       });
     }
   });

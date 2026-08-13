@@ -1,8 +1,10 @@
 import { createApp } from "./app.js";
+import { createDatabase } from "./common/database/client.js";
 import { loadConfig } from "./config/env.js";
 
 const config = loadConfig();
-const app = await createApp({ config });
+const database = createDatabase(config);
+const app = await createApp({ config, database });
 
 const shutdown = async (signal: string) => {
   app.log.info({ signal }, "Shutting down Mila API");

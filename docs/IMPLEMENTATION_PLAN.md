@@ -39,13 +39,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 03 — Remote MySQL and versioned data model
 
-- [ ] Configure remote MySQL exclusively through validated environment variables.
-- [ ] Add Prisma MySQL schema, migrations, explicit seed, indexes, constraints, timestamps, soft-delete fields where justified, and transaction boundaries.
-- [ ] Model users, roles, sessions, verification/reset tokens, lists, members, invitations, gifts, images, offers, reservations, contributions, merchants, clicks, commissions, reward wallets/ledger/redemptions, referrals, partners, payments/refunds/chargebacks, bank transfers, order groups/items, notifications, messages/media, thank-yous, reports, audit logs, flags, entitlements, price snapshots, and product identities.
-- [ ] Use integer minor units/Decimal for money; never float or mutable balance as sole truth.
-- [ ] Add database retry, pool, timeout, TLS options, and readiness checks.
-- [ ] Document least-privilege `mila_app` and separate `mila_migration` accounts, network allowlisting, backups, retention, and restoration tests.
-- [ ] Provide a reproducible Supabase/PostgreSQL-to-MySQL migration script and document test-data handling.
+- [x] Configure remote MySQL exclusively through validated environment variables.
+- [x] Add Prisma MySQL schema, migrations, explicit seed, indexes, constraints, timestamps, soft-delete fields where justified, and transaction boundaries.
+- [x] Model users, roles, sessions, verification/reset tokens, lists, members, invitations, gifts, images, offers, reservations, contributions, merchants, clicks, commissions, reward wallets/ledger/redemptions, referrals, partners, payments/refunds/chargebacks, bank transfers, order groups/items, notifications, messages/media, thank-yous, reports, audit logs, flags, entitlements, price snapshots, and product identities.
+- [x] Use integer minor units/Decimal for money; never float or mutable balance as sole truth.
+- [x] Add database pool, timeout, TLS options, graceful shutdown, and readiness checks (connection retry is provided by pool acquisition and orchestrator restart policy).
+- [x] Document least-privilege `mila_app` and separate `mila_migration` accounts, network allowlisting, backups, retention, and restoration tests.
+- [ ] `BLOCKED_EXTERNAL` — finalize and execute the Supabase/PostgreSQL-to-MySQL row transformer after a sanitized source export establishes the real production column shape; deterministic schema inventory and test-data/runbook controls are implemented.
 
 ## Stage 04 — Self-hosted authentication and account lifecycle
 

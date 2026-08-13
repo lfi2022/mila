@@ -118,3 +118,39 @@ Notes:
 
 - Rate limiting is process-local for this bootstrap and becomes Redis-backed in the infrastructure stage.
 - Product endpoints are intentionally not exposed as placeholders; each module is activated only when its domain stage satisfies the Definition of Done.
+
+## Stage 03 — Remote MySQL and versioned data model
+
+Status: DONE_WITH_EXTERNAL_BLOCKERS
+
+Implemented:
+
+- validated remote MySQL host, port, database, user, password, URL, TLS, pool and timeout configuration;
+- Prisma 7 MySQL schema covering the complete roadmap domain with UUID identifiers, foreign keys, unique constraints, indexes, timestamps and intentional soft deletion;
+- integer minor-unit financial fields and immutable ledger-entry models;
+- generated initial SQL migration and idempotent, disabled-by-default feature-flag seed;
+- MariaDB driver adapter, bounded pool, TLS modes, `SELECT 1` readiness and graceful pool shutdown;
+- least-privilege runtime/migration account, network, migration deployment, backup and restore-test runbook;
+- deterministic audit of the 12 legacy Supabase migrations and their 24 source tables.
+
+Tests:
+
+- `npm run prisma:validate --workspace @mila/backend`: PASS;
+- `npm run backend:typecheck`: PASS;
+- `npm run backend:test`: PASS — 6 tests;
+- `npm run backend:build`: PASS;
+- `npm run migration:audit`: PASS.
+
+Environment:
+
+- `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`;
+- `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_URL`;
+- `DATABASE_SSL_MODE`, `DATABASE_POOL_MIN`, `DATABASE_POOL_MAX`;
+- `DATABASE_CONNECT_TIMEOUT_MS`.
+
+Migration: `202608130001_initial`.
+
+External blockers:
+
+- remote database provisioning, firewall allowlist, TLS certificate, accounts and backup activation require operator access;
+- a sanitized Supabase export is required to finalize, rehearse and approve the production row-level mapping without guessing personal-data transformations.

@@ -22,6 +22,7 @@
     "backend:typecheck": "npm run typecheck --workspace @mila/backend",
     "backend:test": "npm run test --workspace @mila/backend",
     "security:secrets": "node scripts/scan-secrets.mjs",
+    "migration:audit": "node scripts/supabase-migration-audit.mjs",
     "check": "npm run security:secrets && npm run format:check && npm run lint && npm run typecheck && npm run backend:typecheck && npm run test && npm run backend:test && npm run build && npm run backend:build"
   },
   "dependencies": {

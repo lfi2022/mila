@@ -6,13 +6,19 @@
   "main": "dist/main.js",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "npm run prisma:generate && tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "typecheck": "npm run prisma:generate && tsc --noEmit",
+    "test": "npm run prisma:generate && vitest run",
+    "prisma:generate": "prisma generate --config prisma.config.ts",
+    "prisma:validate": "prisma validate --config prisma.config.ts",
+    "db:migrate:deploy": "prisma migrate deploy --config prisma.config.ts",
+    "db:migrate:dev": "prisma migrate dev --config prisma.config.ts",
+    "db:seed": "prisma db seed --config prisma.config.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
+    "prisma": "^7.9.1",
     "tsx": "^4.23.12",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
@@ -23,6 +29,9 @@
     "@fastify/rate-limit": "^11.2.0",
     "@fastify/swagger": "^9.8.1",
     "@fastify/swagger-ui": "^6.1.1",
+    "@prisma/adapter-mariadb": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "dotenv": "^17.4.2",
     "fastify": "^5.11.3",
     "zod": "^3.25.76"
   }

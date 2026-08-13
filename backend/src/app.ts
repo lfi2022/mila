@@ -7,6 +7,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 
 import { installErrorHandler } from "./common/http/error-handler.js";
+import type { DatabaseService } from "./common/database/client.js";
 import { allowedOrigins, loadConfig, type AppConfig } from "./config/env.js";
 import { healthRoutes, type ReadinessProbe } from "./modules/health/routes.js";
 import { MODULE_NAMES } from "./modules/index.js";
@@ -14,6 +15,7 @@ import { MODULE_NAMES } from "./modules/index.js";
 export type AppOptions = {
   config?: AppConfig;
   readinessProbe?: ReadinessProbe;
+  database?: DatabaseService;
   logger?: boolean;
 };
 
@@ -69,6 +71,10 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
 
   installErrorHandler(app);
 
+  if (options.database) {
+    app.addHook("onClose", () => options.database?.close());
+  }
+
   await app.register(
     async (api) => {
       api.get("/", { schema: { tags: ["health"] } }, async () => ({
@@ -77,7 +83,12 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
         modules: MODULE_NAMES,
       }));
       await api.register(
-        healthRoutes(options.readinessProbe ?? (async () => ({ application: "up" }))),
+        healthRoutes(
+          options.readinessProbe ??
+            (options.database
+              ? async () => ({ database: await options.database!.check() })
+              : async () => ({ application: "up" })),
+        ),
         { prefix: "/health" },
       );
     },
