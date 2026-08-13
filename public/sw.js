@@ -1,5 +1,11 @@
-const CACHE = "mila-public-v2";
-const SAFE_SHELL = ["/offline.html", "/manifest.webmanifest", "/favicon.png", "/icon-192.png"];
+const CACHE = "mila-public-v3";
+const SAFE_SHELL = [
+  "/offline.html",
+  "/manifest.webmanifest",
+  "/favicon.png",
+  "/icon-192.png",
+  "/mila-logo.png",
+];
 const PUBLIC_PAGES = new Set([
   "/",
   "/a-propos",

@@ -10,11 +10,10 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import markAsset from "@/assets/mila-mark.png.asset.json";
 import { reportClientError } from "../lib/error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
-import { runtimeConfig } from "@/config/runtime";
+import { buildPublicUrl, runtimeConfig } from "@/config/runtime";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import { registerPwa } from "@/lib/pwa";
 
@@ -90,7 +89,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Créez une liste de naissance élégante, ajoutez des cadeaux de tous les magasins et laissez vos proches réserver.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Mila" },
+      { property: "og:image", content: buildPublicUrl("/mila-social-card.png") },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "Mila — Listes de naissance" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: buildPublicUrl("/mila-social-card.png") },
       {
         name: "robots",
         content: runtimeConfig.seoIndexingEnabled ? "index, follow" : "noindex, nofollow",
@@ -99,7 +104,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: markAsset.url },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

@@ -36,9 +36,9 @@ export function SiteHeader() {
           <img
             src={logoAsset.url}
             alt="Mila — listes de naissance"
-            width={986}
-            height={349}
-            className="h-10 w-auto sm:h-11"
+            width={1365}
+            height={512}
+            className="h-11 w-auto sm:h-12"
           />
         </Link>
 
