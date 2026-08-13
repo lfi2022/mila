@@ -52,6 +52,12 @@ Management uses body-carried tokens at `/api/v1/public/reservations/manage` and 
 
 Authenticated `/api/v1/notifications` and `/api/v1/notification-preferences` endpoints expose in-app state and per-event in-app/email plus digest controls. Reservation events persist in-app notifications and append email work to Redis Streams. Surprise mode replaces guest/gift details with generic copy.
 
+## Storage routes
+
+Authenticated, CSRF-protected `POST /api/v1/storage/uploads/presign` and `POST /api/v1/storage/uploads/verify` implement direct private-bucket upload with server-generated keys and declared MIME/size enforcement. List covers include `listId` at verification so membership is checked before association. `POST /api/v1/storage/download` returns a short-lived URL only for an owner-prefixed object; `DELETE /api/v1/storage/uploads` verifies both key prefix and stored owner metadata.
+
+Stable public reads use `/assets/list-cover/<key>` or `/assets/product-image/<key>`. They return data only for a public/unlisted, active database association whose object has clean malware-scan metadata; all other cases are indistinguishable from a missing asset.
+
 ## Error contract
 
 ```json

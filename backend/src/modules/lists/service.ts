@@ -100,6 +100,14 @@ export class ListsService {
     });
   }
 
+  async setCover(userId: string, listId: string, storageKey: string): Promise<void> {
+    await this.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
+    await this.prisma.giftList.update({
+      where: { id: listId },
+      data: { coverMediaKey: storageKey },
+    });
+  }
+
   async publicList(slug: string, grant?: string) {
     const list = await this.prisma.giftList.findFirst({
       where: { slug, deletedAt: null, status: "ACTIVE" },

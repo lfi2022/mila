@@ -1,0 +1,23 @@
+{
+  auto_https off
+}
+
+http://storage.localhost {
+  reverse_proxy minio:9000
+}
+
+:80 {
+  encode zstd gzip
+
+  handle /api/* {
+    reverse_proxy backend:3000
+  }
+
+  handle /assets/* {
+    reverse_proxy backend:3000
+  }
+
+  handle {
+    reverse_proxy frontend:3000
+  }
+}

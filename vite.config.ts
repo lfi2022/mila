@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     define: publicDefines,
+    build: { assetsDir: "_app" },
     server: { host: "0.0.0.0", port: 8080 },
     css: { transformer: "lightningcss" as const },
     resolve: {

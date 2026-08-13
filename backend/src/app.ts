@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { installErrorHandler } from "./common/http/error-handler.js";
 import type { DatabaseService } from "./common/database/client.js";
 import type { RedisService } from "./common/redis/client.js";
+import type { StorageService } from "./common/storage/service.js";
 import { allowedOrigins, loadConfig, type AppConfig } from "./config/env.js";
 import { healthRoutes, type ReadinessProbe } from "./modules/health/routes.js";
 import { authRoutes } from "./modules/auth/routes.js";
@@ -24,6 +25,8 @@ import { NotificationQueue } from "./modules/notifications/queue.js";
 import { reservationRoutes } from "./modules/reservations/routes.js";
 import { ReservationsService } from "./modules/reservations/service.js";
 import { notificationRoutes } from "./modules/notifications/routes.js";
+import { storageRoutes } from "./modules/storage/routes.js";
+import { publicAssetRoutes } from "./modules/storage/public-assets.js";
 import { MODULE_NAMES } from "./modules/index.js";
 
 export type AppOptions = {
@@ -31,6 +34,7 @@ export type AppOptions = {
   readinessProbe?: ReadinessProbe;
   database?: DatabaseService;
   redis?: RedisService;
+  storage?: StorageService;
   logger?: boolean;
 };
 
@@ -94,6 +98,9 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
   if (options.redis) {
     app.addHook("onClose", () => options.redis?.close());
   }
+  if (options.storage) {
+    app.addHook("onClose", () => options.storage?.close());
+  }
 
   await app.register(
     async (api) => {
@@ -109,6 +116,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
               ? async () => ({
                   ...(options.database ? { database: await options.database.check() } : {}),
                   ...(options.redis ? { redis: await options.redis.check() } : {}),
+                  ...(options.storage ? { storage: await options.storage.check() } : {}),
                 })
               : async () => ({ application: "up" })),
         ),
@@ -134,6 +142,8 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
           ),
         );
         await api.register(notificationRoutes(options.database.client, auth, config));
+        if (options.storage)
+          await api.register(storageRoutes(options.storage, auth, config, lists));
         await api.register(productRoutes(auth, config));
         await api.register(
           reservationRoutes(
@@ -144,6 +154,12 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
     },
     { prefix: "/api/v1" },
   );
+
+  if (options.database && options.storage) {
+    await app.register(publicAssetRoutes(options.storage, options.database.client), {
+      prefix: "/assets",
+    });
+  }
 
   return app;
 }

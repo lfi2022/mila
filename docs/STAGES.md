@@ -277,3 +277,30 @@ Tests:
 External blocker:
 
 - queued email delivery remains `BLOCKED_EXTERNAL` until SMTP/provider credentials and sender-domain DNS exist; the independent worker and retry/dead-letter runtime are completed in Stage 08.
+
+## Stage 08 — Storage, workers, Redis, and Docker
+
+Status: DONE_WITH_EXTERNAL_SCANNER
+
+Implemented:
+
+- private S3-compatible buckets, short-lived signed upload/download, server-generated owner keys, quotas, MIME/signature verification, ownership-checked deletion and cover association;
+- stable `/assets` streaming guarded by active public database associations and clean-scan metadata;
+- Redis cache, compare-and-delete locks, idempotency results, distributed Fastify limits and durable Streams;
+- independently selectable/concurrent stream consumers with bounded retry and dead-letter streams;
+- concrete notification email, product/price refresh, reservation expiry and auth-token cleanup processors;
+- frontend/API/worker/Redis/MinIO/Caddy containers, private buckets, readiness gates and graceful shutdown;
+- explicit migration job, external MySQL default, optional isolated MySQL profile and complete environment templates;
+- reverse-proxy routing for `/`, `/api/` and `/assets/`, with production HTTPS guidance.
+
+Validation:
+
+- backend typecheck: PASS;
+- backend tests: 37 PASS, including signed-key policy and SMTP configuration;
+- `docker compose --env-file .env.local.example config --quiet`: PASS (placeholder root-password warning only).
+- frontend, backend and worker container image builds: PASS.
+
+External blockers:
+
+- SMTP credentials and sender-domain DNS remain `BLOCKED_EXTERNAL` for real email delivery;
+- the malware scanner service is `BLOCKED_EXTERNAL`; uploads remain pending and public asset delivery fails closed until a scanner marks objects clean.

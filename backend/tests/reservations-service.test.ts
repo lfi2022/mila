@@ -18,6 +18,17 @@ const config = loadConfig({
   SESSION_SECRET: "test-session-secret-at-least-32-characters",
   REDIS_URL: "redis://cache.test.invalid:6379",
   PRODUCT_FETCH_USER_AGENT: "MilaTest/1.0",
+  STORAGE_ENDPOINT: "https://storage.test.invalid",
+  STORAGE_PUBLIC_ENDPOINT: "https://uploads.test.invalid",
+  EMAIL_FROM: "Mila Test <noreply@test.invalid>",
+  STORAGE_ACCESS_KEY: "test-access-key",
+  STORAGE_SECRET_KEY: "test-secret-key",
+  STORAGE_FORCE_PATH_STYLE: "true",
+  STORAGE_BUCKET_PRODUCT_IMAGES: "product-images",
+  STORAGE_BUCKET_LIST_COVERS: "list-covers",
+  STORAGE_BUCKET_USER_UPLOADS: "user-uploads",
+  STORAGE_BUCKET_MEDIA_MESSAGES: "media-messages",
+  STORAGE_BUCKET_EXPORTS: "exports",
 });
 
 const gift = {

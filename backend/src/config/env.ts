@@ -58,6 +58,37 @@ const envSchema = z
     PRODUCT_FETCH_TIMEOUT_MS: z.coerce.number().int().min(500).max(30_000).default(8_000),
     PRODUCT_FETCH_MAX_BYTES: z.coerce.number().int().min(1_024).max(2_097_152).default(524_288),
     PRODUCT_FETCH_MAX_REDIRECTS: z.coerce.number().int().min(0).max(5).default(3),
+    STORAGE_ENDPOINT: z.string().url(),
+    STORAGE_PUBLIC_ENDPOINT: z.string().url(),
+    STORAGE_REGION: z.string().trim().min(1).default("us-east-1"),
+    STORAGE_ACCESS_KEY: z.string().min(1),
+    STORAGE_SECRET_KEY: z.string().min(8),
+    STORAGE_FORCE_PATH_STYLE: booleanString,
+    STORAGE_BUCKET_PRODUCT_IMAGES: z.string().regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/),
+    STORAGE_BUCKET_LIST_COVERS: z.string().regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/),
+    STORAGE_BUCKET_USER_UPLOADS: z.string().regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/),
+    STORAGE_BUCKET_MEDIA_MESSAGES: z.string().regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/),
+    STORAGE_BUCKET_EXPORTS: z.string().regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/),
+    STORAGE_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3_600).default(900),
+    STORAGE_MAX_UPLOAD_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1_024)
+      .max(104_857_600)
+      .default(10_485_760),
+    EMAIL_PROVIDER: z.enum(["console", "smtp", "disabled"]).default("console"),
+    EMAIL_FROM: z.string().trim().min(3),
+    SMTP_HOST: z.string().trim().optional().default(""),
+    SMTP_PORT: z.coerce.number().int().min(1).max(65_535).default(587),
+    SMTP_USER: z.string().trim().optional().default(""),
+    SMTP_PASSWORD: z.string().optional().default(""),
+    SMTP_SECURE: booleanString,
+    WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(50).default(5),
+    WORKER_QUEUES: z
+      .string()
+      .trim()
+      .min(1)
+      .default("notifications,product-refresh,media-scan,cleanup"),
   })
   .superRefine((env, context) => {
     if (env.APP_ENV !== "development" && !env.APP_URL.startsWith("https://")) {
@@ -100,6 +131,13 @@ const envSchema = z
         code: "custom",
         path: ["SESSION_SECRET"],
         message: "SESSION_SECRET must be distinct from AUTH_SECRET",
+      });
+    }
+    if (env.EMAIL_PROVIDER === "smtp" && (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASSWORD)) {
+      context.addIssue({
+        code: "custom",
+        path: ["SMTP_HOST"],
+        message: "SMTP host, user and password are required when EMAIL_PROVIDER is smtp",
       });
     }
   });

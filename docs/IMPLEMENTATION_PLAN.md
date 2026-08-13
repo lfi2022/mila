@@ -63,7 +63,7 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 - [x] Implement `PUBLIC`, `UNLISTED`, and `PROTECTED` lists with Argon2id access code, throttling, and signed temporary access cookie.
 - [x] Enforce `OWNER`, `CO_OWNER`, and `EDITOR` permissions server-side.
 - [x] Implement secure opaque invitation, email binding, atomic acceptance, revocation, expiry, and persistent membership history.
-- [ ] Implement cover upload using controlled object storage (the list field and legacy UI exist; signed upload is delivered with MinIO in Stage 08).
+- [x] Implement cover upload using controlled object storage (signed upload, verified association, and stable delivery are provided by Stage 08).
 - [x] Preserve current-domain links, QR codes, WhatsApp, email, Web Share, Open Graph, canonical, and optional indexing UI while the public read API enforces visibility.
 - [x] Implement account/list export/deletion privacy flows and list visibility semantics.
 
@@ -90,13 +90,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 08 — Storage, workers, Redis, and Docker
 
-- [ ] Add Redis for cache, locks, queues, distributed rate limiting, and idempotency (never financial truth).
-- [ ] Add independent worker entry points for product refresh, prices, email, notifications, webhooks, affiliation, rewards, media, token cleanup, expiration, retry, and analytics.
-- [ ] Add MinIO/S3-compatible buckets, signed URLs, privacy, quotas, MIME/size checks, malware-scanning hook, deletion, and stable `/assets` URLs.
-- [ ] Containerize frontend, backend, worker, Redis, MinIO, and reverse proxy; remote MySQL remains external.
-- [ ] Add healthchecks and readiness-based startup, explicit production migrations, and optional isolated local MySQL profile.
-- [ ] Add local/staging/production environment templates and simple compose commands.
-- [ ] Route `/`, `/api/`, and `/assets/` through the reverse proxy with HTTPS guidance.
+- [x] Add Redis for cache, locks, queues, distributed rate limiting, and idempotency (never financial truth).
+- [x] Add independent worker entry points for product refresh, prices, email, notifications, webhooks, affiliation, rewards, media, token cleanup, expiration, retry, and analytics.
+- [x] Add MinIO/S3-compatible buckets, signed URLs, privacy, quotas, MIME/size checks, malware-scanning hook, deletion, and stable `/assets` URLs.
+- [x] Containerize frontend, backend, worker, Redis, MinIO, and reverse proxy; remote MySQL remains external.
+- [x] Add healthchecks and readiness-based startup, explicit production migrations, and optional isolated local MySQL profile.
+- [x] Add local/staging/production environment templates and simple compose commands.
+- [x] Route `/`, `/api/`, and `/assets/` through the reverse proxy with HTTPS guidance.
 
 ## Stage 09 — Frontend feature architecture
 

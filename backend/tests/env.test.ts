@@ -16,6 +16,17 @@ const valid = {
   SESSION_SECRET: "test-session-secret-at-least-32-characters",
   REDIS_URL: "redis://cache.test.invalid:6379",
   PRODUCT_FETCH_USER_AGENT: "MilaTest/1.0",
+  STORAGE_ENDPOINT: "https://storage.test.invalid",
+  STORAGE_PUBLIC_ENDPOINT: "https://uploads.test.invalid",
+  EMAIL_FROM: "Mila Test <noreply@test.invalid>",
+  STORAGE_ACCESS_KEY: "test-access-key",
+  STORAGE_SECRET_KEY: "test-secret-key",
+  STORAGE_FORCE_PATH_STYLE: "true",
+  STORAGE_BUCKET_PRODUCT_IMAGES: "product-images",
+  STORAGE_BUCKET_LIST_COVERS: "list-covers",
+  STORAGE_BUCKET_USER_UPLOADS: "user-uploads",
+  STORAGE_BUCKET_MEDIA_MESSAGES: "media-messages",
+  STORAGE_BUCKET_EXPORTS: "exports",
 };
 
 describe("database environment", () => {
@@ -45,5 +56,18 @@ describe("database environment", () => {
     expect(() => loadConfig({ ...valid, SESSION_SECRET: valid.AUTH_SECRET })).toThrow(
       /SESSION_SECRET/,
     );
+  });
+
+  it("requires complete SMTP credentials when SMTP delivery is enabled", () => {
+    expect(() => loadConfig({ ...valid, EMAIL_PROVIDER: "smtp" })).toThrow(/SMTP_HOST/);
+    expect(
+      loadConfig({
+        ...valid,
+        EMAIL_PROVIDER: "smtp",
+        SMTP_HOST: "smtp.test.invalid",
+        SMTP_USER: "user",
+        SMTP_PASSWORD: "password",
+      }).EMAIL_PROVIDER,
+    ).toBe("smtp");
   });
 });
