@@ -127,13 +127,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 12 — Mollie payments and Premium
 
-- [ ] Implement internal order/payment records and server-side Mollie Payments API adapter.
-- [ ] Handle browser redirect only as UX; confirm paid state from Mollie/webhook.
-- [ ] Implement idempotent, out-of-order-safe payment/refund/chargeback webhooks and reconciliation.
-- [ ] Implement full/partial refunds and entitlement reversal rules.
-- [ ] Implement one-time Premium per event and optional reward redemption.
-- [ ] Separate test/live configuration and dynamically expose enabled methods.
-- [ ] Mark live activation `BLOCKED_EXTERNAL` until Mollie credentials/account and commercial decisions exist.
+- [x] Implement internal order/payment records and server-side Mollie Payments API adapter.
+- [x] Handle browser redirect only as UX; confirm paid state from Mollie/webhook.
+- [x] Implement idempotent, out-of-order-safe payment/refund/chargeback webhooks and reconciliation.
+- [x] Implement full/partial refunds and entitlement reversal rules.
+- [x] Implement one-time Premium per event and optional reward redemption.
+- [x] Separate test/live configuration and dynamically expose enabled methods.
+- [x] Mark live activation `BLOCKED_EXTERNAL` until Mollie credentials/account and commercial decisions exist.
 
 ## Stage 13 — Contributions and bank transfers
 

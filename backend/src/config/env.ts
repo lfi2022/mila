@@ -63,6 +63,20 @@ const envSchema = z
     FEATURE_REWARD_REDEMPTION: booleanString,
     FEATURE_REWARD_MARKETPLACE: booleanString,
     FEATURE_BANK_PAYOUT: booleanString,
+    FEATURE_MOLLIE_PAYMENTS: booleanString,
+    FEATURE_MOLLIE_CONNECT: booleanString,
+    FEATURE_PREMIUM: booleanString,
+    MOLLIE_MODE: z.enum(["test", "live"]).default("test"),
+    MOLLIE_API_KEY: z.string().optional().default(""),
+    MOLLIE_API_URL: z.string().url().default("https://api.mollie.com/v2"),
+    MOLLIE_WEBHOOK_URL: z.string().url().optional().or(z.literal("")).default(""),
+    MOLLIE_REDIRECT_URL: z.string().url().optional().or(z.literal("")).default(""),
+    MOLLIE_TIMEOUT_MS: z.coerce.number().int().min(500).max(30_000).default(8_000),
+    PREMIUM_PRICE_MINOR: z.coerce.number().int().min(100).max(1_000_000).default(2_999),
+    PREMIUM_CURRENCY: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .default("EUR"),
     REWARD_DEFAULT_SHARE_RATE_BPS: z.coerce.number().int().min(0).max(10_000).default(2_500),
     REWARD_MIN_REDEMPTION_MINOR: z.coerce.number().int().min(1).default(1_000),
     REFERRAL_REWARD_MINOR: z.coerce.number().int().min(0).default(500),
@@ -161,6 +175,40 @@ const envSchema = z
         message:
           "AFFILIATE_WEBHOOK_SECRET must contain at least 32 characters when affiliation is enabled",
       });
+    }
+    if (env.FEATURE_MOLLIE_PAYMENTS) {
+      const expectedPrefix = env.MOLLIE_MODE === "live" ? "live_" : "test_";
+      if (!env.MOLLIE_API_KEY.startsWith(expectedPrefix)) {
+        context.addIssue({
+          code: "custom",
+          path: ["MOLLIE_API_KEY"],
+          message: `MOLLIE_API_KEY must start with ${expectedPrefix} when Mollie is enabled`,
+        });
+      }
+      if (!env.MOLLIE_WEBHOOK_URL || !env.MOLLIE_REDIRECT_URL) {
+        context.addIssue({
+          code: "custom",
+          path: ["MOLLIE_WEBHOOK_URL"],
+          message: "Mollie webhook and redirect URLs are required when Mollie is enabled",
+        });
+      }
+      if (new URL(env.MOLLIE_API_URL).origin !== "https://api.mollie.com") {
+        context.addIssue({
+          code: "custom",
+          path: ["MOLLIE_API_URL"],
+          message: "MOLLIE_API_URL must use the official Mollie API origin",
+        });
+      }
+      if (
+        env.MOLLIE_REDIRECT_URL &&
+        new URL(env.MOLLIE_REDIRECT_URL).origin !== new URL(env.APP_URL).origin
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["MOLLIE_REDIRECT_URL"],
+          message: "MOLLIE_REDIRECT_URL must use the application origin",
+        });
+      }
     }
   });
 

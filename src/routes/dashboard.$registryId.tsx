@@ -316,17 +316,29 @@ function RegistryDetail() {
             {giftRows.length} cadeau{giftRows.length > 1 ? "x" : ""}
           </p>
         </div>
-        <Badge variant={list.status === "ACTIVE" ? "default" : "secondary"}>
-          {list.status === "ACTIVE"
-            ? list.visibility === "PUBLIC"
-              ? "Publique"
-              : list.visibility === "PROTECTED"
-                ? "Protégée par code"
-                : "Lien privé"
-            : list.status === "ARCHIVED"
-              ? "Archivée"
-              : "Suspendue"}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/recompenses/$registryId" params={{ registryId }}>
+              Récompenses
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/premium/$listId" params={{ listId: registryId }}>
+              Premium
+            </Link>
+          </Button>
+          <Badge variant={list.status === "ACTIVE" ? "default" : "secondary"}>
+            {list.status === "ACTIVE"
+              ? list.visibility === "PUBLIC"
+                ? "Publique"
+                : list.visibility === "PROTECTED"
+                  ? "Protégée par code"
+                  : "Lien privé"
+              : list.status === "ARCHIVED"
+                ? "Archivée"
+                : "Suspendue"}
+          </Badge>
+        </div>
       </div>
 
       <Tabs defaultValue="gifts" className="mt-8">

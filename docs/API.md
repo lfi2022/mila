@@ -80,6 +80,14 @@ Staff reward routes expose analytics, the review queue, audited adjustments, typ
 
 Reward policy is read from the `rewards` feature-flag JSON config. `networkRates` and `campaignRates` map identifiers to basis points; merchant rates override network rates, campaign rates override all other rates, and `maxShareRateBps` plus `maxRewardMinor` are profitability guardrails. Environment defaults remain the final fallback.
 
+## Payment and Premium routes
+
+`GET /api/v1/payments/methods` queries the active Mollie profile dynamically when test/live payments are enabled. `GET /api/v1/payments/premium/:listId` reports the configured one-time event price and entitlement. The CSRF- and idempotency-protected `POST` on that path first reserves the list entitlement, then creates the provider payment; a second checkout for the same event is rejected. Full reward payment is an optional atomic wallet redemption and never enters cash revenue.
+
+The browser checkout redirect is UX only. `GET /api/v1/payments/:paymentId?reconcile=true` and the classic `POST /api/v1/webhooks/mollie` fetch the authenticated Mollie payment, refund and chargeback resources, verify mode/internal ID/amount/currency, and only then update state or activate Premium. Final paid state cannot regress because an older notification arrived later. This implements Mollie's documented [webhook fetch-back model](https://docs.mollie.com/reference/webhooks) and [payment status contract](https://docs.mollie.com/docs/handling-payment-status).
+
+Administrators list and reconcile payments and request partial/full refunds below `/api/v1/admin/payments`. Every provider POST uses Mollie's [Idempotency-Key mechanism](https://docs.mollie.com/reference/api-idempotency); ambiguous payment creation stops before that provider window expires rather than risking a double charge. Confirmed refunds and chargebacks append negative financial-ledger entries. A full refund or chargeback revokes the linked Premium entitlement, while a partial refund remains visible without silently changing access.
+
 ## Error contract
 
 ```json

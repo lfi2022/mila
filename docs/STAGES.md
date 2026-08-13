@@ -398,3 +398,41 @@ External blockers:
 
 - bank payout remains `BLOCKED_EXTERNAL` pending a regulated provider flow, legal/accounting validation and credentials;
 - real marketplace offers, partner campaigns and production Premium funding remain disabled until commercial catalogs/contracts and the Stage 12 payment provider are configured.
+
+## Stage 12 — Mollie payments and Premium
+
+Status: DONE_WITH_LIVE_ACTIVATION_BLOCKED
+
+Implemented:
+
+- server-only Mollie Payments API adapter with official-origin enforcement, timeouts, exact minor-unit conversion and provider idempotency keys;
+- separate, validated test/live configuration and dynamic payment-method discovery;
+- internal payment reservation that prevents concurrent Premium checkouts for one event;
+- one-time Premium checkout, browser return polling and entitlement activation only after authenticated provider fetch-back;
+- classic Mollie webhook handling, manual reconciliation, identity/mode/amount/currency verification and out-of-order-safe transitions;
+- separate refunds and chargebacks, partial/full refund guardrails, immutable financial adjustments and audited staff refund requests;
+- full-refund/chargeback Premium revocation while partial refunds preserve access pending commercial policy;
+- atomic full-price Reward redemption as an optional non-cash Premium funding path;
+- parent Premium UI and staff payment/reconciliation/refund administration.
+
+Migration: `202608130006_entitlement_payment`.
+
+Validation:
+
+- `npm run check`: PASS;
+- frontend tests: 14 PASS;
+- backend tests: 48 PASS, including exact money conversion, test/live separation, stale-event non-regression, provider-authenticated activation and refund reversal;
+- Prisma validation and legacy migration audit: PASS;
+- Docker Compose configuration: PASS (optional local MySQL root-password warning only).
+
+Environment variables:
+
+- `FEATURE_PREMIUM`, `FEATURE_MOLLIE_PAYMENTS`, `FEATURE_MOLLIE_CONNECT`;
+- `MOLLIE_MODE`, `MOLLIE_API_KEY`, `MOLLIE_API_URL`, `MOLLIE_WEBHOOK_URL`, `MOLLIE_REDIRECT_URL`, `MOLLIE_TIMEOUT_MS`;
+- `PREMIUM_PRICE_MINOR`, `PREMIUM_CURRENCY`.
+
+External blockers:
+
+- Mollie live activation is `BLOCKED_EXTERNAL` until a verified Mollie account, live API key, enabled methods, production domain/webhook and accounting/refund/chargeback policy are supplied and approved;
+- Mollie Connect and all third-party-funds routing remain disabled for Stage 13 pending the marketplace contract plus legal/accounting validation;
+- final Premium price, benefits, tax treatment and partial-refund access policy require commercial/legal approval before production activation.

@@ -875,6 +875,7 @@ model Payment {
   refunds           Refund[]
   chargebacks       Chargeback[]
   ledgerEntries     FinancialLedgerEntry[]
+  entitlement       ListEntitlement?
 
   @@unique([provider, externalId])
   @@index([listId, status])
@@ -1165,6 +1166,7 @@ model FeatureFlag {
 model ListEntitlement {
   id        String    @id @default(uuid()) @db.Char(36)
   listId    String    @unique @map("list_id") @db.Char(36)
+  paymentId String?   @unique @map("payment_id") @db.Char(36)
   plan      String    @default("FREE") @db.VarChar(64)
   startsAt  DateTime  @default(now()) @map("starts_at") @db.DateTime(3)
   expiresAt DateTime? @map("expires_at") @db.DateTime(3)
@@ -1172,6 +1174,7 @@ model ListEntitlement {
   createdAt DateTime  @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
   list      GiftList  @relation(fields: [listId], references: [id], onDelete: Cascade)
+  payment   Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
   @@map("list_entitlements")
 }

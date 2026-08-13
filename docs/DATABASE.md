@@ -31,6 +31,8 @@ Migration deployment must run once before replacing application containers. Appl
 
 `reward_wallets.list_id` is unique, so a list has at most one wallet. `reward_transactions.idempotency_key` is globally unique and every monetary value is a signed `BIGINT` minor-unit amount. Available and pending balances are always recomputed from ledger status and amount; cached wallet columns are optional projections only. Corrections, cancelled commissions and rejected redemptions append idempotent compensating entries instead of updating or deleting settled entries. Referral ownership codes are normalized in `202608130005_referral_codes` and are unique per user and globally.
 
+`202608130006_entitlement_payment` links an event entitlement to the exact internal payment that funded it. A list's unique entitlement row also reserves an in-progress Premium checkout, preventing concurrent purchases. Provider payment/refund/chargeback rows remain distinct from append-only `financial_ledger_entries`; browser redirects never write settlement or entitlement state.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

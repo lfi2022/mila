@@ -70,4 +70,27 @@ describe("database environment", () => {
       }).EMAIL_PROVIDER,
     ).toBe("smtp");
   });
+
+  it("keeps Mollie test and live credentials explicitly separated", () => {
+    const mollie = {
+      ...valid,
+      FEATURE_MOLLIE_PAYMENTS: "true",
+      MOLLIE_WEBHOOK_URL: "https://test.example.com/api/v1/webhooks/mollie",
+      MOLLIE_REDIRECT_URL: "https://test.example.com/paiement/retour",
+    };
+    expect(() =>
+      loadConfig({ ...mollie, MOLLIE_MODE: "live", MOLLIE_API_KEY: "test_wrong" }),
+    ).toThrow(/live_/);
+    expect(
+      loadConfig({ ...mollie, MOLLIE_MODE: "test", MOLLIE_API_KEY: "test_valid" }).MOLLIE_MODE,
+    ).toBe("test");
+    expect(() =>
+      loadConfig({
+        ...mollie,
+        MOLLIE_MODE: "test",
+        MOLLIE_API_KEY: "test_valid",
+        MOLLIE_API_URL: "https://attacker.invalid/v2",
+      }),
+    ).toThrow(/official Mollie API origin/);
+  });
 });

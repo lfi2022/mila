@@ -32,6 +32,8 @@ import { Route as GoTokenRouteImport } from './routes/go.$token'
 import { Route as InvitationTokenRouteImport } from './routes/invitation.$token'
 import { Route as LSlugRouteImport } from './routes/l.$slug'
 import { Route as ListeSlugRouteImport } from './routes/liste.$slug'
+import { Route as PaiementRetourRouteImport } from './routes/paiement.retour'
+import { Route as PremiumListIdRouteImport } from './routes/premium.$listId'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as RecompensesIndexRouteImport } from './routes/recompenses.index'
 import { Route as RecompensesRegistryIdRouteImport } from './routes/recompenses.$registryId'
@@ -151,6 +153,16 @@ const ListeSlugRoute = ListeSlugRouteImport.update({
   path: '/liste/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaiementRetourRoute = PaiementRetourRouteImport.update({
+  id: '/paiement/retour',
+  path: '/paiement/retour',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PremiumListIdRoute = PremiumListIdRouteImport.update({
+  id: '/premium/$listId',
+  path: '/premium/$listId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RTokenRoute = RTokenRouteImport.update({
   id: '/r/$token',
   path: '/r/$token',
@@ -190,6 +202,8 @@ export interface FileRoutesByFullPath {
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
   '/liste/$slug': typeof ListeSlugRoute
+  '/paiement/retour': typeof PaiementRetourRoute
+  '/premium/$listId': typeof PremiumListIdRoute
   '/r/$token': typeof RTokenRoute
   '/recompenses/$registryId': typeof RecompensesRegistryIdRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -217,6 +231,8 @@ export interface FileRoutesByTo {
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
   '/liste/$slug': typeof ListeSlugRoute
+  '/paiement/retour': typeof PaiementRetourRoute
+  '/premium/$listId': typeof PremiumListIdRoute
   '/r/$token': typeof RTokenRoute
   '/recompenses/$registryId': typeof RecompensesRegistryIdRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -246,6 +262,8 @@ export interface FileRoutesById {
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
   '/liste/$slug': typeof ListeSlugRoute
+  '/paiement/retour': typeof PaiementRetourRoute
+  '/premium/$listId': typeof PremiumListIdRoute
   '/r/$token': typeof RTokenRoute
   '/recompenses/$registryId': typeof RecompensesRegistryIdRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -276,6 +294,8 @@ export interface FileRouteTypes {
     | '/invitation/$token'
     | '/l/$slug'
     | '/liste/$slug'
+    | '/paiement/retour'
+    | '/premium/$listId'
     | '/r/$token'
     | '/recompenses/$registryId'
     | '/dashboard/'
@@ -303,6 +323,8 @@ export interface FileRouteTypes {
     | '/invitation/$token'
     | '/l/$slug'
     | '/liste/$slug'
+    | '/paiement/retour'
+    | '/premium/$listId'
     | '/r/$token'
     | '/recompenses/$registryId'
     | '/dashboard'
@@ -331,6 +353,8 @@ export interface FileRouteTypes {
     | '/invitation/$token'
     | '/l/$slug'
     | '/liste/$slug'
+    | '/paiement/retour'
+    | '/premium/$listId'
     | '/r/$token'
     | '/recompenses/$registryId'
     | '/dashboard/'
@@ -359,6 +383,8 @@ export interface RootRouteChildren {
   InvitationTokenRoute: typeof InvitationTokenRoute
   LSlugRoute: typeof LSlugRoute
   ListeSlugRoute: typeof ListeSlugRoute
+  PaiementRetourRoute: typeof PaiementRetourRoute
+  PremiumListIdRoute: typeof PremiumListIdRoute
   RTokenRoute: typeof RTokenRoute
   RecompensesRegistryIdRoute: typeof RecompensesRegistryIdRoute
   RecompensesIndexRoute: typeof RecompensesIndexRoute
@@ -527,6 +553,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListeSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/paiement/retour': {
+      id: '/paiement/retour'
+      path: '/paiement/retour'
+      fullPath: '/paiement/retour'
+      preLoaderRoute: typeof PaiementRetourRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/premium/$listId': {
+      id: '/premium/$listId'
+      path: '/premium/$listId'
+      fullPath: '/premium/$listId'
+      preLoaderRoute: typeof PremiumListIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$token': {
       id: '/r/$token'
       path: '/r/$token'
@@ -587,6 +627,8 @@ const rootRouteChildren: RootRouteChildren = {
   InvitationTokenRoute: InvitationTokenRoute,
   LSlugRoute: LSlugRoute,
   ListeSlugRoute: ListeSlugRoute,
+  PaiementRetourRoute: PaiementRetourRoute,
+  PremiumListIdRoute: PremiumListIdRoute,
   RTokenRoute: RTokenRoute,
   RecompensesRegistryIdRoute: RecompensesRegistryIdRoute,
   RecompensesIndexRoute: RecompensesIndexRoute,

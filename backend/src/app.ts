@@ -2,6 +2,7 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import formbody from "@fastify/formbody";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyInstance } from "fastify";
@@ -33,6 +34,9 @@ import { affiliationRoutes } from "./modules/affiliation/routes.js";
 import { merchantRoutes } from "./modules/merchants/routes.js";
 import { RewardsService } from "./modules/rewards/service.js";
 import { rewardRoutes } from "./modules/rewards/routes.js";
+import { MollieClient } from "./modules/payments/mollie.js";
+import { PaymentsService } from "./modules/payments/service.js";
+import { paymentRoutes } from "./modules/payments/routes.js";
 
 export type AppOptions = {
   config?: AppConfig;
@@ -72,6 +76,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
 
   await app.register(helmet, { global: true, contentSecurityPolicy: false });
   await app.register(cookie);
+  await app.register(formbody);
   await app.register(cors, {
     credentials: true,
     origin(origin, callback) {
@@ -159,6 +164,13 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
           ),
         );
         await api.register(rewardRoutes(rewards, auth, config));
+        await api.register(
+          paymentRoutes(
+            new PaymentsService(options.database.client, config, lists, new MollieClient(config)),
+            auth,
+            config,
+          ),
+        );
         await api.register(merchantRoutes(options.database.client, auth, config));
         await api.register(
           reservationRoutes(

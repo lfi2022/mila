@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RewardsAdmin } from "@/features/admin/components";
+import { PaymentsAdmin, RewardsAdmin } from "@/features/admin/components";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -162,6 +162,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
             <TabsTrigger value="merchants">Marchands</TabsTrigger>
             <TabsTrigger value="rewards">Récompenses</TabsTrigger>
+            <TabsTrigger value="payments">Paiements</TabsTrigger>
             <TabsTrigger value="moderation">Modération</TabsTrigger>
             <TabsTrigger value="audit">Journal</TabsTrigger>
           </TabsList>
@@ -361,6 +362,10 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
 
           <TabsContent value="rewards" className="mt-6">
             <RewardsAdmin />
+          </TabsContent>
+
+          <TabsContent value="payments" className="mt-6">
+            <PaymentsAdmin />
           </TabsContent>
 
           <TabsContent value="moderation" className="mt-6">
