@@ -1,4 +1,0 @@
-# Safe default for local and staging builds. Production replaces this through
-# the environment-aware reverse-proxy/deployment configuration.
-User-agent: *
-Disallow: /

@@ -1,10 +1,4 @@
-/**
- * Lightweight, consent-aware conversion analytics.
- *
- * No third-party tracker is loaded. Events are buffered in memory and only
- * forwarded to `window.dataLayer` (for a future consented tag manager) when the
- * visitor has explicitly accepted analytics via `setAnalyticsConsent(true)`.
- */
+import { runtimeConfig } from "@/config/runtime";
 
 export type MilaAnalyticsEvent =
   | "homepage_view"
@@ -15,30 +9,28 @@ export type MilaAnalyticsEvent =
   | "signup_completed"
   | "list_created"
   | "first_gift_added"
-  | "list_shared";
+  | "list_shared"
+  | "first_reservation"
+  | "first_eligible_purchase"
+  | "first_reward"
+  | "premium_checkout_started"
+  | "premium_activated"
+  | "referral_registered"
+  | "web_vital";
 
 const CONSENT_KEY = "mila.analytics-consent";
-const buffer: Array<{ event: MilaAnalyticsEvent; props: Record<string, unknown>; at: string }> = [];
-
-function hasConsent() {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(CONSENT_KEY) === "granted";
-  } catch {
-    return false;
-  }
-}
+const VISITOR_KEY = "mila.analytics-visitor";
+let sessionId: string | undefined;
 
 export function setAnalyticsConsent(granted: boolean) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(CONSENT_KEY, granted ? "granted" : "denied");
   } catch {
-    /* storage unavailable — stay in memory only */
+    /* unavailable: consent remains unset */
   }
-  if (granted) flush();
+  window.dispatchEvent(new CustomEvent("mila:analytics-consent", { detail: granted }));
 }
-
 export function getAnalyticsConsent(): "granted" | "denied" | "unset" {
   if (typeof window === "undefined") return "unset";
   try {
@@ -48,26 +40,98 @@ export function getAnalyticsConsent(): "granted" | "denied" | "unset" {
     return "unset";
   }
 }
-
-function push(entry: { event: MilaAnalyticsEvent; props: Record<string, unknown>; at: string }) {
-  const layer = ((window as unknown as { dataLayer?: unknown[] }).dataLayer ??= []);
-  layer.push({ event: entry.event, ...entry.props, event_time: entry.at });
-}
-
-function flush() {
-  if (typeof window === "undefined") return;
-  while (buffer.length > 0) push(buffer.shift()!);
-}
-
-/** Records a funnel event: visitors → signup → list → first gift → share. */
 export function track(event: MilaAnalyticsEvent, props: Record<string, unknown> = {}) {
-  const entry = { event, props, at: new Date().toISOString() };
-  if (typeof window === "undefined") return;
-  if (!hasConsent()) {
-    // Keep at most a short buffer so nothing leaves the page without consent.
-    if (buffer.length < 50) buffer.push(entry);
+  if (typeof window === "undefined" || getAnalyticsConsent() !== "granted") return;
+  const payload = JSON.stringify({
+    consent: true,
+    visitorId: visitor(),
+    sessionId: (sessionId ??= crypto.randomUUID()),
+    event,
+    path: analyticsPath(window.location.pathname),
+    occurredAt: new Date().toISOString(),
+    properties: safeProperties(props),
+  });
+  const endpoint = `${runtimeConfig.apiBaseUrl}/analytics/events`;
+  if (
+    navigator.sendBeacon &&
+    navigator.sendBeacon(endpoint, new Blob([payload], { type: "application/json" }))
+  )
     return;
+  void fetch(endpoint, {
+    method: "POST",
+    credentials: "include",
+    keepalive: true,
+    headers: { "content-type": "application/json" },
+    body: payload,
+  }).catch(() => undefined);
+}
+function visitor() {
+  try {
+    const current = window.localStorage.getItem(VISITOR_KEY);
+    if (current && UUID_PATTERN.test(current)) return current;
+    const id = crypto.randomUUID();
+    window.localStorage.setItem(VISITOR_KEY, id);
+    return id;
+  } catch {
+    return crypto.randomUUID();
   }
-  flush();
-  push(entry);
+}
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const STATIC_ANALYTICS_PATHS = new Set([
+  "/",
+  "/auth",
+  "/dashboard",
+  "/cookies",
+  "/demo",
+  "/onboarding",
+  "/recompenses",
+]);
+export function analyticsPath(pathname: string) {
+  if (STATIC_ANALYTICS_PATHS.has(pathname)) return pathname;
+  if (pathname.startsWith("/dashboard/")) return "/dashboard/:listId";
+  if (pathname.startsWith("/l/")) return "/l/:slug";
+  if (pathname.startsWith("/premium/")) return "/premium/:listId";
+  return "/other";
+}
+function safeProperties(props: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(props)
+      .slice(0, 12)
+      .filter(
+        (entry): entry is [string, string | number | boolean] =>
+          /^[a-zA-Z0-9_]{1,40}$/.test(entry[0]) &&
+          (typeof entry[1] === "string" ||
+            typeof entry[1] === "number" ||
+            typeof entry[1] === "boolean"),
+      )
+      .map(([key, value]) => [key, typeof value === "string" ? value.slice(0, 120) : value]),
+  );
+}
+
+export function startWebVitals() {
+  if (typeof window === "undefined" || !("PerformanceObserver" in window)) return () => undefined;
+  const observers: PerformanceObserver[] = [];
+  const observe = (type: string, callback: (entry: PerformanceEntry) => void) => {
+    try {
+      const observer = new PerformanceObserver((list) => list.getEntries().forEach(callback));
+      observer.observe({ type, buffered: true });
+      observers.push(observer);
+    } catch {
+      /* unsupported */
+    }
+  };
+  observe("largest-contentful-paint", (entry) =>
+    track("web_vital", { name: "LCP", value: Math.round(entry.startTime) }),
+  );
+  let cls = 0;
+  observe("layout-shift", (entry) => {
+    const shift = entry as PerformanceEntry & { value?: number; hadRecentInput?: boolean };
+    if (!shift.hadRecentInput) cls += shift.value ?? 0;
+  });
+  const onHide = () => track("web_vital", { name: "CLS", value: Math.round(cls * 1000) / 1000 });
+  document.addEventListener("visibilitychange", onHide);
+  return () => {
+    observers.forEach((observer) => observer.disconnect());
+    document.removeEventListener("visibilitychange", onHide);
+  };
 }

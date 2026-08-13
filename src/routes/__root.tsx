@@ -15,6 +15,8 @@ import { reportClientError } from "../lib/error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { runtimeConfig } from "@/config/runtime";
+import { ConsentBanner } from "@/components/ConsentBanner";
+import { registerPwa } from "@/lib/pwa";
 
 function NotFoundComponent() {
   return (
@@ -98,6 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "apple-touch-icon", href: markAsset.url },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -119,6 +122,12 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <a
+          href="#main-content"
+          className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-md bg-background px-4 py-2 font-medium shadow-lg focus:translate-y-0"
+        >
+          Aller au contenu principal
+        </a>
         {children}
         <Scripts />
       </body>
@@ -128,13 +137,17 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => registerPwa(), []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        <div id="main-content" tabIndex={-1}>
+          <Outlet />
+        </div>
         <Toaster />
+        <ConsentBanner />
       </AuthProvider>
     </QueryClientProvider>
   );

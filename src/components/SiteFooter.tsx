@@ -47,6 +47,16 @@ export function SiteFooter() {
                   FAQ
                 </Link>
               </li>
+              <li>
+                <Link to="/guides/liste-naissance" className="hover:text-foreground">
+                  Guide liste de naissance
+                </Link>
+              </li>
+              <li>
+                <Link to="/guides/budget-cadeaux" className="hover:text-foreground">
+                  Guide des budgets cadeaux
+                </Link>
+              </li>
             </ul>
           </nav>
 

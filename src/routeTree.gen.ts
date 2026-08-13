@@ -32,6 +32,8 @@ import { Route as DashboardRegistryIdRouteImport } from './routes/dashboard.$reg
 import { Route as DashboardMemoriesRouteImport } from './routes/dashboard.memories'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as GoTokenRouteImport } from './routes/go.$token'
+import { Route as GuidesBudgetCadeauxRouteImport } from './routes/guides.budget-cadeaux'
+import { Route as GuidesListeNaissanceRouteImport } from './routes/guides.liste-naissance'
 import { Route as InvitationTokenRouteImport } from './routes/invitation.$token'
 import { Route as LSlugRouteImport } from './routes/l.$slug'
 import { Route as ListeSlugRouteImport } from './routes/liste.$slug'
@@ -156,6 +158,16 @@ const GoTokenRoute = GoTokenRouteImport.update({
   path: '/go/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuidesBudgetCadeauxRoute = GuidesBudgetCadeauxRouteImport.update({
+  id: '/guides/budget-cadeaux',
+  path: '/guides/budget-cadeaux',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesListeNaissanceRoute = GuidesListeNaissanceRouteImport.update({
+  id: '/guides/liste-naissance',
+  path: '/guides/liste-naissance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvitationTokenRoute = InvitationTokenRouteImport.update({
   id: '/invitation/$token',
   path: '/invitation/$token',
@@ -220,6 +232,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/memories': typeof DashboardMemoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
+  '/guides/budget-cadeaux': typeof GuidesBudgetCadeauxRoute
+  '/guides/liste-naissance': typeof GuidesListeNaissanceRoute
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
   '/liste/$slug': typeof ListeSlugRoute
@@ -252,6 +266,8 @@ export interface FileRoutesByTo {
   '/dashboard/memories': typeof DashboardMemoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
+  '/guides/budget-cadeaux': typeof GuidesBudgetCadeauxRoute
+  '/guides/liste-naissance': typeof GuidesListeNaissanceRoute
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
   '/liste/$slug': typeof ListeSlugRoute
@@ -286,6 +302,8 @@ export interface FileRoutesById {
   '/dashboard/memories': typeof DashboardMemoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/go/$token': typeof GoTokenRoute
+  '/guides/budget-cadeaux': typeof GuidesBudgetCadeauxRoute
+  '/guides/liste-naissance': typeof GuidesListeNaissanceRoute
   '/invitation/$token': typeof InvitationTokenRoute
   '/l/$slug': typeof LSlugRoute
   '/liste/$slug': typeof ListeSlugRoute
@@ -321,6 +339,8 @@ export interface FileRouteTypes {
     | '/dashboard/memories'
     | '/dashboard/orders'
     | '/go/$token'
+    | '/guides/budget-cadeaux'
+    | '/guides/liste-naissance'
     | '/invitation/$token'
     | '/l/$slug'
     | '/liste/$slug'
@@ -353,6 +373,8 @@ export interface FileRouteTypes {
     | '/dashboard/memories'
     | '/dashboard/orders'
     | '/go/$token'
+    | '/guides/budget-cadeaux'
+    | '/guides/liste-naissance'
     | '/invitation/$token'
     | '/l/$slug'
     | '/liste/$slug'
@@ -386,6 +408,8 @@ export interface FileRouteTypes {
     | '/dashboard/memories'
     | '/dashboard/orders'
     | '/go/$token'
+    | '/guides/budget-cadeaux'
+    | '/guides/liste-naissance'
     | '/invitation/$token'
     | '/l/$slug'
     | '/liste/$slug'
@@ -417,6 +441,8 @@ export interface RootRouteChildren {
   VerificationEmailRoute: typeof VerificationEmailRoute
   ContribuerGiftTokenRoute: typeof ContribuerGiftTokenRoute
   GoTokenRoute: typeof GoTokenRoute
+  GuidesBudgetCadeauxRoute: typeof GuidesBudgetCadeauxRoute
+  GuidesListeNaissanceRoute: typeof GuidesListeNaissanceRoute
   InvitationTokenRoute: typeof InvitationTokenRoute
   LSlugRoute: typeof LSlugRoute
   ListeSlugRoute: typeof ListeSlugRoute
@@ -590,6 +616,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guides/budget-cadeaux': {
+      id: '/guides/budget-cadeaux'
+      path: '/guides/budget-cadeaux'
+      fullPath: '/guides/budget-cadeaux'
+      preLoaderRoute: typeof GuidesBudgetCadeauxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/liste-naissance': {
+      id: '/guides/liste-naissance'
+      path: '/guides/liste-naissance'
+      fullPath: '/guides/liste-naissance'
+      preLoaderRoute: typeof GuidesListeNaissanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invitation/$token': {
       id: '/invitation/$token'
       path: '/invitation/$token'
@@ -687,6 +727,8 @@ const rootRouteChildren: RootRouteChildren = {
   VerificationEmailRoute: VerificationEmailRoute,
   ContribuerGiftTokenRoute: ContribuerGiftTokenRoute,
   GoTokenRoute: GoTokenRoute,
+  GuidesBudgetCadeauxRoute: GuidesBudgetCadeauxRoute,
+  GuidesListeNaissanceRoute: GuidesListeNaissanceRoute,
   InvitationTokenRoute: InvitationTokenRoute,
   LSlugRoute: LSlugRoute,
   ListeSlugRoute: ListeSlugRoute,

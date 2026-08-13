@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
+import { shareNative } from "@/lib/pwa";
 import { Input } from "@/components/ui/input";
 
 /** Share panel with copy link, QR code download and native share. */
@@ -55,12 +56,14 @@ export function ShareCard({ slug, title }: { slug: string; title: string }) {
             onClick={() => {
               const message = `Découvre ma liste « ${title} » : ${url}`;
               track("list_shared", { method: "native" });
-              if (navigator.share) {
-                void navigator.share({ title, text: message, url }).catch(() => undefined);
-              } else {
-                void navigator.clipboard.writeText(message);
-                toast.success("Message copié");
-              }
+              void shareNative({ title, text: message, url })
+                .then((shared) => {
+                  if (shared) return;
+                  return navigator.clipboard
+                    .writeText(message)
+                    .then(() => toast.success("Message copié"));
+                })
+                .catch(() => undefined);
             }}
           >
             Partager

@@ -194,6 +194,80 @@ export class AdminService {
       orderBy: { createdAt: "desc" },
     });
   }
+  async productAnalytics(days: number) {
+    const since = new Date(Date.now() - days * 86_400_000);
+    const [
+      events,
+      users,
+      lists,
+      gifts,
+      reservations,
+      purchases,
+      commissions,
+      premium,
+      referrals,
+      activeFamilies,
+    ] = await Promise.all([
+      this.prisma.productAnalyticsEvent.groupBy({
+        by: ["event"],
+        where: { occurredAt: { gte: since } },
+        _count: true,
+      }),
+      this.prisma.user.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.giftList.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.gift.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.reservation.count({
+        where: { createdAt: { gte: since }, status: { not: "CANCELLED" } },
+      }),
+      this.prisma.reservation.count({ where: { purchasedAt: { gte: since } } }),
+      this.prisma.affiliateCommission.aggregate({
+        where: { status: "CONFIRMED", confirmedAt: { gte: since } },
+        _sum: { commissionMinor: true },
+      }),
+      this.prisma.payment.count({
+        where: { status: "PAID", paidAt: { gte: since }, entitlement: { isNot: null } },
+      }),
+      this.prisma.referral.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.giftList.count({
+        where: {
+          reservations: { some: { createdAt: { gte: since }, status: { not: "CANCELLED" } } },
+        },
+      }),
+    ]);
+    const funnel = Object.fromEntries(events.map((row) => [row.event, row._count]));
+    const visitors = funnel["homepage_view"] ?? 0;
+    const signupStarted = funnel["signup_started"] ?? 0;
+    const signupCompleted = funnel["signup_completed"] ?? 0;
+    return {
+      periodDays: days,
+      funnel,
+      kpis: {
+        consentedVisitors: visitors,
+        signupConversionRate: visitors ? signupCompleted / visitors : null,
+        signupStartedConversionRate: signupStarted ? signupCompleted / signupStarted : null,
+        usersCreated: users,
+        listsCreated: lists,
+        activationRate: lists ? activeFamilies / lists : null,
+        giftsCreated: gifts,
+        giftsPerList: lists ? gifts / lists : null,
+        reservations,
+        purchasedReservations: purchases,
+        listsWithReservation: activeFamilies,
+        confirmedCommissionMinor: money(commissions._sum.commissionMinor),
+        premiumActivations: premium,
+        referrals,
+        gmvObservableMinor: null,
+        revenuePerListMinor: null,
+        retentionRate: null,
+      },
+      notes: {
+        gmvObservableMinor:
+          "Unavailable until authorized order/purchase values are consistently captured",
+        revenuePerListMinor: "Computed only after accounting policy defines eligible revenue",
+        retentionRate: "Requires a longer production cohort window",
+      },
+    };
+  }
   async reviewRisk(
     actorId: string,
     requestId: string,

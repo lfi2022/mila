@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/SiteHeader";
 import { paymentApi } from "@/features/payments/api";
 import { formatCents } from "@/lib/money";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/premium/$listId")({
   head: () => ({ meta: [{ title: "Mila Premium" }, { name: "robots", content: "noindex" }] }),
@@ -17,6 +18,7 @@ function PremiumPage() {
   const { listId } = Route.useParams();
   const queryClient = useQueryClient();
   const requestKey = useRef(crypto.randomUUID());
+  const activationTracked = useRef(false);
   const premium = useQuery({
     queryKey: ["premium", listId],
     queryFn: () => paymentApi.premiumStatus(listId),
@@ -32,11 +34,18 @@ function PremiumPage() {
       }
       requestKey.current = crypto.randomUUID();
       await queryClient.invalidateQueries({ queryKey: ["premium", listId] });
+      track("premium_activated");
       toast.success("Mila Premium est activé pour cette liste.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
   const value = premium.data;
+  useEffect(() => {
+    if (value?.active && !activationTracked.current) {
+      activationTracked.current = true;
+      track("premium_activated");
+    }
+  }, [value?.active]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,7 +80,10 @@ function PremiumPage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button
                   disabled={!value.mollieEnabled || purchase.isPending}
-                  onClick={() => purchase.mutate(false)}
+                  onClick={() => {
+                    track("premium_checkout_started", { method: "mollie" });
+                    purchase.mutate(false);
+                  }}
                 >
                   Payer avec Mollie
                 </Button>
@@ -79,7 +91,10 @@ function PremiumPage() {
                   <Button
                     variant="secondary"
                     disabled={purchase.isPending}
-                    onClick={() => purchase.mutate(true)}
+                    onClick={() => {
+                      track("premium_checkout_started", { method: "rewards" });
+                      purchase.mutate(true);
+                    }}
                   >
                     Utiliser mes Récompenses Mila
                   </Button>

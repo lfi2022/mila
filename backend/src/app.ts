@@ -48,6 +48,7 @@ import { memoryRoutes } from "./modules/memories/routes.js";
 import { AdminService } from "./modules/admin/service.js";
 import { adminRoutes } from "./modules/admin/routes.js";
 import { reportRoutes } from "./modules/reports/routes.js";
+import { analyticsRoutes } from "./modules/analytics/routes.js";
 
 export type AppOptions = {
   config?: AppConfig;
@@ -178,6 +179,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
         );
         await api.register(adminRoutes(new AdminService(options.database.client), auth, config));
         await api.register(reportRoutes(options.database.client, config));
+        await api.register(analyticsRoutes(options.database.client, config));
         await api.register(
           contributionRoutes(
             new ContributionsService(options.database.client, config, lists),

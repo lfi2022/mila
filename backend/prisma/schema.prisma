@@ -1451,6 +1451,22 @@ model DataProcessor {
   @@map("data_processors")
 }
 
+model ProductAnalyticsEvent {
+  id          String   @id @default(uuid()) @db.Char(36)
+  event       String   @db.VarChar(64)
+  subjectHash String   @map("subject_hash") @db.Char(64)
+  sessionHash String   @map("session_hash") @db.Char(64)
+  path        String?  @db.VarChar(255)
+  properties  Json?
+  occurredAt  DateTime @map("occurred_at") @db.DateTime(3)
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@unique([sessionHash, event, occurredAt])
+  @@index([event, occurredAt])
+  @@index([subjectHash, occurredAt])
+  @@map("product_analytics_events")
+}
+
 model AdminAuditLog {
   id         String   @id @default(uuid()) @db.Char(36)
   actorId    String?  @map("actor_id") @db.Char(36)

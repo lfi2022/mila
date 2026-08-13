@@ -40,6 +40,13 @@ export function adminRoutes(
       await staff(request);
       return jsonSafe(await service.overview());
     });
+    app.get("/admin/analytics", async (request) => {
+      await staff(request);
+      const { days } = z
+        .object({ days: z.coerce.number().int().min(1).max(365).default(30) })
+        .parse(request.query);
+      return jsonSafe(await service.productAnalytics(days));
+    });
     app.get("/admin/lists", async (request) => {
       await staff(request);
       const value = page(request);

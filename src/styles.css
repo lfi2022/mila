@@ -155,6 +155,11 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+
+  :focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 3px;
+  }
 }
 
 @layer base {

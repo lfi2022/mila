@@ -26,6 +26,7 @@ import { getPublicList, reserveGift, type PublicGift } from "@/lib/public.functi
 import { priceApi } from "@/features/prices/api";
 import { createSecondHandOffer } from "@/features/memories/api";
 import { apiRequest } from "@/services/api/client";
+import { track } from "@/lib/analytics";
 
 const searchSchema = z.object({ code: z.string().max(64).optional() });
 
@@ -357,6 +358,7 @@ function GiftCard({
         },
       });
       setManageLink(result.manageLink);
+      track("first_reservation");
       toast.success("Cadeau réservé, merci !");
       await router.invalidate();
     } catch (error) {

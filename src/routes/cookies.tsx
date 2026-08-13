@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import { buildPublicUrl } from "@/config/runtime";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { Button } from "@/components/ui/button";
+import { getAnalyticsConsent, setAnalyticsConsent } from "@/lib/analytics";
 
 export const Route = createFileRoute("/cookies")({
   head: () => ({
@@ -29,6 +32,12 @@ export const Route = createFileRoute("/cookies")({
 });
 
 function CookiesPage() {
+  const [analytics, setAnalytics] = useState<"granted" | "denied" | "unset">("unset");
+  useEffect(() => setAnalytics(getAnalyticsConsent()), []);
+  const choose = (granted: boolean) => {
+    setAnalyticsConsent(granted);
+    setAnalytics(granted ? "granted" : "denied");
+  };
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -42,6 +51,31 @@ function CookiesPage() {
             session de connexion, le jeton qui vous permet de retrouver une réservation faite sans
             compte, et vos préférences d'affichage. Ces éléments ne servent pas à vous suivre sur
             d'autres sites.
+          </p>
+          <div className="flex flex-wrap gap-3" aria-label="Préférence de mesure d’audience">
+            <Button
+              type="button"
+              variant={analytics === "granted" ? "default" : "outline"}
+              onClick={() => choose(true)}
+            >
+              Autoriser la mesure
+            </Button>
+            <Button
+              type="button"
+              variant={analytics === "denied" ? "default" : "outline"}
+              onClick={() => choose(false)}
+            >
+              Refuser la mesure
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            Choix actuel :{" "}
+            {analytics === "granted"
+              ? "autorisée"
+              : analytics === "denied"
+                ? "refusée"
+                : "non défini"}
+            .
           </p>
         </section>
 

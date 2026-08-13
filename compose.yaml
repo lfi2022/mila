@@ -30,10 +30,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
+        VITE_SEO_INDEXING_ENABLED: ${SEO_INDEXING_ENABLED:-false}
+    env_file:
+      - path: ${MILA_ENV_FILE:-.env}
+        required: false
     environment:
       NODE_ENV: production
       PORT: 3000
       HOST: 0.0.0.0
+      APP_URL: ${APP_URL:-http://localhost}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
+      SEO_INDEXING_ENABLED: ${SEO_INDEXING_ENABLED:-false}
     restart: unless-stopped
     healthcheck:
       test:
