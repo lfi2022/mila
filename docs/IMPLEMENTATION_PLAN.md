@@ -155,11 +155,11 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 15 — Order grouping and fulfilment
 
-- [ ] Implement OrderGroup and OrderGroupItem grouped by merchant/destination/window.
-- [ ] Implement manual-parent and assisted-parent workflows, variants, quantities, delivery, contribution allocation, and status history.
-- [ ] Add `/dashboard/orders` sections for ready, awaiting funding, ordered, received, and problems.
-- [ ] Keep automatic orders behind a feature flag and `BLOCKED_EXTERNAL` until an authorized merchant API/contract exists.
-- [ ] Never automate purchases through unauthorized scraping/browser robots.
+- [x] Implement OrderGroup and OrderGroupItem grouped by merchant/destination/window.
+- [x] Implement manual-parent and assisted-parent workflows, variants, quantities, delivery, contribution allocation, and status history.
+- [x] Add `/dashboard/orders` sections for ready, awaiting funding, ordered, received, and problems.
+- [x] Keep automatic orders behind a feature flag and `BLOCKED_EXTERNAL` until an authorized merchant API/contract exists.
+- [x] Never automate purchases through unauthorized scraping/browser robots.
 
 ## Stage 16 — Second hand, messages, thank-yous, and memories
 

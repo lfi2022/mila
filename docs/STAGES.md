@@ -518,3 +518,42 @@ External configuration:
 - official merchant APIs/affiliate feeds, their rate limits and contractual data/image permissions remain configuration work per merchant;
 - without an authorized feed/API, the hardened HTML metadata connector remains conservative and merchant minimum intervals apply;
 - automatic comparison stays feature-flagged off until trusted merchants and controlled offers are populated.
+
+## Stage 15 — Order grouping and fulfilment
+
+Status: DONE_WITH_AUTOMATIC_ORDERING_BLOCKED_EXTERNAL
+
+Commit: `0d59663`
+
+Implemented:
+
+- persisted order groups grouped by merchant, currency, destination and fulfilment window, with immutable item snapshots and append-only status history;
+- atomic, serializable preparation that prevents duplicate claims and enforces a configurable maximum group size;
+- manual-parent and assisted-parent workflows with quantity, variant, inclusion and delivery-cost adjustments;
+- ledger-backed contribution allocation plans that never misrepresent planned funds as financial settlement;
+- forward-only ready, ordered, received and problem lifecycles, including required external order references and gift-status synchronization;
+- a parent order center with candidate, ready, awaiting-funding, ordered, received and problem sections;
+- automatic ordering guarded by both a global feature flag and explicit merchant authorization, while returning `BLOCKED_EXTERNAL` because no authorized connector exists;
+- an explicit prohibition on scraping or browser-robot purchasing.
+
+Migration: `202608130009_order_fulfilment`.
+
+Validation:
+
+- `npm run check`: PASS;
+- frontend tests: 14 PASS;
+- backend tests: 61 PASS, including atomic grouping, contribution allocation and forward-only lifecycle behavior;
+- frontend and backend production builds: PASS;
+- Prisma validation, legacy migration audit and Docker Compose configuration: PASS;
+- lint: PASS with 8 pre-existing Fast Refresh warnings.
+
+Environment variables:
+
+- `FEATURE_ORDER_FULFILMENT`, `FEATURE_AUTOMATIC_ORDERS`;
+- `ORDER_PREPARATION_MAX_ITEMS`.
+
+External blockers:
+
+- automatic orders remain `BLOCKED_EXTERNAL` until an official merchant API or contract, credentials, explicit consent, payment/address handling and returns policy are approved;
+- no purchase automation through scraping or browser robots is implemented or permitted;
+- contribution allocation remains a budget plan until the regulated third-party-funds architecture is approved and activated.
