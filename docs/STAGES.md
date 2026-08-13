@@ -368,6 +368,8 @@ External blockers:
 
 Status: DONE_WITH_FLAGGED_EXTERNAL_PRODUCTS
 
+Commit: `7bb45fe`
+
 Implemented:
 
 - one wallet per list with balances derived exclusively from signed immutable ledger entries;
