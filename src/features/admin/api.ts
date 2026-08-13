@@ -131,6 +131,20 @@ export const adminListRisks = async () =>
       }>;
     }>("/admin/risk-reviews?limit=100")
   ).risks;
+export const adminListPartners = async () =>
+  (
+    await apiRequest<{
+      partners: Array<{
+        id: string;
+        name: string;
+        category: string;
+        region: string | null;
+        status: string;
+        contractReference: string | null;
+        campaigns: Array<{ id: string; name: string; active: boolean }>;
+      }>;
+    }>("/admin/partners?limit=100")
+  ).partners;
 export const adminReviewRisk = (
   riskId: string,
   status: "RESOLVED" | "DISMISSED",

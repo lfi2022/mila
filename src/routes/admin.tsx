@@ -31,6 +31,7 @@ import {
   adminListAuditLog,
   adminListLists,
   adminListMerchants,
+  adminListPartners,
   adminListReports,
   adminListRisks,
   adminListUsers,
@@ -109,6 +110,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
   const listsQuery = useQuery({ queryKey: ["admin-lists"], queryFn: adminListLists });
   const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: adminListUsers });
   const merchantsQuery = useQuery({ queryKey: ["admin-merchants"], queryFn: adminListMerchants });
+  const partnersQuery = useQuery({ queryKey: ["admin-partners"], queryFn: adminListPartners });
   const reportsQuery = useQuery({ queryKey: ["admin-reports"], queryFn: adminListReports });
   const risksQuery = useQuery({ queryKey: ["admin-risks"], queryFn: adminListRisks });
   const auditQuery = useQuery({ queryKey: ["admin-audit"], queryFn: adminListAuditLog });
@@ -153,6 +155,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
             <TabsTrigger value="lists">Listes</TabsTrigger>
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
             <TabsTrigger value="merchants">Marchands</TabsTrigger>
+            <TabsTrigger value="partners">Partenaires</TabsTrigger>
             <TabsTrigger value="rewards">Récompenses</TabsTrigger>
             <TabsTrigger value="payments">Paiements</TabsTrigger>
             <TabsTrigger value="moderation">Modération</TabsTrigger>
@@ -359,6 +362,41 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
 
           <TabsContent value="rewards" className="mt-6">
             <RewardsAdmin />
+          </TabsContent>
+
+          <TabsContent value="partners" className="mt-6">
+            {!partnersQuery.data?.length ? (
+              <p className="text-sm text-muted-foreground">
+                Aucun partenaire contractuel. Mila n’affiche jamais de partenaire fictif.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Partenaire</TableHead>
+                    <TableHead>Catégorie</TableHead>
+                    <TableHead>Zone</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Campagnes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {partnersQuery.data.map((partner) => (
+                    <TableRow key={partner.id}>
+                      <TableCell>{partner.name}</TableCell>
+                      <TableCell>{partner.category}</TableCell>
+                      <TableCell>{partner.region ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={partner.status === "ACTIVE" ? "default" : "secondary"}>
+                          {partner.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{partner.campaigns.length}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </TabsContent>
 
           <TabsContent value="payments" className="mt-6">

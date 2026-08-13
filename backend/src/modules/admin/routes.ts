@@ -65,6 +65,11 @@ export function adminRoutes(
       const value = page(request);
       return jsonSafe({ risks: await service.risks(value.skip, value.take) });
     });
+    app.get("/admin/partners", async (request) => {
+      await staff(request);
+      const value = page(request);
+      return jsonSafe({ partners: await service.partners(value.skip, value.take) });
+    });
     app.post("/admin/risk-reviews/:riskId/review", async (request) => {
       csrf(request);
       const user = await staff(request);

@@ -174,6 +174,26 @@ export class AdminService {
       orderBy: [{ score: "desc" }, { createdAt: "asc" }],
     });
   }
+  async partners(skip: number, take: number) {
+    return this.prisma.partner.findMany({
+      skip,
+      take,
+      include: {
+        campaigns: {
+          select: {
+            id: true,
+            name: true,
+            active: true,
+            startsAt: true,
+            endsAt: true,
+            budgetMinor: true,
+            currency: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
   async reviewRisk(
     actorId: string,
     requestId: string,
