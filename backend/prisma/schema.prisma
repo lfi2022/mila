@@ -91,25 +91,41 @@ enum ContributionStatus {
   CHARGEDBACK
 }
 
-enum ImageSourceType {
+enum ProductMediaSourceType {
   OFFICIAL_API
   AFFILIATE_FEED
-  REMOTE
-  USER_UPLOAD
-  PLACEHOLDER
+  LICENSED
+  USER_UPLOADED
+  REMOTE_VERIFIED
+  REMOTE_UNVERIFIED
+  GENERIC_LIBRARY
+  GENERATED
+  BLOCKED
 }
 
-enum ImageUsagePolicy {
-  OFFICIAL_API
-  AFFILIATE_FEED
-  REMOTE_DISPLAY_ALLOWED
-  TEMPORARY_CACHE_ALLOWED
-  USER_UPLOADED
-  MANUAL_REVIEW_REQUIRED
-  DO_NOT_DISPLAY
+enum ProductMediaUsageStatus {
+  AUTHORIZED
+  AUTHORIZED_REMOTE_ONLY
+  AUTHORIZED_CACHE
+  USER_DECLARED
+  REVIEW_REQUIRED
+  BLOCKED
+}
+
+enum GenericImageCategory {
+  STROLLER
+  PLUSH_RABBIT
+  BABY_BOUNCER
+  BABY_CRIB
+  CLOTHING
+  FEEDING
+  BATH
+  TOY
+  OTHER
 }
 
 enum ImageStatus {
+  PENDING
   ACTIVE
   EXPIRED
   REMOVED
@@ -251,50 +267,50 @@ enum SecondHandOfferStatus {
 }
 
 model User {
-  id                      String                    @id @default(uuid()) @db.Char(36)
-  email                   String                    @unique @db.VarChar(255)
-  passwordHash            String                    @map("password_hash") @db.VarChar(255)
-  displayName             String?                   @map("display_name") @db.VarChar(120)
-  avatarKey               String?                   @map("avatar_key") @db.VarChar(512)
-  emailVerifiedAt         DateTime?                 @map("email_verified_at") @db.DateTime(3)
-  onboardingCompleted     Boolean                   @default(false) @map("onboarding_completed")
-  suspendedAt             DateTime?                 @map("suspended_at") @db.DateTime(3)
-  deletedAt               DateTime?                 @map("deleted_at") @db.DateTime(3)
-  createdAt               DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt               DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
-  roles                   UserRole[]
-  sessions                Session[]
-  verificationTokens      EmailVerificationToken[]
-  resetTokens             PasswordResetToken[]
-  ownedLists              GiftList[]                @relation("ListOwner")
-  memberships             ListMember[]
-  sentInvitations         ListInvitation[]          @relation("InvitationSender")
-  acceptedInvitations     ListInvitation[]          @relation("InvitationAccepter")
-  reservations            Reservation[]
-  paymentAccounts         PaymentAccount[]
-  requestedPayouts        Payout[]                  @relation("PayoutRequester")
-  orderStatusChanges      OrderGroupStatusHistory[]
-  requestedRedemptions    RewardRedemption[]
-  sentReferrals           Referral[]                @relation("Referrer")
-  receivedReferral        Referral?                 @relation("Referred")
-  referralCode            ReferralCode?
-  notifications           Notification[]
-  notificationPreferences NotificationPreference[]
-  messages                Message[]
-  uploadedMedia           MediaAsset[]
-  thankYous               ThankYou[]
-  approvedMessages        Message[]                  @relation("MessageApprover")
-  reviewedSecondHandOffers SecondHandOffer[]          @relation("SecondHandReviewer")
-  approvedMemoryItems     MemoryBookItem[]            @relation("MemoryItemApprover")
-  partnerAttributions     PartnerAttribution[]
-  listLifecycleEvents     ListLifecycleEvent[]
-  privacyConsents         PrivacyConsent[]
-  privacyRequests         DataSubjectRequest[]          @relation("PrivacyRequester")
-  assignedPrivacyRequests DataSubjectRequest[]          @relation("PrivacyAssignee")
-  riskReviews             RiskReview[]                @relation("RiskSubject")
-  reviewedRisks           RiskReview[]                @relation("RiskReviewer")
-  reports                 Report[]                  @relation("Reporter")
-  auditLogs               AdminAuditLog[]           @relation("AuditActor")
+  id                       String                    @id @default(uuid()) @db.Char(36)
+  email                    String                    @unique @db.VarChar(255)
+  passwordHash             String                    @map("password_hash") @db.VarChar(255)
+  displayName              String?                   @map("display_name") @db.VarChar(120)
+  avatarKey                String?                   @map("avatar_key") @db.VarChar(512)
+  emailVerifiedAt          DateTime?                 @map("email_verified_at") @db.DateTime(3)
+  onboardingCompleted      Boolean                   @default(false) @map("onboarding_completed")
+  suspendedAt              DateTime?                 @map("suspended_at") @db.DateTime(3)
+  deletedAt                DateTime?                 @map("deleted_at") @db.DateTime(3)
+  createdAt                DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
+  roles                    UserRole[]
+  sessions                 Session[]
+  verificationTokens       EmailVerificationToken[]
+  resetTokens              PasswordResetToken[]
+  ownedLists               GiftList[]                @relation("ListOwner")
+  memberships              ListMember[]
+  sentInvitations          ListInvitation[]          @relation("InvitationSender")
+  acceptedInvitations      ListInvitation[]          @relation("InvitationAccepter")
+  reservations             Reservation[]
+  paymentAccounts          PaymentAccount[]
+  requestedPayouts         Payout[]                  @relation("PayoutRequester")
+  orderStatusChanges       OrderGroupStatusHistory[]
+  requestedRedemptions     RewardRedemption[]
+  sentReferrals            Referral[]                @relation("Referrer")
+  receivedReferral         Referral?                 @relation("Referred")
+  referralCode             ReferralCode?
+  notifications            Notification[]
+  notificationPreferences  NotificationPreference[]
+  messages                 Message[]
+  uploadedMedia            MediaAsset[]
+  thankYous                ThankYou[]
+  approvedMessages         Message[]                 @relation("MessageApprover")
+  reviewedSecondHandOffers SecondHandOffer[]         @relation("SecondHandReviewer")
+  approvedMemoryItems      MemoryBookItem[]          @relation("MemoryItemApprover")
+  partnerAttributions      PartnerAttribution[]
+  listLifecycleEvents      ListLifecycleEvent[]
+  privacyConsents          PrivacyConsent[]
+  privacyRequests          DataSubjectRequest[]      @relation("PrivacyRequester")
+  assignedPrivacyRequests  DataSubjectRequest[]      @relation("PrivacyAssignee")
+  riskReviews              RiskReview[]              @relation("RiskSubject")
+  reviewedRisks            RiskReview[]              @relation("RiskReviewer")
+  reports                  Report[]                  @relation("Reporter")
+  auditLogs                AdminAuditLog[]           @relation("AuditActor")
 
   @@index([createdAt])
   @@map("users")
@@ -483,7 +499,8 @@ model Merchant {
   updatedAt             DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
   domains               MerchantDomain[]
   gifts                 Gift[]
-  images                GiftImage[]
+  images                ProductMedia[]
+  mediaPolicy           MerchantMediaPolicy?
   offers                MerchantOffer[]
   snapshots             PriceSnapshot[]
   clicks                AffiliateClick[]
@@ -528,45 +545,46 @@ model ProductIdentity {
 }
 
 model Gift {
-  id                        String            @id @default(uuid()) @db.Char(36)
-  listId                    String            @map("list_id") @db.Char(36)
-  merchantId                String?           @map("merchant_id") @db.Char(36)
-  productIdentityId         String?           @map("product_identity_id") @db.Char(36)
-  publicToken               String            @unique @map("public_token") @db.Char(64)
-  title                     String            @db.VarChar(240)
-  description               String?           @db.Text
+  id                        String               @id @default(uuid()) @db.Char(36)
+  listId                    String               @map("list_id") @db.Char(36)
+  merchantId                String?              @map("merchant_id") @db.Char(36)
+  productIdentityId         String?              @map("product_identity_id") @db.Char(36)
+  publicToken               String               @unique @map("public_token") @db.Char(64)
+  title                     String               @db.VarChar(240)
+  description               String?              @db.Text
   kind                      GiftKind
-  status                    GiftStatus        @default(AVAILABLE)
-  url                       String?           @db.VarChar(2048)
-  canonicalUrl              String?           @map("canonical_url") @db.VarChar(2048)
-  sku                       String?           @db.VarChar(120)
-  selectedVariant           Json?             @map("selected_variant")
-  currency                  String            @default("EUR") @db.Char(3)
-  unitPriceMinor            BigInt?           @map("unit_price_minor")
-  priceAtCreationMinor      BigInt?           @map("price_at_creation_minor")
-  quantity                  Int               @default(1) @db.UnsignedSmallInt
-  reservedQuantity          Int               @default(0) @map("reserved_quantity") @db.UnsignedSmallInt
-  fundedAmountMinor         BigInt            @default(0) @map("funded_amount_minor")
-  contributionTargetMinor   BigInt?           @map("contribution_target_minor")
-  secondHandPolicy          SecondHandPolicy  @default(NEW_ONLY) @map("second_hand_policy")
-  offerPreference           OfferPreference   @default(FIXED_MERCHANT) @map("offer_preference")
-  position                  Int               @default(0)
-  hiddenByModerator         Boolean           @default(false) @map("hidden_by_moderator")
-  priceAlertsEnabled        Boolean           @default(false) @map("price_alerts_enabled")
-  availabilityAlertsEnabled Boolean           @default(false) @map("availability_alerts_enabled")
-  deadLinkAlertsEnabled     Boolean           @default(false) @map("dead_link_alerts_enabled")
-  lastAvailability          String?           @map("last_availability") @db.VarChar(64)
-  lastLinkHealthy           Boolean?          @map("last_link_healthy")
-  refreshFailureCount       Int               @default(0) @map("refresh_failure_count") @db.UnsignedSmallInt
-  nextRefreshAt             DateTime?         @map("next_refresh_at") @db.DateTime(3)
-  lastRefreshedAt           DateTime?         @map("last_refreshed_at") @db.DateTime(3)
-  deletedAt                 DateTime?         @map("deleted_at") @db.DateTime(3)
-  createdAt                 DateTime          @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt                 DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
-  list                      GiftList          @relation(fields: [listId], references: [id], onDelete: Cascade)
-  merchant                  Merchant?         @relation(fields: [merchantId], references: [id], onDelete: SetNull)
-  productIdentity           ProductIdentity?  @relation(fields: [productIdentityId], references: [id], onDelete: SetNull)
-  images                    GiftImage[]
+  status                    GiftStatus           @default(AVAILABLE)
+  url                       String?              @db.VarChar(2048)
+  canonicalUrl              String?              @map("canonical_url") @db.VarChar(2048)
+  sku                       String?              @db.VarChar(120)
+  selectedVariant           Json?                @map("selected_variant")
+  currency                  String               @default("EUR") @db.Char(3)
+  unitPriceMinor            BigInt?              @map("unit_price_minor")
+  priceAtCreationMinor      BigInt?              @map("price_at_creation_minor")
+  quantity                  Int                  @default(1) @db.UnsignedSmallInt
+  reservedQuantity          Int                  @default(0) @map("reserved_quantity") @db.UnsignedSmallInt
+  fundedAmountMinor         BigInt               @default(0) @map("funded_amount_minor")
+  contributionTargetMinor   BigInt?              @map("contribution_target_minor")
+  secondHandPolicy          SecondHandPolicy     @default(NEW_ONLY) @map("second_hand_policy")
+  offerPreference           OfferPreference      @default(FIXED_MERCHANT) @map("offer_preference")
+  position                  Int                  @default(0)
+  hiddenByModerator         Boolean              @default(false) @map("hidden_by_moderator")
+  priceAlertsEnabled        Boolean              @default(false) @map("price_alerts_enabled")
+  availabilityAlertsEnabled Boolean              @default(false) @map("availability_alerts_enabled")
+  deadLinkAlertsEnabled     Boolean              @default(false) @map("dead_link_alerts_enabled")
+  lastAvailability          String?              @map("last_availability") @db.VarChar(64)
+  lastLinkHealthy           Boolean?             @map("last_link_healthy")
+  refreshFailureCount       Int                  @default(0) @map("refresh_failure_count") @db.UnsignedSmallInt
+  nextRefreshAt             DateTime?            @map("next_refresh_at") @db.DateTime(3)
+  lastRefreshedAt           DateTime?            @map("last_refreshed_at") @db.DateTime(3)
+  genericImageCategory      GenericImageCategory @default(OTHER) @map("generic_image_category")
+  deletedAt                 DateTime?            @map("deleted_at") @db.DateTime(3)
+  createdAt                 DateTime             @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt                 DateTime             @updatedAt @map("updated_at") @db.DateTime(3)
+  list                      GiftList             @relation(fields: [listId], references: [id], onDelete: Cascade)
+  merchant                  Merchant?            @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  productIdentity           ProductIdentity?     @relation(fields: [productIdentityId], references: [id], onDelete: SetNull)
+  images                    ProductMedia[]
   offers                    MerchantOffer[]
   offerSwitches             GiftOfferSwitch[]
   snapshots                 PriceSnapshot[]
@@ -586,29 +604,86 @@ model Gift {
   @@map("gifts")
 }
 
-model GiftImage {
-  id                  String           @id @default(uuid()) @db.Char(36)
-  giftId              String           @map("gift_id") @db.Char(36)
-  merchantId          String?          @map("merchant_id") @db.Char(36)
-  sourceUrl           String?          @map("source_url") @db.VarChar(2048)
-  storageKey          String?          @map("storage_key") @db.VarChar(512)
-  sourceType          ImageSourceType  @map("source_type")
-  usagePolicy         ImageUsagePolicy @map("usage_policy")
-  cached              Boolean          @default(false)
-  cachedUntil         DateTime?        @map("cached_until") @db.DateTime(3)
-  attributionRequired Boolean          @default(false) @map("attribution_required")
-  attributionText     String?          @map("attribution_text") @db.VarChar(500)
-  lastCheckedAt       DateTime?        @map("last_checked_at") @db.DateTime(3)
-  status              ImageStatus      @default(ACTIVE)
-  position            Int              @default(0)
-  createdAt           DateTime         @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt           DateTime         @updatedAt @map("updated_at") @db.DateTime(3)
-  gift                Gift             @relation(fields: [giftId], references: [id], onDelete: Cascade)
-  merchant            Merchant?        @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+model ProductMedia {
+  id                    String                  @id @default(uuid()) @db.Char(36)
+  giftId                String                  @map("gift_id") @db.Char(36)
+  merchantId            String?                 @map("merchant_id") @db.Char(36)
+  originalUrl           String?                 @map("source_url") @db.VarChar(2048)
+  storedObjectKey       String?                 @map("storage_key") @db.VarChar(512)
+  publicUrl             String?                 @map("public_url") @db.VarChar(2048)
+  sourceType            ProductMediaSourceType  @map("source_type")
+  usageStatus           ProductMediaUsageStatus @map("usage_policy")
+  copyrightOwner        String?                 @map("copyright_owner") @db.VarChar(255)
+  licenseName           String?                 @map("license_name") @db.VarChar(120)
+  licenseUrl            String?                 @map("license_url") @db.VarChar(2048)
+  termsUrl              String?                 @map("terms_url") @db.VarChar(2048)
+  commercialUseAllowed  Boolean                 @default(false) @map("commercial_use_allowed")
+  cacheAllowed          Boolean                 @default(false) @map("cache_allowed")
+  remoteDisplayAllowed  Boolean                 @default(false) @map("remote_display_allowed")
+  transformationAllowed Boolean                 @default(false) @map("transformation_allowed")
+  redistributionAllowed Boolean                 @default(false) @map("redistribution_allowed")
+  attributionRequired   Boolean                 @default(false) @map("attribution_required")
+  attributionText       String?                 @map("attribution_text") @db.VarChar(500)
+  verifiedAt            DateTime?               @map("verified_at") @db.DateTime(3)
+  verifiedBy            String?                 @map("verified_by") @db.Char(36)
+  reviewAfter           DateTime?               @map("review_after") @db.DateTime(3)
+  etag                  String?                 @db.VarChar(255)
+  lastModified          String?                 @map("last_modified") @db.VarChar(255)
+  fetchedAt             DateTime?               @map("fetched_at") @db.DateTime(3)
+  expiresAt             DateTime?               @map("expires_at") @db.DateTime(3)
+  status                ImageStatus             @default(ACTIVE)
+  position              Int                     @default(0)
+  createdAt             DateTime                @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime                @updatedAt @map("updated_at") @db.DateTime(3)
+  gift                  Gift                    @relation(fields: [giftId], references: [id], onDelete: Cascade)
+  merchant              Merchant?               @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  claims                MediaClaim[]
 
   @@index([giftId, position])
-  @@index([cachedUntil])
+  @@index([usageStatus, status])
+  @@index([expiresAt])
   @@map("gift_images")
+}
+
+model MerchantMediaPolicy {
+  id                  String    @id @default(uuid()) @db.Char(36)
+  merchantId          String    @unique @map("merchant_id") @db.Char(36)
+  allowMetadata       Boolean   @default(true) @map("allow_metadata")
+  allowRemoteDisplay  Boolean   @default(false) @map("allow_remote_display")
+  allowCaching        Boolean   @default(false) @map("allow_caching")
+  allowLocalStorage   Boolean   @default(false) @map("allow_local_storage")
+  allowTransformation Boolean   @default(false) @map("allow_transformation")
+  allowCommercialUse  Boolean   @default(false) @map("allow_commercial_use")
+  attributionRequired Boolean   @default(false) @map("attribution_required")
+  attributionTemplate String?   @map("attribution_template") @db.VarChar(500)
+  licenseSourceUrl    String?   @map("license_source_url") @db.VarChar(2048)
+  termsSourceUrl      String?   @map("terms_source_url") @db.VarChar(2048)
+  verifiedAt          DateTime? @map("verified_at") @db.DateTime(3)
+  verifiedBy          String?   @map("verified_by") @db.Char(36)
+  reviewAfter         DateTime? @map("review_after") @db.DateTime(3)
+  status              String    @default("REVIEW_REQUIRED") @db.VarChar(32)
+  notes               String?   @db.VarChar(2000)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  merchant            Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("merchant_media_policies")
+}
+
+model MediaClaim {
+  id         String       @id @default(uuid()) @db.Char(36)
+  mediaId    String       @map("media_id") @db.Char(36)
+  claimant   String       @db.VarChar(180)
+  contact    String       @db.VarChar(255)
+  reason     String       @db.VarChar(2000)
+  receivedAt DateTime     @default(now()) @map("received_at") @db.DateTime(3)
+  status     String       @default("OPEN") @db.VarChar(32)
+  action     String?      @db.VarChar(1000)
+  resolvedAt DateTime?    @map("resolved_at") @db.DateTime(3)
+  media      ProductMedia @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([status, receivedAt])
+  @@map("media_claims")
 }
 
 model MerchantOffer {
@@ -883,20 +958,20 @@ model ReferralCode {
 }
 
 model Partner {
-  id                String            @id @default(uuid()) @db.Char(36)
-  slug              String            @unique @db.VarChar(120)
-  name              String            @db.VarChar(180)
-  category          String            @db.VarChar(120)
-  summary           String?           @db.VarChar(500)
-  websiteUrl        String?           @map("website_url") @db.VarChar(2048)
-  landingTitle      String?           @map("landing_title") @db.VarChar(180)
-  landingBody       String?           @map("landing_body") @db.Text
+  id                String               @id @default(uuid()) @db.Char(36)
+  slug              String               @unique @db.VarChar(120)
+  name              String               @db.VarChar(180)
+  category          String               @db.VarChar(120)
+  summary           String?              @db.VarChar(500)
+  websiteUrl        String?              @map("website_url") @db.VarChar(2048)
+  landingTitle      String?              @map("landing_title") @db.VarChar(180)
+  landingBody       String?              @map("landing_body") @db.Text
   contact           Json?
-  region            String?           @db.VarChar(120)
-  status            String            @default("PENDING") @db.VarChar(32)
-  contractReference String?           @map("contract_reference") @db.VarChar(255)
-  createdAt         DateTime          @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt         DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+  region            String?              @db.VarChar(120)
+  status            String               @default("PENDING") @db.VarChar(32)
+  contractReference String?              @map("contract_reference") @db.VarChar(255)
+  createdAt         DateTime             @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.DateTime(3)
   campaigns         PartnerCampaign[]
   attributions      PartnerAttribution[]
 
@@ -904,21 +979,21 @@ model Partner {
 }
 
 model PartnerCampaign {
-  id                String   @id @default(uuid()) @db.Char(36)
-  partnerId         String   @map("partner_id") @db.Char(36)
-  code              String   @unique @db.VarChar(64)
-  name              String   @db.VarChar(180)
-  startsAt          DateTime @map("starts_at") @db.DateTime(3)
-  endsAt            DateTime @map("ends_at") @db.DateTime(3)
+  id                String                       @id @default(uuid()) @db.Char(36)
+  partnerId         String                       @map("partner_id") @db.Char(36)
+  code              String                       @unique @db.VarChar(64)
+  name              String                       @db.VarChar(180)
+  startsAt          DateTime                     @map("starts_at") @db.DateTime(3)
+  endsAt            DateTime                     @map("ends_at") @db.DateTime(3)
   benefit           Json
-  budgetMinor       BigInt?  @map("budget_minor")
-  currency          String   @default("EUR") @db.Char(3)
+  budgetMinor       BigInt?                      @map("budget_minor")
+  currency          String                       @default("EUR") @db.Char(3)
   conditions        Json?
-  attributionConfig Json?    @map("attribution_config")
-  active            Boolean  @default(false)
-  createdAt         DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.DateTime(3)
-  partner           Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  attributionConfig Json?                        @map("attribution_config")
+  active            Boolean                      @default(false)
+  createdAt         DateTime                     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime                     @updatedAt @map("updated_at") @db.DateTime(3)
+  partner           Partner                      @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   attributions      PartnerAttribution[]
   ledgerEntries     PartnerCampaignLedgerEntry[]
 
@@ -927,20 +1002,20 @@ model PartnerCampaign {
 }
 
 model PartnerAttribution {
-  id          String           @id @default(uuid()) @db.Char(36)
-  partnerId   String           @map("partner_id") @db.Char(36)
-  campaignId  String?          @map("campaign_id") @db.Char(36)
-  userId      String?          @map("user_id") @db.Char(36)
-  listId      String?          @unique @map("list_id") @db.Char(36)
-  tokenHash   String           @unique @map("token_hash") @db.Char(64)
-  channel     String           @default("LINK") @db.VarChar(32)
-  expiresAt   DateTime         @map("expires_at") @db.DateTime(3)
-  convertedAt DateTime?        @map("converted_at") @db.DateTime(3)
-  createdAt   DateTime         @default(now()) @map("created_at") @db.DateTime(3)
-  partner     Partner          @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  campaign    PartnerCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  user        User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  list        GiftList?        @relation(fields: [listId], references: [id], onDelete: SetNull)
+  id            String                       @id @default(uuid()) @db.Char(36)
+  partnerId     String                       @map("partner_id") @db.Char(36)
+  campaignId    String?                      @map("campaign_id") @db.Char(36)
+  userId        String?                      @map("user_id") @db.Char(36)
+  listId        String?                      @unique @map("list_id") @db.Char(36)
+  tokenHash     String                       @unique @map("token_hash") @db.Char(64)
+  channel       String                       @default("LINK") @db.VarChar(32)
+  expiresAt     DateTime                     @map("expires_at") @db.DateTime(3)
+  convertedAt   DateTime?                    @map("converted_at") @db.DateTime(3)
+  createdAt     DateTime                     @default(now()) @map("created_at") @db.DateTime(3)
+  partner       Partner                      @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  campaign      PartnerCampaign?             @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  user          User?                        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  list          GiftList?                    @relation(fields: [listId], references: [id], onDelete: SetNull)
   ledgerEntries PartnerCampaignLedgerEntry[]
 
   @@index([partnerId, createdAt])
@@ -950,17 +1025,17 @@ model PartnerAttribution {
 }
 
 model PartnerCampaignLedgerEntry {
-  id            String              @id @default(uuid()) @db.Char(36)
-  campaignId    String              @map("campaign_id") @db.Char(36)
-  attributionId String?             @map("attribution_id") @db.Char(36)
-  kind          String              @db.VarChar(32)
-  amountMinor   BigInt              @map("amount_minor")
-  currency      String              @default("EUR") @db.Char(3)
-  idempotencyKey String             @unique @map("idempotency_key") @db.VarChar(255)
-  note          String?             @db.VarChar(500)
-  createdAt     DateTime            @default(now()) @map("created_at") @db.DateTime(3)
-  campaign      PartnerCampaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  attribution   PartnerAttribution? @relation(fields: [attributionId], references: [id], onDelete: SetNull)
+  id             String              @id @default(uuid()) @db.Char(36)
+  campaignId     String              @map("campaign_id") @db.Char(36)
+  attributionId  String?             @map("attribution_id") @db.Char(36)
+  kind           String              @db.VarChar(32)
+  amountMinor    BigInt              @map("amount_minor")
+  currency       String              @default("EUR") @db.Char(3)
+  idempotencyKey String              @unique @map("idempotency_key") @db.VarChar(255)
+  note           String?             @db.VarChar(500)
+  createdAt      DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  campaign       PartnerCampaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  attribution    PartnerAttribution? @relation(fields: [attributionId], references: [id], onDelete: SetNull)
 
   @@index([campaignId, kind, createdAt])
   @@map("partner_campaign_ledger_entries")
@@ -1301,48 +1376,48 @@ model NotificationPreference {
 }
 
 model Message {
-  id            String       @id @default(uuid()) @db.Char(36)
-  listId        String       @map("list_id") @db.Char(36)
-  giftId        String?      @map("gift_id") @db.Char(36)
-  reservationId String?      @map("reservation_id") @db.Char(36)
-  authorUserId  String?      @map("author_user_id") @db.Char(36)
-  guestName     String?      @map("guest_name") @db.VarChar(120)
-  text          String?      @db.Text
-  approvedForMemory Boolean  @default(false) @map("approved_for_memory")
-  approvedById  String?      @map("approved_by_id") @db.Char(36)
-  approvedAt    DateTime?    @map("approved_at") @db.DateTime(3)
-  hiddenAt      DateTime?    @map("hidden_at") @db.DateTime(3)
-  createdAt     DateTime     @default(now()) @map("created_at") @db.DateTime(3)
-  list          GiftList     @relation(fields: [listId], references: [id], onDelete: Cascade)
-  gift          Gift?        @relation(fields: [giftId], references: [id], onDelete: SetNull)
-  reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
-  author        User?        @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
-  approvedBy    User?        @relation("MessageApprover", fields: [approvedById], references: [id], onDelete: SetNull)
-  media         MediaAsset[]
+  id                String       @id @default(uuid()) @db.Char(36)
+  listId            String       @map("list_id") @db.Char(36)
+  giftId            String?      @map("gift_id") @db.Char(36)
+  reservationId     String?      @map("reservation_id") @db.Char(36)
+  authorUserId      String?      @map("author_user_id") @db.Char(36)
+  guestName         String?      @map("guest_name") @db.VarChar(120)
+  text              String?      @db.Text
+  approvedForMemory Boolean      @default(false) @map("approved_for_memory")
+  approvedById      String?      @map("approved_by_id") @db.Char(36)
+  approvedAt        DateTime?    @map("approved_at") @db.DateTime(3)
+  hiddenAt          DateTime?    @map("hidden_at") @db.DateTime(3)
+  createdAt         DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  list              GiftList     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  gift              Gift?        @relation(fields: [giftId], references: [id], onDelete: SetNull)
+  reservation       Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  author            User?        @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+  approvedBy        User?        @relation("MessageApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  media             MediaAsset[]
 
   @@index([listId, createdAt])
   @@map("messages")
 }
 
 model MediaAsset {
-  id           String    @id @default(uuid()) @db.Char(36)
-  messageId    String?   @map("message_id") @db.Char(36)
-  uploadedById String?   @map("uploaded_by_id") @db.Char(36)
-  kind         MediaKind
-  storageKey   String    @unique @map("storage_key") @db.VarChar(512)
-  mimeType     String    @map("mime_type") @db.VarChar(120)
-  sizeBytes    BigInt    @map("size_bytes")
-  checksum     String    @db.Char(64)
-  scanStatus   String    @default("PENDING") @map("scan_status") @db.VarChar(32)
-  transcodeStatus String  @default("NOT_REQUIRED") @map("transcode_status") @db.VarChar(32)
-  transcodedStorageKey String? @map("transcoded_storage_key") @db.VarChar(512)
-  durationSeconds Int?   @map("duration_seconds") @db.UnsignedSmallInt
-  retentionUntil DateTime? @map("retention_until") @db.DateTime(3)
-  metadata     Json?
-  deletedAt    DateTime? @map("deleted_at") @db.DateTime(3)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
-  message      Message?  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  uploadedBy   User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  id                   String    @id @default(uuid()) @db.Char(36)
+  messageId            String?   @map("message_id") @db.Char(36)
+  uploadedById         String?   @map("uploaded_by_id") @db.Char(36)
+  kind                 MediaKind
+  storageKey           String    @unique @map("storage_key") @db.VarChar(512)
+  mimeType             String    @map("mime_type") @db.VarChar(120)
+  sizeBytes            BigInt    @map("size_bytes")
+  checksum             String    @db.Char(64)
+  scanStatus           String    @default("PENDING") @map("scan_status") @db.VarChar(32)
+  transcodeStatus      String    @default("NOT_REQUIRED") @map("transcode_status") @db.VarChar(32)
+  transcodedStorageKey String?   @map("transcoded_storage_key") @db.VarChar(512)
+  durationSeconds      Int?      @map("duration_seconds") @db.UnsignedSmallInt
+  retentionUntil       DateTime? @map("retention_until") @db.DateTime(3)
+  metadata             Json?
+  deletedAt            DateTime? @map("deleted_at") @db.DateTime(3)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  message              Message?  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploadedBy           User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
 
   @@index([messageId])
   @@index([scanStatus, createdAt])
@@ -1350,24 +1425,24 @@ model MediaAsset {
 }
 
 model ThankYou {
-  id            String       @id @default(uuid()) @db.Char(36)
-  listId        String       @map("list_id") @db.Char(36)
-  giftId        String?      @map("gift_id") @db.Char(36)
-  reservationId String?      @unique @map("reservation_id") @db.Char(36)
-  userId        String       @map("user_id") @db.Char(36)
-  receivedAt    DateTime?    @map("received_at") @db.DateTime(3)
-  thankedAt     DateTime?    @map("thanked_at") @db.DateTime(3)
-  draft         String?      @db.Text
-  draftApprovedAt DateTime?  @map("draft_approved_at") @db.DateTime(3)
-  cardTheme     String?      @map("card_theme") @db.VarChar(64)
-  cardMessage   String?      @map("card_message") @db.Text
-  cardCreatedAt DateTime?    @map("card_created_at") @db.DateTime(3)
-  createdAt     DateTime     @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt     DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
-  list          GiftList     @relation(fields: [listId], references: [id], onDelete: Cascade)
-  gift          Gift?        @relation(fields: [giftId], references: [id], onDelete: SetNull)
-  reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String       @id @default(uuid()) @db.Char(36)
+  listId          String       @map("list_id") @db.Char(36)
+  giftId          String?      @map("gift_id") @db.Char(36)
+  reservationId   String?      @unique @map("reservation_id") @db.Char(36)
+  userId          String       @map("user_id") @db.Char(36)
+  receivedAt      DateTime?    @map("received_at") @db.DateTime(3)
+  thankedAt       DateTime?    @map("thanked_at") @db.DateTime(3)
+  draft           String?      @db.Text
+  draftApprovedAt DateTime?    @map("draft_approved_at") @db.DateTime(3)
+  cardTheme       String?      @map("card_theme") @db.VarChar(64)
+  cardMessage     String?      @map("card_message") @db.Text
+  cardCreatedAt   DateTime?    @map("card_created_at") @db.DateTime(3)
+  createdAt       DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+  list            GiftList     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  gift            Gift?        @relation(fields: [giftId], references: [id], onDelete: SetNull)
+  reservation     Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([listId, thankedAt])
   @@map("thank_yous")
@@ -1383,7 +1458,7 @@ model SecondHandOffer {
   comment             String?               @db.VarChar(2000)
   photoStorageKey     String?               @map("photo_storage_key") @db.VarChar(512)
   photoMimeType       String?               @map("photo_mime_type") @db.VarChar(120)
-  photoSizeBytes      BigInt?                @map("photo_size_bytes")
+  photoSizeBytes      BigInt?               @map("photo_size_bytes")
   photoScanStatus     String?               @map("photo_scan_status") @db.VarChar(32)
   status              SecondHandOfferStatus @default(PENDING)
   managementTokenHash String                @unique @map("management_token_hash") @db.Char(64)
@@ -1457,16 +1532,16 @@ model Report {
 }
 
 model PrivacyConsent {
-  id          String   @id @default(uuid()) @db.Char(36)
-  userId      String?  @map("user_id") @db.Char(36)
-  subjectHash String   @map("subject_hash") @db.Char(64)
-  purpose     String   @db.VarChar(64)
-  policyVersion String @map("policy_version") @db.VarChar(32)
-  granted     Boolean
-  source      String   @db.VarChar(32)
-  evidence    Json?
-  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id            String   @id @default(uuid()) @db.Char(36)
+  userId        String?  @map("user_id") @db.Char(36)
+  subjectHash   String   @map("subject_hash") @db.Char(64)
+  purpose       String   @db.VarChar(64)
+  policyVersion String   @map("policy_version") @db.VarChar(32)
+  granted       Boolean
+  source        String   @db.VarChar(32)
+  evidence      Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([subjectHash, purpose, createdAt])
   @@index([userId, purpose])
@@ -1496,20 +1571,20 @@ model DataSubjectRequest {
 }
 
 model RiskReview {
-  id           String   @id @default(uuid()) @db.Char(36)
-  subjectUserId String? @map("subject_user_id") @db.Char(36)
-  targetType   String   @map("target_type") @db.VarChar(64)
-  targetId     String?  @map("target_id") @db.Char(36)
-  category     String   @db.VarChar(64)
-  score        Int      @db.UnsignedTinyInt
-  signals      Json
-  status       String   @default("OPEN") @db.VarChar(32)
-  reviewedById String?  @map("reviewed_by_id") @db.Char(36)
-  resolution   String?  @db.VarChar(1000)
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  reviewedAt   DateTime? @map("reviewed_at") @db.DateTime(3)
-  subjectUser  User?    @relation("RiskSubject", fields: [subjectUserId], references: [id], onDelete: SetNull)
-  reviewedBy   User?    @relation("RiskReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  id            String    @id @default(uuid()) @db.Char(36)
+  subjectUserId String?   @map("subject_user_id") @db.Char(36)
+  targetType    String    @map("target_type") @db.VarChar(64)
+  targetId      String?   @map("target_id") @db.Char(36)
+  category      String    @db.VarChar(64)
+  score         Int       @db.UnsignedTinyInt
+  signals       Json
+  status        String    @default("OPEN") @db.VarChar(32)
+  reviewedById  String?   @map("reviewed_by_id") @db.Char(36)
+  resolution    String?   @db.VarChar(1000)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  reviewedAt    DateTime? @map("reviewed_at") @db.DateTime(3)
+  subjectUser   User?     @relation("RiskSubject", fields: [subjectUserId], references: [id], onDelete: SetNull)
+  reviewedBy    User?     @relation("RiskReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([status, score, createdAt])
   @@index([targetType, targetId])
@@ -1517,32 +1592,32 @@ model RiskReview {
 }
 
 model SecurityIncident {
-  id             String   @id @default(uuid()) @db.Char(36)
-  severity       String   @db.VarChar(32)
-  status         String   @default("OPEN") @db.VarChar(32)
-  detectedAt     DateTime @map("detected_at") @db.DateTime(3)
-  summary        String   @db.VarChar(500)
-  personalData   Boolean  @default(false) @map("personal_data")
+  id             String    @id @default(uuid()) @db.Char(36)
+  severity       String    @db.VarChar(32)
+  status         String    @default("OPEN") @db.VarChar(32)
+  detectedAt     DateTime  @map("detected_at") @db.DateTime(3)
+  summary        String    @db.VarChar(500)
+  personalData   Boolean   @default(false) @map("personal_data")
   authorityDueAt DateTime? @map("authority_due_at") @db.DateTime(3)
   resolvedAt     DateTime? @map("resolved_at") @db.DateTime(3)
   metadata       Json?
-  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(3)
 
   @@index([status, severity, detectedAt])
   @@map("security_incidents")
 }
 
 model DataProcessor {
-  id                String   @id @default(uuid()) @db.Char(36)
-  name              String   @db.VarChar(180)
-  purpose           String   @db.VarChar(500)
-  dataCategories    Json     @map("data_categories")
-  region            String   @db.VarChar(64)
-  agreementReference String? @map("agreement_reference") @db.VarChar(255)
-  active            Boolean  @default(true)
-  reviewedAt        DateTime? @map("reviewed_at") @db.DateTime(3)
-  createdAt         DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  id                 String    @id @default(uuid()) @db.Char(36)
+  name               String    @db.VarChar(180)
+  purpose            String    @db.VarChar(500)
+  dataCategories     Json      @map("data_categories")
+  region             String    @db.VarChar(64)
+  agreementReference String?   @map("agreement_reference") @db.VarChar(255)
+  active             Boolean   @default(true)
+  reviewedAt         DateTime? @map("reviewed_at") @db.DateTime(3)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
 
   @@index([active, reviewedAt])
   @@map("data_processors")

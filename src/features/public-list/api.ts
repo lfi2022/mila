@@ -52,6 +52,7 @@ type PublicListPayload = {
     fundedAmountMinor: string;
     contributionTargetMinor: string | null;
     isReserved: boolean;
+    imageUrl: string;
   }>;
   totals: { items: number; taken: number };
 };
@@ -125,7 +126,7 @@ export async function getPublicList(slug: string, wrongCode = false): Promise<Pu
         store_name: null,
         price: gift.unitPriceMinor == null ? null : Number(gift.unitPriceMinor) / 100,
         currency: gift.currency,
-        image_url: null,
+        image_url: gift.imageUrl,
         quantity: gift.quantity,
         reserved_qty: gift.reservedQuantity,
         kind: gift.kind,

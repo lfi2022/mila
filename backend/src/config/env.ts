@@ -151,6 +151,17 @@ const envSchema = z
     PRODUCT_FETCH_TIMEOUT_MS: z.coerce.number().int().min(500).max(30_000).default(8_000),
     PRODUCT_FETCH_MAX_BYTES: z.coerce.number().int().min(1_024).max(2_097_152).default(524_288),
     PRODUCT_FETCH_MAX_REDIRECTS: z.coerce.number().int().min(0).max(5).default(3),
+    REMOTE_IMAGE_TIMEOUT_MS: z.coerce.number().int().min(500).max(30_000).default(8_000),
+    MAX_REMOTE_IMAGE_BYTES: z.coerce.number().int().min(1_024).max(20_971_520).default(5_242_880),
+    REMOTE_IMAGE_MAX_REDIRECTS: z.coerce.number().int().min(0).max(5).default(2),
+    MAX_IMAGE_PIXELS: z.coerce.number().int().min(10_000).max(100_000_000).default(25_000_000),
+    ALLOWED_IMAGE_MIME_TYPES: z.string().default("image/jpeg,image/png,image/webp,image/avif"),
+    PRODUCT_MEDIA_CACHE_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(300)
+      .max(2_592_000)
+      .default(86_400),
     STORAGE_ENDPOINT: z.string().url(),
     STORAGE_PUBLIC_ENDPOINT: z.string().url(),
     STORAGE_REGION: z.string().trim().min(1).default("us-east-1"),
@@ -185,7 +196,7 @@ const envSchema = z
       .string()
       .trim()
       .min(1)
-      .default("notifications,product-refresh,media-scan,cleanup"),
+      .default("notifications,product-refresh,product-media,media-scan,cleanup"),
   })
   .superRefine((env, context) => {
     if (env.APP_ENV !== "development" && !env.APP_URL.startsWith("https://")) {

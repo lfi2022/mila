@@ -443,10 +443,12 @@ export class MemoriesService {
           images: {
             where: {
               status: "ACTIVE",
-              usagePolicy: { notIn: ["MANUAL_REVIEW_REQUIRED", "DO_NOT_DISPLAY"] },
+              usageStatus: {
+                in: ["AUTHORIZED", "AUTHORIZED_CACHE", "AUTHORIZED_REMOTE_ONLY", "USER_DECLARED"],
+              },
             },
             take: 1,
-            select: { sourceUrl: true },
+            select: { originalUrl: true, publicUrl: true },
           },
         },
         orderBy: { position: "asc" },
@@ -572,7 +574,7 @@ export class MemoriesService {
       .filter((item) => selected.has(`GIFT:${item.id}`))
       .map(
         (item) =>
-          `<article><h2>${escapeHtml(item.title)}</h2>${item.images[0]?.sourceUrl ? `<img src="${escapeHtml(item.images[0].sourceUrl!)}" alt="">` : ""}<p>${escapeHtml(item.description ?? "Un cadeau reçu avec affection.")}</p></article>`,
+          `<article><h2>${escapeHtml(item.title)}</h2>${item.images[0]?.publicUrl || item.images[0]?.originalUrl ? `<img src="${escapeHtml((item.images[0]?.publicUrl ?? item.images[0]?.originalUrl)!)}" alt="">` : ""}<p>${escapeHtml(item.description ?? "Un cadeau reçu avec affection.")}</p></article>`,
       );
     const sections = [...messageSections, ...giftSections].join("\n");
     await this.prisma.memoryBook.update({

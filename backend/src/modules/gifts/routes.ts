@@ -44,9 +44,22 @@ const giftInput = z.object({
   image: z
     .object({
       url: z.string().max(2048),
-      source: z.enum(["OFFICIAL_API", "AFFILIATE_FEED", "REMOTE"]),
+      source: z.enum(["OFFICIAL_API", "AFFILIATE_FEED", "REMOTE_UNVERIFIED"]),
     })
     .nullable()
+    .optional(),
+  genericImageCategory: z
+    .enum([
+      "STROLLER",
+      "PLUSH_RABBIT",
+      "BABY_BOUNCER",
+      "BABY_CRIB",
+      "CLOTHING",
+      "FEEDING",
+      "BATH",
+      "TOY",
+      "OTHER",
+    ])
     .optional(),
   identity: z
     .object({
@@ -120,6 +133,23 @@ export function giftRoutes(
       const { listId, giftId } = giftParams.parse(request.params);
       await gifts.remove(current.id, listId, giftId);
       return reply.status(204).send();
+    });
+    app.post("/lists/:listId/gifts/:giftId/media", async (request, reply) => {
+      csrf(request);
+      const current = await user(request);
+      const { listId, giftId } = giftParams.parse(request.params);
+      const input = z
+        .object({ storedObjectKey: z.string().min(10).max(1024), rightsConfirmed: z.literal(true) })
+        .parse(request.body);
+      return reply.status(201).send({
+        media: await gifts.attachUserMedia(
+          current.id,
+          listId,
+          giftId,
+          input.storedObjectKey,
+          input.rightsConfirmed,
+        ),
+      });
     });
     app.put("/lists/:listId/gifts/order", async (request, reply) => {
       csrf(request);

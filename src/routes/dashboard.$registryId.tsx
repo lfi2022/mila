@@ -28,6 +28,8 @@ import { listApi, type ListPatch } from "@/features/lists/api";
 import { giftApi } from "@/features/gifts/api";
 import { reservationApi } from "@/features/reservations/api";
 import { previewProduct } from "@/features/products/api";
+import { uploadProductImage } from "@/features/storage/api";
+import { Checkbox } from "@/components/ui/checkbox";
 import { queryKeys } from "@/app/query";
 
 export const Route = createFileRoute("/dashboard/$registryId")({
@@ -119,6 +121,8 @@ function RegistryDetail() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [futureTitle, setFutureTitle] = useState("");
   const [futureDate, setFutureDate] = useState("");
+  const [productImage, setProductImage] = useState<File | null>(null);
+  const [productImageRights, setProductImageRights] = useState(false);
   const registry = useQuery({
     queryKey: queryKeys.list(registryId),
     queryFn: async () => {
@@ -254,7 +258,7 @@ function RegistryDetail() {
     mutationFn: async () => {
       const parsed = itemSchema.safeParse(item);
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Champs invalides");
-      await giftApi.create(registryId, {
+      const gift = await giftApi.create(registryId, {
         title: parsed.data.title,
         url: parsed.data.url || null,
         imageUrl: parsed.data.imageUrl || null,
@@ -265,9 +269,18 @@ function RegistryDetail() {
         description: parsed.data.description || null,
         secondHandPolicy: parsed.data.secondHandPolicy,
       });
+      if (productImage) {
+        if (!productImageRights) {
+          throw new Error("Confirmez que vous avez le droit d’utiliser cette image.");
+        }
+        const key = await uploadProductImage(productImage);
+        await giftApi.attachUserMedia(registryId, gift.id, key);
+      }
     },
     onSuccess: () => {
       setItem(emptyItem);
+      setProductImage(null);
+      setProductImageRights(false);
       if ((items.data?.length ?? 0) === 0) track("first_gift_added");
       toast.success("Cadeau ajouté");
       refresh();
@@ -434,13 +447,27 @@ function RegistryDetail() {
                   Collez simplement le lien d'un produit. Mila s'occupe du reste.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Lorsque c'est possible, Mila récupère automatiquement le nom, l'image et le prix
-                  du produit. Vous pouvez ensuite tout modifier.
+                  Mila récupère les informations descriptives. Une image marchande n’est affichée
+                  que si ses droits sont vérifiés ; sinon Mila utilise une illustration générique.
                 </p>
               </div>
-              {item.imageUrl ? (
-                <img src={item.imageUrl} alt="" className="h-32 w-32 rounded-lg object-cover" />
-              ) : null}
+              <div className="space-y-2 rounded-lg border p-3">
+                <Label htmlFor="item-image">Ma propre image (facultatif)</Label>
+                <Input
+                  id="item-image"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) => setProductImage(event.target.files?.[0] ?? null)}
+                />
+                <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={productImageRights}
+                    onCheckedChange={(checked) => setProductImageRights(checked === true)}
+                  />
+                  Je confirme être l’auteur de cette image ou disposer des droits nécessaires pour
+                  son affichage sur Mila. Cette case n’est jamais pré-cochée.
+                </label>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="item-title">Nom du cadeau</Label>
                 <Input
@@ -519,13 +546,20 @@ function RegistryDetail() {
                     key={gift.id}
                     className="surface-card flex items-start justify-between gap-4 p-4"
                   >
-                    <div>
-                      <p className="font-medium">{gift.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {gift.store_name ?? "Magasin non précisé"}
-                        {gift.price ? ` · ${gift.price} €` : ""} · {gift.reserved_qty}/
-                        {gift.quantity} réservé
-                      </p>
+                    <div className="flex gap-3">
+                      <img
+                        src={gift.imageUrl}
+                        alt=""
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
+                      <div>
+                        <p className="font-medium">{gift.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {gift.store_name ?? "Magasin non précisé"}
+                          {gift.price ? ` · ${gift.price} €` : ""} · {gift.reserved_qty}/
+                          {gift.quantity} réservé
+                        </p>
+                      </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <Badge variant={fullyReserved ? "default" : "secondary"}>

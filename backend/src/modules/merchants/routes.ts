@@ -40,6 +40,21 @@ const merchantInput = z.object({
   refreshMinMinutes: z.number().int().min(60).max(10_080).default(1_440),
   connectorConfig: z.record(z.unknown()).nullable().optional(),
 });
+const mediaPolicyInput = z.object({
+  allowMetadata: z.boolean().default(true),
+  allowRemoteDisplay: z.boolean().default(false),
+  allowCaching: z.boolean().default(false),
+  allowLocalStorage: z.boolean().default(false),
+  allowTransformation: z.boolean().default(false),
+  allowCommercialUse: z.boolean().default(false),
+  attributionRequired: z.boolean().default(false),
+  attributionTemplate: z.string().trim().max(500).nullable().optional(),
+  licenseSourceUrl: z.string().url().max(2048).nullable().optional(),
+  termsSourceUrl: z.string().url().max(2048).nullable().optional(),
+  reviewAfter: z.coerce.date().nullable().optional(),
+  status: z.enum(["REVIEW_REQUIRED", "VERIFIED", "SUSPENDED"]),
+  notes: z.string().trim().max(2000).nullable().optional(),
+});
 
 export function merchantRoutes(
   prisma: PrismaClient,
@@ -85,7 +100,7 @@ export function merchantRoutes(
       await staff(request);
       return {
         merchants: await prisma.merchant.findMany({
-          include: { domains: true },
+          include: { domains: true, mediaPolicy: true },
           orderBy: { name: "asc" },
         }),
       };
@@ -133,6 +148,116 @@ export function merchantRoutes(
         });
         return { merchant };
       });
+    });
+    app.put("/admin/merchants/:merchantId/media-policy", async (request) => {
+      csrf(request);
+      const actor = await administrator(request);
+      const { merchantId } = z.object({ merchantId: z.string().uuid() }).parse(request.params);
+      const input = mediaPolicyInput.parse(request.body);
+      if (input.status === "VERIFIED" && !input.licenseSourceUrl && !input.termsSourceUrl) {
+        throw new AppError(
+          400,
+          "MEDIA_RIGHTS_EVIDENCE_REQUIRED",
+          "Verified rights require a licence or terms URL",
+        );
+      }
+      if (input.allowCaching && !input.allowLocalStorage) {
+        throw new AppError(
+          400,
+          "MEDIA_POLICY_INVALID",
+          "Caching requires local storage permission",
+        );
+      }
+      return prisma.$transaction(async (transaction) => {
+        const before = await transaction.merchantMediaPolicy.findUnique({ where: { merchantId } });
+        const policy = await transaction.merchantMediaPolicy.upsert({
+          where: { merchantId },
+          create: {
+            merchantId,
+            ...input,
+            verifiedAt: input.status === "VERIFIED" ? new Date() : null,
+            verifiedBy: actor.id,
+          },
+          update: {
+            ...input,
+            verifiedAt: input.status === "VERIFIED" ? new Date() : null,
+            verifiedBy: actor.id,
+          },
+        });
+        await transaction.adminAuditLog.create({
+          data: {
+            actorId: actor.id,
+            action: "merchant.media_policy.update",
+            targetType: "merchant",
+            targetId: merchantId,
+            reason: "Politique média vérifiée depuis l’administration",
+            before: before ? JSON.parse(JSON.stringify(before)) : undefined,
+            after: JSON.parse(JSON.stringify(policy)),
+            requestId: request.id,
+          },
+        });
+        return { policy };
+      });
+    });
+    app.get("/admin/media", async (request) => {
+      await staff(request);
+      return {
+        media: await prisma.productMedia.findMany({
+          take: 200,
+          orderBy: { createdAt: "desc" },
+          include: {
+            gift: { select: { title: true, listId: true } },
+            merchant: { select: { name: true } },
+            claims: true,
+          },
+        }),
+      };
+    });
+    app.post("/admin/media/:mediaId/block", async (request) => {
+      csrf(request);
+      const actor = await staff(request);
+      const { mediaId } = z.object({ mediaId: z.string().uuid() }).parse(request.params);
+      const { reason } = z
+        .object({ reason: z.string().trim().min(3).max(1000) })
+        .parse(request.body);
+      return prisma.$transaction(async (transaction) => {
+        const media = await transaction.productMedia.update({
+          where: { id: mediaId },
+          data: { status: "BLOCKED", usageStatus: "BLOCKED", sourceType: "BLOCKED" },
+        });
+        await transaction.adminAuditLog.create({
+          data: {
+            actorId: actor.id,
+            action: "media.block",
+            targetType: "product_media",
+            targetId: mediaId,
+            reason,
+            requestId: request.id,
+          },
+        });
+        return { media };
+      });
+    });
+    app.post("/admin/media/:mediaId/claims", async (request, reply) => {
+      csrf(request);
+      await staff(request);
+      const { mediaId } = z.object({ mediaId: z.string().uuid() }).parse(request.params);
+      const input = z
+        .object({
+          claimant: z.string().trim().min(2).max(180),
+          contact: z.string().trim().min(3).max(255),
+          reason: z.string().trim().min(3).max(2000),
+        })
+        .parse(request.body);
+      const claim = await prisma.$transaction(async (transaction) => {
+        const created = await transaction.mediaClaim.create({ data: { mediaId, ...input } });
+        await transaction.productMedia.update({
+          where: { id: mediaId },
+          data: { status: "BLOCKED", usageStatus: "BLOCKED", sourceType: "BLOCKED" },
+        });
+        return created;
+      });
+      return reply.status(201).send({ claim });
     });
   };
 }

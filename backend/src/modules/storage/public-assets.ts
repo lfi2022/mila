@@ -47,9 +47,10 @@ async function isVisible(
     );
   }
   return Boolean(
-    await prisma.giftImage.findFirst({
+    await prisma.productMedia.findFirst({
       where: {
-        storageKey: key,
+        storedObjectKey: key,
+        usageStatus: { in: ["AUTHORIZED", "AUTHORIZED_CACHE", "USER_DECLARED"] },
         status: "ACTIVE",
         gift: {
           deletedAt: null,

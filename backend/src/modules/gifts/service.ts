@@ -8,9 +8,16 @@ import type {
   GiftStatus,
   OfferPreference,
   SecondHandPolicy,
+  GenericImageCategory,
 } from "../../generated/prisma/enums.js";
 import { ListsService } from "../lists/service.js";
 import type { ProductRefreshQueue } from "../products/refresh-queue.js";
+import {
+  decideMediaUsage,
+  detectGenericImageCategory,
+  selectProductImage,
+} from "../product-media/policy.js";
+import type { StorageService } from "../../common/storage/service.js";
 
 export type GiftInput = {
   title: string;
@@ -27,7 +34,8 @@ export type GiftInput = {
   secondHandPolicy?: SecondHandPolicy;
   offerPreference?: OfferPreference;
   position?: number;
-  image?: { url: string; source: "OFFICIAL_API" | "AFFILIATE_FEED" | "REMOTE" } | null;
+  image?: { url: string; source: "OFFICIAL_API" | "AFFILIATE_FEED" | "REMOTE_UNVERIFIED" } | null;
+  genericImageCategory?: GenericImageCategory;
   identity?: {
     gtin?: string | null;
     ean?: string | null;
@@ -42,11 +50,12 @@ export class GiftsService {
     private readonly prisma: PrismaClient,
     private readonly lists: ListsService,
     private readonly refreshQueue?: ProductRefreshQueue,
+    private readonly storage?: StorageService,
   ) {}
 
   async list(userId: string, listId: string) {
     await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
-    return this.prisma.gift.findMany({
+    const gifts = await this.prisma.gift.findMany({
       where: { listId, deletedAt: null },
       include: {
         images: { where: { status: "ACTIVE" }, orderBy: { position: "asc" } },
@@ -55,6 +64,10 @@ export class GiftsService {
       },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     });
+    return gifts.map((gift) => ({
+      ...gift,
+      imageUrl: selectProductImage(gift.images, gift.genericImageCategory),
+    }));
   }
 
   async create(userId: string, listId: string, input: GiftInput) {
@@ -73,6 +86,9 @@ export class GiftsService {
           productIdentityId: identity?.id,
           publicToken: randomBytes(32).toString("hex"),
           ...giftData(input),
+          genericImageCategory:
+            input.genericImageCategory ??
+            detectGenericImageCategory(input.title, input.description),
           title: input.title.trim(),
           kind: input.kind,
           ...urls,
@@ -81,10 +97,10 @@ export class GiftsService {
             ? {
                 create: {
                   merchantId,
-                  sourceUrl: normalizeUrl(input.image.url).toString(),
+                  originalUrl: normalizeUrl(input.image.url, true).toString(),
                   sourceType: input.image.source,
-                  usagePolicy: usagePolicy(input.image.source),
-                  attributionRequired: input.image.source === "REMOTE",
+                  usageStatus: "REVIEW_REQUIRED",
+                  attributionRequired: false,
                 },
               }
             : undefined,
@@ -100,6 +116,40 @@ export class GiftsService {
       );
     }
     return gift;
+  }
+
+  async attachUserMedia(
+    userId: string,
+    listId: string,
+    giftId: string,
+    storedObjectKey: string,
+    rightsConfirmed: boolean,
+  ) {
+    await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
+    await this.requireGift(listId, giftId);
+    if (!rightsConfirmed) {
+      throw new AppError(400, "MEDIA_RIGHTS_REQUIRED", "Image rights must be explicitly confirmed");
+    }
+    if (!this.storage) throw new AppError(503, "STORAGE_UNAVAILABLE", "Storage is unavailable");
+    this.storage.assertOwnedKey(userId, storedObjectKey);
+    const scanStatus = await this.storage.uploadScanStatus("product-image", storedObjectKey);
+    return this.prisma.productMedia.create({
+      data: {
+        giftId,
+        storedObjectKey,
+        sourceType: "USER_UPLOADED",
+        usageStatus: decideMediaUsage("USER_UPLOADED").usageStatus,
+        copyrightOwner: "Utilisateur déclarant",
+        commercialUseAllowed: true,
+        remoteDisplayAllowed: false,
+        cacheAllowed: false,
+        transformationAllowed: false,
+        redistributionAllowed: false,
+        verifiedAt: new Date(),
+        verifiedBy: userId,
+        status: scanStatus === "clean" ? "ACTIVE" : "PENDING",
+      },
+    });
   }
 
   async update(userId: string, listId: string, giftId: string, input: Partial<GiftInput>) {
@@ -179,6 +229,9 @@ function giftData(input: Partial<GiftInput>) {
     ...(input.secondHandPolicy !== undefined ? { secondHandPolicy: input.secondHandPolicy } : {}),
     ...(input.offerPreference !== undefined ? { offerPreference: input.offerPreference } : {}),
     ...(input.position !== undefined ? { position: input.position } : {}),
+    ...(input.genericImageCategory !== undefined
+      ? { genericImageCategory: input.genericImageCategory }
+      : {}),
   };
 }
 function normalizeUrls(input: Partial<GiftInput>) {
@@ -231,11 +284,4 @@ async function controlledIdentity(
     if (existing) return existing;
   }
   return transaction.productIdentity.create({ data });
-}
-function usagePolicy(source: NonNullable<GiftInput["image"]>["source"]) {
-  return source === "OFFICIAL_API"
-    ? ("OFFICIAL_API" as const)
-    : source === "AFFILIATE_FEED"
-      ? ("AFFILIATE_FEED" as const)
-      : ("MANUAL_REVIEW_REQUIRED" as const);
 }

@@ -2,6 +2,7 @@ import argon2 from "argon2";
 import { createHmac, randomBytes } from "node:crypto";
 
 import { AppError } from "../../common/errors/app-error.js";
+import { selectProductImage } from "../product-media/policy.js";
 import type { AppConfig } from "../../config/env.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
 import type {
@@ -303,6 +304,18 @@ export class ListsService {
             reservedQuantity: true,
             fundedAmountMinor: true,
             contributionTargetMinor: true,
+            genericImageCategory: true,
+            images: {
+              where: { status: "ACTIVE" },
+              orderBy: { position: "asc" },
+              select: {
+                usageStatus: true,
+                status: true,
+                originalUrl: true,
+                publicUrl: true,
+                storedObjectKey: true,
+              },
+            },
           },
         },
       },
@@ -326,6 +339,7 @@ export class ListsService {
       reservedQuantity: gift.reservedQuantity,
       fundedAmountMinor: gift.fundedAmountMinor.toString(),
       contributionTargetMinor: gift.contributionTargetMinor?.toString() ?? null,
+      imageUrl: selectProductImage(gift.images, gift.genericImageCategory),
       isReserved:
         gift.reservedQuantity >= gift.quantity ||
         ["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status),

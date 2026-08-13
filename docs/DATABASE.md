@@ -1,5 +1,13 @@
 # Mila database operations
 
+## Médias produit
+
+`ProductMedia` (table historique `gift_images`) relie une image à un cadeau et, si connu, à un
+marchand. Il conserve source, statut d’usage, URL originale, clé MinIO, droits détaillés,
+attribution, vérification, durée de cache et réclamations. `MerchantMediaPolicy` porte les
+autorisations vérifiées par marchand ; son absence vaut refus. `MediaClaim` trace une réclamation et
+provoque le blocage du média. `Gift.genericImageCategory` sélectionne le repli Mila.
+
 MySQL 8 is the only application database target. It is remote in staging and production; Docker Compose must not silently create a production database. Prisma owns the versioned schema in `backend/prisma/schema.prisma` and migrations in `backend/prisma/migrations`.
 
 ## Accounts and network access

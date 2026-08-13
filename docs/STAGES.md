@@ -1,5 +1,18 @@
 # Mila Stages
 
+## Product Media Compliance — DONE
+
+- [x] Modèle `ProductMedia`, provenance, droits, cache et réclamations.
+- [x] `MerchantMediaPolicy` en refus par défaut avec preuve et révision.
+- [x] Fournisseurs Amazon, IKEA, Vertbaudet, Cybex, bol et repli générique.
+- [x] Pipeline worker sécurisé et configuration documentée.
+- [x] Bibliothèque Mila poussette, doudou lapin, transat et lit.
+- [x] Choix parent avec déclaration de droits non pré-cochée.
+- [x] Inventaire et blocage administratif immédiat.
+- [x] Tests de politique, fournisseurs, ports, adresses et dimensions.
+
+Les autorisations contractuelles propres aux marchands restent **À COMPLÉTER** et sont désactivées.
+
 ## Stage 00 — Audit
 
 Status: DONE

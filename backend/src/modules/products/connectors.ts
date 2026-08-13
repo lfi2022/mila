@@ -2,7 +2,7 @@ import type { AppConfig } from "../../config/env.js";
 import { extractProduct, type ProductPreview } from "./extractor.js";
 
 export type ConnectorTrustLevel = 0 | 1 | 2 | 3 | 4;
-export type ConnectorCapability = "metadata" | "price" | "availability" | "images" | "offers";
+export type ConnectorCapability = "metadata" | "price" | "availability" | "offers";
 
 export interface MerchantConnector {
   readonly id: string;
@@ -15,7 +15,8 @@ export interface MerchantConnector {
 export class StructuredMetadataConnector implements MerchantConnector {
   readonly id = "structured-metadata";
   readonly trustLevel = 1 as const;
-  readonly capabilities = ["metadata", "price", "availability", "images"] as const;
+  // Structured metadata may contain an image URL, but detection is not an image-use right.
+  readonly capabilities = ["metadata", "price", "availability"] as const;
   constructor(private readonly config: AppConfig) {}
   supports(url: URL): boolean {
     return ["https:", "http:"].includes(url.protocol);

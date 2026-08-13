@@ -58,7 +58,7 @@ type AuditEntry = {
   metadata: unknown;
   createdAt: string;
 };
-type Merchant = {
+export type Merchant = {
   id: string;
   name: string;
   logoKey: string | null;
@@ -70,6 +70,17 @@ type Merchant = {
   connectorType: string;
   connectorConfig: unknown;
   domains: Array<{ domain: string }>;
+  mediaPolicy: {
+    allowRemoteDisplay: boolean;
+    allowCaching: boolean;
+    allowLocalStorage: boolean;
+    allowTransformation: boolean;
+    allowCommercialUse: boolean;
+    attributionRequired: boolean;
+    licenseSourceUrl: string | null;
+    termsSourceUrl: string | null;
+    status: string;
+  } | null;
 };
 type MerchantInput = {
   id?: string;
@@ -329,3 +340,55 @@ export const adminTestAffiliateLink = async ({
     return { ok: false as const, reason: "URL invalide." };
   }
 };
+
+export type AdminProductMedia = {
+  id: string;
+  sourceType: string;
+  usageStatus: string;
+  status: string;
+  originalUrl: string | null;
+  storedObjectKey: string | null;
+  copyrightOwner: string | null;
+  licenseName: string | null;
+  verifiedAt: string | null;
+  reviewAfter: string | null;
+  gift: { title: string; listId: string };
+  merchant: { name: string } | null;
+  claims: Array<{ id: string; status: string }>;
+};
+
+export const adminListProductMedia = async () =>
+  (await apiRequest<{ media: AdminProductMedia[] }>("/admin/media")).media;
+
+export const adminBlockProductMedia = (mediaId: string, reason: string) =>
+  apiRequest(`/admin/media/${mediaId}/block`, {
+    method: "POST",
+    csrf: true,
+    body: JSON.stringify({ reason }),
+  });
+
+export const adminSaveMerchantMediaPolicy = (
+  merchantId: string,
+  input: {
+    allowRemoteDisplay: boolean;
+    allowCaching: boolean;
+    allowLocalStorage: boolean;
+    allowTransformation: boolean;
+    allowCommercialUse: boolean;
+    attributionRequired: boolean;
+    licenseSourceUrl: string | null;
+    termsSourceUrl: string | null;
+    status: "REVIEW_REQUIRED" | "VERIFIED" | "SUSPENDED";
+  },
+) =>
+  apiRequest(`/admin/merchants/${merchantId}/media-policy`, {
+    method: "PUT",
+    csrf: true,
+    body: JSON.stringify({
+      allowMetadata: true,
+      attributionTemplate: null,
+      reviewAfter: null,
+      notes: null,
+      ...input,
+    }),
+  });

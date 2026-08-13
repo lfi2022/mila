@@ -1,5 +1,15 @@
 # Mila API
 
+## Médias produit
+
+- `POST /lists/:listId/gifts/:giftId/media` associe un fichier déjà vérifié, avec
+  `rightsConfirmed: true` obligatoire.
+- `GET /admin/media` inventorie sources, usages, droits et réclamations.
+- `POST /admin/media/:mediaId/block` bloque immédiatement un média et journalise le motif.
+- `POST /admin/media/:mediaId/claims` crée une réclamation et bloque le média.
+- `PUT /admin/merchants/:merchantId/media-policy` enregistre une politique avec preuve obligatoire
+  pour le statut `VERIFIED`.
+
 The self-hosted HTTP API is versioned from its first release. The current base path is `/api/v1`; frontend code must consume it through the centralized API configuration rather than duplicating the version string.
 
 ## Bootstrap routes

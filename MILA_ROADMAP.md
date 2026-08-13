@@ -1,5 +1,15 @@
 # Mila --- Product & Business Roadmap
 
+## Stage Product Media Compliance — réalisé le 13 août 2026
+
+Le moteur image est implémenté en refus par défaut : aucune URL marchande détectée n’est affichée
+ou copiée sans autorisation explicite. Le modèle de provenance/droits, les politiques marchandes,
+les fournisseurs nommés, le pipeline asynchrone protégé contre SSRF et contenus hostiles, les
+visuels génériques Mila, la déclaration utilisateur, l’inventaire administratif et le retrait sont
+opérationnels et testés. Les détails et limites sont consignés dans `docs/product-media/` et
+`docs/assets/LICENSES.md`. Les contrats et droits propres aux marchands restent **À COMPLÉTER** et
+aucune capacité image correspondante n’est activée.
+
 > **Document vivant --- Roadmap produit, technique et business**
 >
 > Objectif : faire de **Mila** une plateforme de listes de naissance

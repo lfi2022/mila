@@ -46,6 +46,9 @@ import {
   adminSetPartnerCampaignActive,
   adminSetPartnerActive,
   adminUpdatePrivacyRequest,
+  adminListProductMedia,
+  adminBlockProductMedia,
+  adminSaveMerchantMediaPolicy,
   getAdminStats,
 } from "@/features/admin/api";
 
@@ -126,6 +129,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
     queryFn: adminListPrivacyRequests,
     enabled: isAdmin,
   });
+  const mediaQuery = useQuery({ queryKey: ["admin-media"], queryFn: adminListProductMedia });
   const [partnerForm, setPartnerForm] = useState({
     slug: "",
     name: "",
@@ -160,6 +164,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
       "admin-audit",
       "admin-partners",
       "admin-privacy",
+      "admin-media",
     ]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
@@ -257,6 +262,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
             <TabsTrigger value="lists">Listes</TabsTrigger>
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
             <TabsTrigger value="merchants">Marchands</TabsTrigger>
+            <TabsTrigger value="media">Médias</TabsTrigger>
             <TabsTrigger value="partners">Partenaires</TabsTrigger>
             <TabsTrigger value="rewards">Récompenses</TabsTrigger>
             <TabsTrigger value="payments">Paiements</TabsTrigger>
@@ -461,6 +467,70 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                 testLink={adminTestAffiliateLink}
               />
             ) : null}
+          </TabsContent>
+
+          <TabsContent value="media" className="mt-6">
+            <div className="mb-6 grid gap-4 lg:grid-cols-2">
+              {(merchantsQuery.data ?? []).map((merchant) => (
+                <MerchantMediaPolicyEditor
+                  key={merchant.id}
+                  merchant={merchant}
+                  onSaved={refresh}
+                />
+              ))}
+            </div>
+            <div className="surface-card overflow-x-auto p-6">
+              <h2 className="mb-4 text-lg">Conformité des images produit</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cadeau</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Usage</TableHead>
+                    <TableHead>Droits</TableHead>
+                    <TableHead>Contrôle / cache</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(mediaQuery.data ?? []).map((media) => (
+                    <TableRow key={media.id}>
+                      <TableCell>{media.gift.title}</TableCell>
+                      <TableCell>{media.merchant?.name ?? media.sourceType}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{media.usageStatus}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {media.copyrightOwner ?? media.licenseName ?? "Non documentés"}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {media.verifiedAt
+                          ? `Vérifié ${new Date(media.verifiedAt).toLocaleDateString("fr-BE")}`
+                          : "Non vérifié"}
+                        {media.storedObjectKey ? " · copie locale" : " · aucune copie"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={media.status === "BLOCKED"}
+                          onClick={async () => {
+                            await adminBlockProductMedia(
+                              media.id,
+                              "Blocage ou retrait confirmé par la modération",
+                            );
+                            toast.success("Image immédiatement bloquée");
+                            refresh();
+                          }}
+                        >
+                          Bloquer
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </TabsContent>
 
           <TabsContent value="rewards" className="mt-6">
@@ -1284,5 +1354,92 @@ function AffiliateTester({
       </Button>
       {result ? <p className="break-all rounded-lg bg-secondary/60 p-3 text-xs">{result}</p> : null}
     </div>
+  );
+}
+
+function MerchantMediaPolicyEditor({
+  merchant,
+  onSaved,
+}: {
+  merchant: {
+    id: string;
+    name: string;
+    mediaPolicy: {
+      allowRemoteDisplay: boolean;
+      allowCaching: boolean;
+      allowCommercialUse: boolean;
+      licenseSourceUrl: string | null;
+      termsSourceUrl: string | null;
+      status: string;
+    } | null;
+  };
+  onSaved: () => void;
+}) {
+  const current = merchant.mediaPolicy;
+  const [licenseUrl, setLicenseUrl] = useState(current?.licenseSourceUrl ?? "");
+  const [termsUrl, setTermsUrl] = useState(current?.termsSourceUrl ?? "");
+  const [remote, setRemote] = useState(current?.allowRemoteDisplay ?? false);
+  const [cache, setCache] = useState(current?.allowCaching ?? false);
+  const [commercial, setCommercial] = useState(current?.allowCommercialUse ?? false);
+  const [busy, setBusy] = useState(false);
+  return (
+    <section className="surface-card space-y-3 p-5">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-medium">{merchant.name}</h3>
+        <Badge variant={current?.status === "VERIFIED" ? "default" : "secondary"}>
+          {current?.status ?? "REVIEW_REQUIRED"}
+        </Badge>
+      </div>
+      <Input
+        value={licenseUrl}
+        onChange={(event) => setLicenseUrl(event.target.value)}
+        placeholder="URL de licence"
+      />
+      <Input
+        value={termsUrl}
+        onChange={(event) => setTermsUrl(event.target.value)}
+        placeholder="URL des conditions"
+      />
+      <label className="flex items-center justify-between text-sm">
+        Affichage distant <Switch checked={remote} onCheckedChange={setRemote} />
+      </label>
+      <label className="flex items-center justify-between text-sm">
+        Cache et stockage local <Switch checked={cache} onCheckedChange={setCache} />
+      </label>
+      <label className="flex items-center justify-between text-sm">
+        Usage commercial <Switch checked={commercial} onCheckedChange={setCommercial} />
+      </label>
+      <Button
+        size="sm"
+        disabled={busy || (!licenseUrl && !termsUrl)}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await adminSaveMerchantMediaPolicy(merchant.id, {
+              allowRemoteDisplay: remote,
+              allowCaching: cache,
+              allowLocalStorage: cache,
+              allowTransformation: false,
+              allowCommercialUse: commercial,
+              attributionRequired: false,
+              licenseSourceUrl: licenseUrl || null,
+              termsSourceUrl: termsUrl || null,
+              status: "VERIFIED",
+            });
+            toast.success("Politique média vérifiée");
+            onSaved();
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Enregistrement impossible");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        Vérifier la politique
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Tout droit non activé reste refusé. Le cache exige aussi le stockage local.
+      </p>
+    </section>
   );
 }

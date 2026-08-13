@@ -32,7 +32,7 @@ describe("GiftsService", () => {
       currency: "eur",
       unitPriceMinor: "12995",
       quantity: 1,
-      image: { url: "https://cdn.example/image.jpg", source: "REMOTE" },
+      image: { url: "https://cdn.example/image.jpg", source: "REMOTE_UNVERIFIED" },
       identity: { gtin: "1234567890123", brand: "Mila Test" },
     });
 
@@ -41,9 +41,9 @@ describe("GiftsService", () => {
     expect(data.url).toBe("https://shop.example/product");
     expect(data.unitPriceMinor).toBe(12_995n);
     expect(data.images.create).toMatchObject({
-      sourceType: "REMOTE",
-      usagePolicy: "MANUAL_REVIEW_REQUIRED",
-      attributionRequired: true,
+      sourceType: "REMOTE_UNVERIFIED",
+      usageStatus: "REVIEW_REQUIRED",
+      attributionRequired: false,
     });
     expect(queue.enqueue).toHaveBeenCalledWith(
       "gift-1",

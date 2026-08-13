@@ -1,5 +1,15 @@
 # Mila Implementation Plan
 
+## Stage — Product Media Compliance (terminé le 13 août 2026)
+
+Le moteur d’images produit applique un refus par défaut, sépare les métadonnées des droits médias,
+conserve la provenance et les preuves, fournit des politiques marchandes, cinq fournisseurs nommés
+et un fournisseur générique, protège les téléchargements distants et propose une bibliothèque
+générique Mila. Voir `docs/product-media/` et `docs/assets/LICENSES.md`.
+
+Restent hors de ce stage : négociation des contrats marchands, activation de leurs droits d’images,
+transformation d’images distantes et durée juridique de conservation des copies retirées.
+
 Source of truth: `MILA_ROADMAP.md` (found as `MILA_ROADMAP(5).md` during audit, then normalized to the required name).
 
 Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a secret, account, contract, infrastructure action, domain, or legal decision.

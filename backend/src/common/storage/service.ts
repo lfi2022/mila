@@ -15,6 +15,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { AppError } from "../errors/app-error.js";
 import type { AppConfig } from "../../config/env.js";
 import type { RedisService } from "../redis/client.js";
+import { readImageDimensions } from "../security/external-url.js";
 
 export type UploadPurpose =
   "product-image" | "list-cover" | "user-upload" | "media-message" | "export";
@@ -199,6 +200,22 @@ export class StorageService {
     );
   }
 
+  async storeRemoteProductImage(key: string, body: Buffer, contentType: string) {
+    if (!key.startsWith("remote/") || key.includes("..")) {
+      throw new AppError(400, "STORAGE_KEY_INVALID", "Remote media key is invalid");
+    }
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.config.STORAGE_BUCKET_PRODUCT_IMAGES,
+        Key: key,
+        Body: body,
+        ContentLength: body.length,
+        ContentType: contentType,
+        Metadata: { purpose: "product-image", scan: "clean", origin: "authorized-remote" },
+      }),
+    );
+  }
+
   async signedCleanDownload(purpose: UploadPurpose, key: string) {
     const policy = this.policies[purpose];
     const head = await this.client.send(new HeadObjectCommand({ Bucket: policy.bucket, Key: key }));
@@ -206,6 +223,13 @@ export class StorageService {
       throw new AppError(409, "MEDIA_SCAN_PENDING", "Media is unavailable until scanning succeeds");
     }
     return this.signedDownload(purpose, key);
+  }
+
+  async uploadScanStatus(purpose: UploadPurpose, key: string) {
+    const head = await this.client.send(
+      new HeadObjectCommand({ Bucket: this.policies[purpose].bucket, Key: key }),
+    );
+    return head.Metadata?.["scan"] ?? "pending";
   }
 
   async markScanStatus(bucket: string, key: string, status: "clean" | "infected") {
@@ -222,6 +246,39 @@ export class StorageService {
         Metadata: { ...head.Metadata, scan: status },
       }),
     );
+  }
+
+  async validateUploadedImage(bucket: string, key: string) {
+    const imageBuckets = new Set([
+      this.config.STORAGE_BUCKET_PRODUCT_IMAGES,
+      this.config.STORAGE_BUCKET_LIST_COVERS,
+    ]);
+    if (!imageBuckets.has(bucket)) {
+      throw new AppError(
+        503,
+        "MALWARE_SCANNER_REQUIRED",
+        "Non-image media requires a malware scanner",
+      );
+    }
+    const object = await this.client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    const body = object.Body
+      ? Buffer.from(await object.Body.transformToByteArray())
+      : Buffer.alloc(0);
+    const detected = await fileTypeFromBuffer(body);
+    if (
+      !detected ||
+      !/^image\/(jpeg|png|webp)$/.test(detected.mime) ||
+      detected.mime !== object.ContentType
+    ) {
+      await this.markScanStatus(bucket, key, "infected");
+      throw new AppError(415, "UPLOAD_SIGNATURE_MISMATCH", "Uploaded image signature is invalid");
+    }
+    const dimensions = readImageDimensions(body, detected.mime);
+    if (dimensions && dimensions.width * dimensions.height > this.config.MAX_IMAGE_PIXELS) {
+      await this.markScanStatus(bucket, key, "infected");
+      throw new AppError(413, "IMAGE_DIMENSIONS_TOO_LARGE", "Uploaded image dimensions are unsafe");
+    }
+    await this.markScanStatus(bucket, key, "clean");
   }
 
   async readObject(purpose: UploadPurpose, key: string, requireClean = false) {

@@ -6,8 +6,14 @@ import type { NotificationJob } from "../modules/notifications/queue.js";
 import type { NotificationQueue } from "../modules/notifications/queue.js";
 import { calculateRefreshHours } from "../modules/prices/scheduler.js";
 import { rankOffers } from "../modules/prices/service.js";
-import { extractProduct, type ProductPreview } from "../modules/products/extractor.js";
+import type { ProductPreview } from "../modules/products/extractor.js";
+import { createProductProviders, selectProductProvider } from "../modules/products/providers.js";
+import { decideMediaUsage } from "../modules/product-media/policy.js";
+import type { ProductMediaQueue } from "../modules/product-media/queue.js";
 import type { StreamJob, StreamProcessor } from "./stream-worker.js";
+import { safeFetchImage } from "../common/security/external-url.js";
+import type { StorageService } from "../common/storage/service.js";
+import { createHash } from "node:crypto";
 
 export function notificationProcessor(
   config: AppConfig,
@@ -67,6 +73,7 @@ export function productRefreshProcessor(
   config: AppConfig,
   database: DatabaseService,
   notifications?: NotificationQueue,
+  mediaQueue?: ProductMediaQueue,
 ): StreamProcessor {
   return async ({ values }) => {
     const giftId = required(values, "giftId");
@@ -74,7 +81,7 @@ export function productRefreshProcessor(
       where: { id: giftId, deletedAt: null, url: { not: null } },
       include: {
         productIdentity: true,
-        merchant: true,
+        merchant: { include: { mediaPolicy: true } },
         snapshots: { orderBy: { checkedAt: "desc" }, take: 6 },
         offers: { include: { merchant: true } },
         list: {
@@ -86,7 +93,10 @@ export function productRefreshProcessor(
     const kinds = JSON.parse(values["kinds"] ?? "[]") as string[];
     const now = new Date();
     try {
-      const product = await extractProduct(gift.url, config);
+      const target = new URL(gift.url);
+      const provider = selectProductProvider(target, createProductProviders(config));
+      if (!provider) throw new Error("No product provider supports this URL");
+      const product = await provider.preview(target);
       const previous = gift.snapshots[0];
       const volatilityBps = priceVolatilityBps(
         gift.snapshots.flatMap((snapshot) =>
@@ -105,6 +115,45 @@ export function productRefreshProcessor(
         maxHours: config.PRICE_REFRESH_MAX_HOURS,
         now,
       });
+      if (product.imageUrl) {
+        const sourceType = provider.capabilities.images
+          ? gift.merchant?.connectorType === "OFFICIAL_API"
+            ? ("OFFICIAL_API" as const)
+            : ("AFFILIATE_FEED" as const)
+          : ("REMOTE_UNVERIFIED" as const);
+        const decision = decideMediaUsage(sourceType, gift.merchant?.mediaPolicy ?? null);
+        const existing = await database.client.productMedia.findFirst({
+          where: { giftId: gift.id, originalUrl: product.imageUrl },
+        });
+        const media = existing
+          ? await database.client.productMedia.update({
+              where: { id: existing.id },
+              data: { usageStatus: decision.usageStatus, verifiedAt: new Date() },
+            })
+          : await database.client.productMedia.create({
+              data: {
+                giftId: gift.id,
+                merchantId: gift.merchantId,
+                originalUrl: product.imageUrl,
+                sourceType,
+                usageStatus: decision.usageStatus,
+                cacheAllowed: Boolean(gift.merchant?.mediaPolicy?.allowCaching),
+                remoteDisplayAllowed: Boolean(gift.merchant?.mediaPolicy?.allowRemoteDisplay),
+                transformationAllowed: Boolean(gift.merchant?.mediaPolicy?.allowTransformation),
+                commercialUseAllowed: Boolean(gift.merchant?.mediaPolicy?.allowCommercialUse),
+                termsUrl: gift.merchant?.mediaPolicy?.termsSourceUrl,
+                licenseUrl: gift.merchant?.mediaPolicy?.licenseSourceUrl,
+                attributionRequired: Boolean(gift.merchant?.mediaPolicy?.attributionRequired),
+                attributionText: gift.merchant?.mediaPolicy?.attributionTemplate,
+                verifiedAt: new Date(),
+              },
+            });
+        process.stdout.write(
+          `${JSON.stringify({ event: "product_media_detected", mediaId: media.id, provider: provider.id, decision: decision.reason })}\n`,
+        );
+        if (decision.cache && mediaQueue)
+          await mediaQueue.enqueue(media.id, "authorized-product-refresh");
+      }
       await database.client.$transaction(async (tx) => {
         await tx.gift.update({
           where: { id: gift.id },
@@ -495,11 +544,71 @@ export function cleanupProcessor(database: DatabaseService): StreamProcessor {
   };
 }
 
-export function mediaScanProcessor(): StreamProcessor {
+export function mediaScanProcessor(
+  storage?: StorageService,
+  database?: DatabaseService,
+): StreamProcessor {
   return async ({ values }) => {
-    required(values, "bucket");
-    required(values, "key");
-    throw new Error("Malware scanner is not configured");
+    const bucket = required(values, "bucket");
+    const key = required(values, "key");
+    if (!storage) throw new Error("Media scanner is not configured");
+    await storage.validateUploadedImage(bucket, key);
+    if (database) {
+      await database.client.productMedia.updateMany({
+        where: { storedObjectKey: key, status: "PENDING" },
+        data: { status: "ACTIVE" },
+      });
+    }
+    process.stdout.write(
+      `${JSON.stringify({ event: "uploaded_image_validated", bucket, keyHash: createHash("sha256").update(key).digest("hex") })}\n`,
+    );
+  };
+}
+
+export function productMediaProcessor(
+  config: AppConfig,
+  database: DatabaseService,
+  storage: StorageService,
+): StreamProcessor {
+  return async ({ values }) => {
+    const mediaId = required(values, "mediaId");
+    const media = await database.client.productMedia.findUnique({ where: { id: mediaId } });
+    if (
+      !media?.originalUrl ||
+      media.status !== "ACTIVE" ||
+      media.usageStatus !== "AUTHORIZED_CACHE" ||
+      !media.cacheAllowed
+    ) {
+      process.stdout.write(
+        `${JSON.stringify({ event: "product_media_fetch_skipped", mediaId, reason: "not-authorized" })}\n`,
+      );
+      return;
+    }
+    try {
+      const fetched = await safeFetchImage(media.originalUrl, config);
+      const extension =
+        fetched.contentType === "image/jpeg" ? "jpg" : fetched.contentType.split("/")[1]!;
+      const key = `remote/${createHash("sha256").update(fetched.body).digest("hex")}.${extension}`;
+      await storage.storeRemoteProductImage(key, fetched.body, fetched.contentType);
+      await database.client.productMedia.update({
+        where: { id: mediaId },
+        data: {
+          storedObjectKey: key,
+          fetchedAt: new Date(),
+          expiresAt: new Date(Date.now() + config.PRODUCT_MEDIA_CACHE_TTL_SECONDS * 1000),
+          etag: fetched.etag,
+          lastModified: fetched.lastModified,
+        },
+      });
+      process.stdout.write(
+        `${JSON.stringify({ event: "product_media_fetched", mediaId, contentType: fetched.contentType, bytes: fetched.body.length })}\n`,
+      );
+    } catch (error) {
+      process.stderr.write(
+        `${JSON.stringify({ event: "product_media_fetch_failed", mediaId, errorType: error instanceof Error ? error.name : "UnknownError" })}\n`,
+      );
+      throw error;
+    }
   };
 }
 

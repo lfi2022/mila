@@ -11,7 +11,8 @@ export type Gift = {
   status: string;
   secondHandPolicy: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
   merchant: { name: string } | null;
-  images: Array<{ sourceUrl: string | null; storageKey: string | null }>;
+  imageUrl: string;
+  images: Array<{ originalUrl: string | null; storedObjectKey: string | null }>;
 };
 
 export const giftApi = {
@@ -42,11 +43,19 @@ export const giftApi = {
           unitPriceMinor: input.unitPriceMinor,
           kind: input.url ? "LINK" : "FREE_GIFT",
           secondHandPolicy: input.secondHandPolicy ?? "NEW_ONLY",
-          ...(input.imageUrl ? { image: { url: input.imageUrl, source: "REMOTE" } } : {}),
+          ...(input.imageUrl
+            ? { image: { url: input.imageUrl, source: "REMOTE_UNVERIFIED" } }
+            : {}),
         }),
       })
     ).gift;
   },
   remove: (listId: string, giftId: string) =>
     apiRequest<void>(`/lists/${listId}/gifts/${giftId}`, { method: "DELETE", csrf: true }),
+  attachUserMedia: (listId: string, giftId: string, storedObjectKey: string) =>
+    apiRequest(`/lists/${listId}/gifts/${giftId}/media`, {
+      method: "POST",
+      csrf: true,
+      body: JSON.stringify({ storedObjectKey, rightsConfirmed: true }),
+    }),
 };

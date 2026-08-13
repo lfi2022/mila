@@ -9,11 +9,14 @@ import {
   mediaScanProcessor,
   notificationProcessor,
   productRefreshProcessor,
+  productMediaProcessor,
 } from "./workers/handlers.js";
 import { StreamWorker, type StreamProcessor } from "./workers/stream-worker.js";
 import { ProductRefreshQueue } from "./modules/products/refresh-queue.js";
 import { NotificationQueue } from "./modules/notifications/queue.js";
 import { scheduleDueProductRefreshes } from "./modules/prices/scheduler.js";
+import { StorageService } from "./common/storage/service.js";
+import { ProductMediaQueue } from "./modules/product-media/queue.js";
 
 const config = loadConfig();
 const database = createDatabase(config);
@@ -21,16 +24,24 @@ const redis = createRedis(config);
 if (redis.client.status === "wait") await redis.client.connect();
 const productRefreshQueue = new ProductRefreshQueue(redis);
 const notificationQueue = new NotificationQueue(redis);
+const storage = new StorageService(config, redis);
+const productMediaQueue = new ProductMediaQueue(redis);
 
 const processors: Record<string, StreamProcessor> = {
   notifications: notificationProcessor(config, database),
   email: notificationProcessor(config, database),
-  "product-refresh": productRefreshProcessor(config, database, notificationQueue),
-  prices: productRefreshProcessor(config, database, notificationQueue),
+  "product-refresh": productRefreshProcessor(
+    config,
+    database,
+    notificationQueue,
+    productMediaQueue,
+  ),
+  prices: productRefreshProcessor(config, database, notificationQueue, productMediaQueue),
+  "product-media": productMediaProcessor(config, database, storage),
   cleanup: cleanupProcessor(database),
   "token-cleanup": cleanupProcessor(database),
   expiration: cleanupProcessor(database),
-  "media-scan": mediaScanProcessor(),
+  "media-scan": mediaScanProcessor(storage, database),
 };
 const queueNames = config.WORKER_QUEUES.split(",")
   .map((item) => item.trim())
@@ -72,5 +83,5 @@ process.once("SIGTERM", requestStop);
 
 await Promise.all(workers.map((worker) => worker.run())).finally(async () => {
   await Promise.all(connections.map((connection) => connection.quit().catch(() => undefined)));
-  await Promise.all([database.close(), redis.close()]);
+  await Promise.all([database.close(), redis.close(), storage.close()]);
 });

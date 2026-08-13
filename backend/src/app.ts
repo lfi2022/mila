@@ -181,6 +181,7 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
               options.database.client,
               lists,
               options.redis ? new ProductRefreshQueue(options.redis) : undefined,
+              options.storage,
             ),
             auth,
             config,
