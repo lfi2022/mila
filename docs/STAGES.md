@@ -341,6 +341,8 @@ Transition note:
 
 Status: DONE_WITH_NETWORK_CONFIGURATION
 
+Commit: `98ee698`
+
 Implemented:
 
 - merchant public/staff APIs for domains, logo, lifecycle, connector trust, affiliate network/identifier/template/rules and reward rate;
