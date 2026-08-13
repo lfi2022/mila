@@ -109,11 +109,11 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 10 — Merchants and affiliation
 
-- [ ] Implement merchant domains, logos, status, connector trust, affiliation network/id/template/rules, reward rate, and tracking.
-- [ ] Implement opaque `/go/:token`, allowlisted destinations, original URL preservation, privacy-aware click tracking, and no open redirect.
-- [ ] Implement commission ingestion with unique external IDs, idempotency, pending/confirmed/cancelled states, and reconciliation.
-- [ ] Implement authenticated/signed affiliate webhooks and safe connector API calls.
-- [ ] Keep each network/merchant integration behind configuration and document missing contracts/keys as `BLOCKED_EXTERNAL`.
+- [x] Implement merchant domains, logos, status, connector trust, affiliation network/id/template/rules, reward rate, and tracking.
+- [x] Implement opaque `/go/:token`, allowlisted destinations, original URL preservation, privacy-aware click tracking, and no open redirect.
+- [x] Implement commission ingestion with unique external IDs, idempotency, pending/confirmed/cancelled states, and reconciliation.
+- [x] Implement authenticated/signed affiliate webhooks and safe connector API calls.
+- [x] Keep each network/merchant integration behind configuration and document missing contracts/keys as `BLOCKED_EXTERNAL`.
 
 ## Stage 11 — Rewards, referrals, and unified ledger
 

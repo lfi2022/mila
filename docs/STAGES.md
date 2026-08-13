@@ -335,4 +335,29 @@ Validation:
 
 Transition note:
 
-- rewards, admin, public compatibility and affiliate redirect server functions remain isolated legacy Supabase consumers until Stages 10, 11 and 19 expose their self-hosted domain APIs.
+- rewards, admin and public compatibility server functions remain isolated legacy Supabase consumers until Stages 11 and 19 expose their self-hosted domain APIs; the affiliate redirect moved in Stage 10.
+
+## Stage 10 — Merchants and affiliation
+
+Status: DONE_WITH_NETWORK_CONFIGURATION
+
+Implemented:
+
+- merchant public/staff APIs for domains, logo, lifecycle, connector trust, affiliate network/identifier/template/rules and reward rate;
+- opaque gift-token `/go` redirect moved from Supabase to Fastify;
+- original merchant and generated tracking destinations protected by separate domain allowlists, preventing open redirects;
+- minimal click persistence with original URL, opaque click ID and daily keyed IP pseudonym;
+- commission ingestion unique by network/external ID with pending/confirmed/cancelled state and stale/regressive-event rejection;
+- timestamped HMAC webhook authentication and feature-flag fail-closed behavior;
+- all merchant/network activation remains configuration-driven.
+
+Migration: `202608130004_affiliate_config`.
+
+Validation:
+
+- backend tests: 41 PASS, including destination allowlists and webhook signatures;
+- backend typecheck and Prisma validation: PASS.
+
+External blockers:
+
+- every real affiliate network remains `BLOCKED_EXTERNAL` until contract, publisher ID, tracking host/template, webhook schema/signing convention and API credentials are supplied and verified.

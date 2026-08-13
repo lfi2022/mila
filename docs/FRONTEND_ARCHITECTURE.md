@@ -16,7 +16,7 @@ The browser application is organized around a small composition layer and explic
 
 Auth, lists, gifts, reservations, notifications, product preview and cover upload now use the self-hosted API. Dashboard compatibility mapping is isolated at its route boundary while the existing visual layout is preserved. The former browser Supabase client and obsolete list/product/cover server functions were removed.
 
-Rewards and administration have feature-level adapters around their legacy server functions until Stages 11 and 19 provide their Fastify endpoints. Payments and orders currently expose only domain types because their real behavior is introduced in Stages 12–13 and 17; no placeholder network call pretends these features exist. Public-list/reporting and affiliate redirects remain server-only transitional Supabase consumers and are migrated in their dedicated roadmap stages.
+Rewards and administration have feature-level adapters around their legacy server functions until Stages 11 and 19 provide their Fastify endpoints. Payments and orders currently expose only domain types because their real behavior is introduced in Stages 12–13 and 17; no placeholder network call pretends these features exist. Public-list/reporting remains a server-only transitional Supabase consumer; affiliate redirects moved to Fastify in Stage 10.
 
 ## Media
 

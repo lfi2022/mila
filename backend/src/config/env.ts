@@ -54,6 +54,8 @@ const envSchema = z
       }),
     QUEUE_PREFIX: z.string().trim().min(1).default("mila"),
     FEATURE_OAUTH: booleanString,
+    FEATURE_AFFILIATION: booleanString,
+    AFFILIATE_WEBHOOK_SECRET: z.string().optional().default(""),
     PRODUCT_FETCH_USER_AGENT: z.string().trim().min(1).default("MilaBot/1.0"),
     PRODUCT_FETCH_TIMEOUT_MS: z.coerce.number().int().min(500).max(30_000).default(8_000),
     PRODUCT_FETCH_MAX_BYTES: z.coerce.number().int().min(1_024).max(2_097_152).default(524_288),
@@ -138,6 +140,14 @@ const envSchema = z
         code: "custom",
         path: ["SMTP_HOST"],
         message: "SMTP host, user and password are required when EMAIL_PROVIDER is smtp",
+      });
+    }
+    if (env.FEATURE_AFFILIATION && env.AFFILIATE_WEBHOOK_SECRET.length < 32) {
+      context.addIssue({
+        code: "custom",
+        path: ["AFFILIATE_WEBHOOK_SECRET"],
+        message:
+          "AFFILIATE_WEBHOOK_SECRET must contain at least 32 characters when affiliation is enabled",
       });
     }
   });

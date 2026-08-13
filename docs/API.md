@@ -62,6 +62,14 @@ Authenticated, CSRF-protected `POST /api/v1/storage/uploads/presign` and `POST /
 
 Stable public reads use `/assets/list-cover/<key>` or `/assets/product-image/<key>`. They return data only for a public/unlisted, active database association whose object has clean malware-scan metadata; all other cases are indistinguishable from a missing asset.
 
+## Merchant and affiliation routes
+
+`GET /api/v1/merchants` returns only active public merchant identity/domain data. Staff can inspect and atomically upsert merchant status, logo key, domains, connector trust, network/identifier/link template, allowlisted tracking hosts and reward rate through `/api/v1/admin/merchants`; writes require staff role plus CSRF.
+
+`GET /api/v1/public/go/:giftToken` resolves an active gift’s opaque token. The original merchant destination must match a stored merchant domain. Affiliate templates interpolate only the URL, opaque click token and configured publisher ID, then the resulting tracking host must match `affiliateRules.trackingHosts`; otherwise the request fails instead of redirecting. Click rows retain the original destination and a daily keyed IP pseudonym, never the raw address. Responses are no-store/no-referrer redirects.
+
+`POST /api/v1/webhooks/affiliation` requires `FEATURE_AFFILIATION`, a timestamp no older than five minutes and `HMAC-SHA256(AFFILIATE_WEBHOOK_SECRET, timestamp + "." + canonical JSON body)`. `(network, externalId)` is unique, older events are ignored and pending events cannot regress confirmed/cancelled commission state.
+
 ## Error contract
 
 ```json

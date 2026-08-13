@@ -431,6 +431,8 @@ model Merchant {
   affiliationEnabled   Boolean               @default(false) @map("affiliation_enabled")
   affiliateNetwork     String?               @map("affiliate_network") @db.VarChar(120)
   affiliateIdentifier  String?               @map("affiliate_identifier") @db.VarChar(255)
+  affiliateLinkTemplate String?               @map("affiliate_link_template") @db.VarChar(2048)
+  affiliateRules       Json?                 @map("affiliate_rules")
   rewardEnabled        Boolean               @default(false) @map("reward_enabled")
   rewardShareRateBps   Int?                  @map("reward_share_rate_bps") @db.UnsignedSmallInt
   connectorType        String                @default("MANUAL") @map("connector_type") @db.VarChar(64)
