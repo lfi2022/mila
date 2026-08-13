@@ -403,6 +403,8 @@ External blockers:
 
 Status: DONE_WITH_LIVE_ACTIVATION_BLOCKED
 
+Commit: `9a5bafa`
+
 Implemented:
 
 - server-only Mollie Payments API adapter with official-origin enforcement, timeouts, exact minor-unit conversion and provider idempotency keys;
