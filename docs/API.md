@@ -44,6 +44,14 @@ Gift CRUD is nested below `/api/v1/lists/:listId/gifts`; updates, deletion and o
 
 `POST /api/v1/products/preview` is authenticated and throttled. It pins DNS resolution to the prevalidated public addresses and revalidates every redirect, with protocol/credential/private-network blocks, timeout, byte limit and HTML-only responses. JSON-LD is preferred over Open Graph and generic metadata. Returned content is only a candidate: creating the gift is the explicit confirmation step.
 
+## Reservation and notification routes
+
+`POST /api/v1/public/reservations` creates an account-free reservation using the gift’s opaque public token. A conditional MySQL update and serializable transaction ensure `reserved_quantity + requested <= quantity`; losing concurrent requests return HTTP 409 and create no reservation. The response contains a one-time 256-bit management token whose keyed digest alone is stored.
+
+Management uses body-carried tokens at `/api/v1/public/reservations/manage` and its `message`, `purchased`, and `cancel` actions, keeping tokens out of API path logs. Cancellation decrements inventory only after winning the reservation state transition. The public `/r/:token` page sends `no-referrer` and manages these actions through the API.
+
+Authenticated `/api/v1/notifications` and `/api/v1/notification-preferences` endpoints expose in-app state and per-event in-app/email plus digest controls. Reservation events persist in-app notifications and append email work to Redis Streams. Surprise mode replaces guest/gift details with generic copy.
+
 ## Error contract
 
 ```json

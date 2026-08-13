@@ -5,6 +5,7 @@ import type { PrismaClient } from "../../generated/prisma/client.js";
 import type { AppRole } from "../../generated/prisma/enums.js";
 import { AppError } from "../../common/errors/app-error.js";
 import type { AppConfig } from "../../config/env.js";
+import type { NotificationQueue } from "../notifications/queue.js";
 
 export type AuthUser = {
   id: string;
@@ -34,6 +35,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly config: AppConfig,
+    private readonly notifications?: NotificationQueue,
   ) {}
 
   async signup(input: { email: string; password: string; displayName?: string }) {
@@ -57,6 +59,19 @@ export class AuthService {
       },
       select: userWithRoles,
     });
+    await Promise.all([
+      this.notifications
+        ?.enqueue({ type: "WELCOME", userId: user.id, email: user.email })
+        .catch(() => undefined),
+      this.notifications
+        ?.enqueue({
+          type: "EMAIL_VERIFICATION",
+          userId: user.id,
+          email: user.email,
+          payload: { token: verificationToken },
+        })
+        .catch(() => undefined),
+    ]);
     return { user: toAuthUser(user), verificationToken };
   }
 
@@ -144,7 +159,7 @@ export class AuthService {
   async requestPasswordReset(emailInput: string): Promise<string | null> {
     const user = await this.prisma.user.findUnique({
       where: { email: normalizeEmail(emailInput) },
-      select: { id: true, deletedAt: true, suspendedAt: true },
+      select: { id: true, email: true, deletedAt: true, suspendedAt: true },
     });
     if (!user || user.deletedAt || user.suspendedAt) return null;
     const token = createOpaqueToken();
@@ -155,6 +170,14 @@ export class AuthService {
         expiresAt: addSeconds(this.config.PASSWORD_RESET_TTL_SECONDS),
       },
     });
+    await this.notifications
+      ?.enqueue({
+        type: "PASSWORD_RESET",
+        userId: user.id,
+        email: user.email,
+        payload: { token },
+      })
+      .catch(() => undefined);
     return token;
   }
 

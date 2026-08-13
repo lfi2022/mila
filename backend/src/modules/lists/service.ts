@@ -10,6 +10,7 @@ import type {
   ListType,
   ListVisibility,
 } from "../../generated/prisma/enums.js";
+import type { NotificationQueue } from "../notifications/queue.js";
 
 type ListInput = {
   title: string;
@@ -34,6 +35,7 @@ export class ListsService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly config: AppConfig,
+    private readonly notifications?: NotificationQueue,
   ) {}
 
   listMine(userId: string) {
@@ -126,7 +128,14 @@ export class ListsService {
       throw new AppError(403, "LIST_ACCESS_REQUIRED", "This list requires an access code");
     }
     const { accessCodeHash: _hidden, ...safe } = list;
-    return safe;
+    return {
+      ...safe,
+      gifts: safe.hideReservedGifts
+        ? safe.gifts.filter(
+            (gift) => !["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status),
+          )
+        : safe.gifts,
+    };
   }
 
   async unlock(slug: string, accessCode: string): Promise<{ listId: string; grant: string }> {
@@ -156,6 +165,15 @@ export class ListsService {
       },
       select: { id: true, email: true, role: true, expiresAt: true },
     });
+    await this.notifications
+      ?.enqueue({
+        type: "LIST_INVITATION",
+        userId,
+        listId,
+        email: email.trim().toLowerCase(),
+        payload: { token, role },
+      })
+      .catch(() => undefined);
     return { invitation, token };
   }
 

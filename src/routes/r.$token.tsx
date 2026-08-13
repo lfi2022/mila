@@ -1,70 +1,74 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { getReservationByToken, updateReservationByToken } from "@/lib/public.functions";
+import { apiRequest } from "@/services/api/client";
+
+type Reservation = {
+  id: string;
+  guestName: string;
+  message: string | null;
+  quantity: number;
+  status: string;
+  giftTitle: string;
+  listTitle: string;
+};
 
 export const Route = createFileRoute("/r/$token")({
-  loader: ({ params }) => getReservationByToken({ data: { token: params.token } }),
   head: () => ({
     meta: [
       { title: "Ma réservation — Mila" },
-      {
-        name: "description",
-        content:
-          "Gérez votre réservation de cadeau : confirmez l'achat, modifiez votre message ou annulez.",
-      },
-      { property: "og:title", content: "Ma réservation — Mila" },
-      { property: "og:description", content: "Gérez votre réservation de cadeau en un clic." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "description", content: "Gérez votre réservation de cadeau Mila." },
       { name: "robots", content: "noindex, nofollow" },
+      { name: "referrer", content: "no-referrer" },
     ],
   }),
-  errorComponent: () => <Fallback title="Lien indisponible" />,
-  notFoundComponent: () => <Fallback title="Réservation introuvable" />,
   component: ReservationPage,
 });
 
-function Fallback({ title }: { title: string }) {
-  return (
-    <div className="mx-auto max-w-xl px-4 py-24 text-center">
-      <h1 className="font-display text-3xl">{title}</h1>
-      <p className="mt-3 text-muted-foreground">
-        Ce lien de gestion n'est plus valide. Il expire après quelques mois ou après annulation.
-      </p>
-      <Button asChild className="mt-6">
-        <Link to="/">Retour à l'accueil</Link>
-      </Button>
-    </div>
-  );
-}
-
 function ReservationPage() {
-  const data = Route.useLoaderData();
   const { token } = Route.useParams();
-  const router = useRouter();
-  const update = useServerFn(updateReservationByToken);
-  const [message, setMessage] = useState(
-    data.state === "ok" ? (data.reservation.message ?? "") : "",
-  );
+  const [reservation, setReservation] = useState<Reservation | null>(null);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  if (data.state !== "ok") return <Fallback title="Réservation introuvable" />;
+  const load = useCallback(async () => {
+    const result = await apiRequest<{ reservation: Reservation }>("/public/reservations/manage", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+    setReservation(result.reservation);
+    setMessage(result.reservation.message ?? "");
+  }, [token]);
+  useEffect(() => {
+    void load()
+      .catch(() => setReservation(null))
+      .finally(() => setLoading(false));
+  }, [load]);
 
-  const reservation = data.reservation;
+  if (loading) return <Fallback title="Chargement de la réservation…" />;
+  if (!reservation) return <Fallback title="Réservation introuvable" />;
   const purchased = reservation.status === "PURCHASED";
 
-  const run = async (action: "message" | "purchased" | "cancel", successMessage: string) => {
+  const run = async (action: "message" | "purchased" | "cancel", success: string) => {
     setBusy(true);
     try {
-      await update({ data: { action, ...(action === "message" ? { message } : {}), token } });
-      toast.success(successMessage);
-      await router.invalidate();
+      await apiRequest<void>(
+        action === "message"
+          ? "/public/reservations/manage/message"
+          : `/public/reservations/manage/${action}`,
+        {
+          method: action === "message" ? "PATCH" : "POST",
+          body: JSON.stringify({ token, message }),
+        },
+      );
+      toast.success(success);
+      if (action === "cancel") setReservation({ ...reservation, status: "CANCELLED" });
+      else await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Action impossible");
     } finally {
@@ -75,72 +79,68 @@ function ReservationPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-16">
       <p className="text-sm uppercase tracking-widest text-muted-foreground">Votre réservation</p>
-      <h1 className="mt-2 font-display text-3xl">{reservation.item_title}</h1>
+      <h1 className="mt-2 font-display text-3xl">{reservation.giftTitle}</h1>
       <p className="mt-1 text-muted-foreground">
-        Pour la liste « {reservation.registry_title} » · réservé par {reservation.guest_name}
+        Pour « {reservation.listTitle} » · {reservation.quantity} réservé par{" "}
+        {reservation.guestName}
       </p>
-
       <Card className="mt-8">
         <CardHeader>
-          <CardTitle className="text-lg">
-            {purchased ? "Cadeau marqué comme acheté 🎉" : "Cadeau réservé"}
+          <CardTitle>
+            {purchased
+              ? "Cadeau marqué comme acheté 🎉"
+              : reservation.status === "CANCELLED"
+                ? "Réservation annulée"
+                : "Cadeau réservé"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          {reservation.item_image_url ? (
-            <img
-              src={reservation.item_image_url}
-              alt={reservation.item_title}
-              loading="lazy"
-              className="h-40 w-full rounded-xl object-cover"
-            />
-          ) : null}
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="guest-message">
-              Votre message aux parents
-            </label>
-            <Textarea
-              id="guest-message"
-              value={message}
-              maxLength={800}
-              rows={4}
-              onChange={(event) => setMessage(event.target.value)}
-              placeholder="Un petit mot doux…"
-            />
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => run("message", "Message mis à jour")}
-            >
-              Enregistrer le message
-            </Button>
-          </div>
-
+          <Textarea
+            value={message}
+            maxLength={800}
+            rows={4}
+            disabled={reservation.status === "CANCELLED"}
+            onChange={(event) => setMessage(event.target.value)}
+          />
+          <Button
+            variant="secondary"
+            disabled={busy || reservation.status === "CANCELLED"}
+            onClick={() => run("message", "Message mis à jour")}
+          >
+            Enregistrer le message
+          </Button>
           <div className="flex flex-wrap gap-3 border-t pt-5">
-            {!purchased ? (
+            {!purchased && reservation.status !== "CANCELLED" && (
               <Button
                 disabled={busy}
                 onClick={() => run("purchased", "Merci, les parents sont prévenus !")}
               >
-                J'ai acheté ce cadeau
+                J’ai acheté ce cadeau
               </Button>
-            ) : null}
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => run("cancel", "Réservation annulée")}
-            >
-              Annuler ma réservation
-            </Button>
+            )}
+            {reservation.status !== "CANCELLED" && (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => run("cancel", "Réservation annulée")}
+              >
+                Annuler ma réservation
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      <Button asChild variant="link" className="mt-6 px-0">
-        <Link to="/l/$slug" params={{ slug: reservation.registry_slug }}>
-          Revenir à la liste
-        </Link>
+function Fallback({ title }: { title: string }) {
+  return (
+    <div className="mx-auto max-w-xl px-4 py-24 text-center">
+      <h1 className="font-display text-3xl">{title}</h1>
+      <p className="mt-3 text-muted-foreground">Ce lien peut avoir expiré ou avoir été révoqué.</p>
+      <Button asChild className="mt-6">
+        <Link to="/">Retour à l’accueil</Link>
       </Button>
     </div>
   );

@@ -248,3 +248,30 @@ External configuration:
 
 - merchant official API and affiliate-feed connectors above trust level 1 remain `BLOCKED_EXTERNAL` per merchant until contracts, credentials, schemas, rate limits and image-use rights are supplied;
 - controlled user uploads and placeholder storage are activated with MinIO in Stage 08.
+
+## Stage 07 — Guest reservations and notifications
+
+Status: DONE_EMAIL_DELIVERY_EXTERNAL
+
+Implemented:
+
+- guest reservation creation with minimal identity fields and opaque hashed management tokens;
+- conditional MySQL quantity claim in a serializable transaction, preventing concurrent overbooking;
+- consult, message, purchased and cancellation flows with expiry and atomic state transitions;
+- cancellation-safe inventory release and distinct gift/reservation/payment/fulfilment states;
+- surprise-mode notification redaction and hidden-reserved-gift policy;
+- durable in-app notifications and Redis Stream jobs for welcome, verification, reset, invitation, reservation, purchased and cancellation events;
+- per-event in-app/email and immediate/daily/weekly/never notification preferences;
+- migrated no-referrer guest reservation management page.
+
+Migration: `202608130002_notification_preferences`.
+
+Tests:
+
+- `npm run check`: PASS before the final surprise-policy adjustment;
+- backend tests: 34 PASS, including concurrent-capacity rejection, token hashing, manager fan-out and cancellation inventory release;
+- Prisma schema validation: PASS.
+
+External blocker:
+
+- queued email delivery remains `BLOCKED_EXTERNAL` until SMTP/provider credentials and sender-domain DNS exist; the independent worker and retry/dead-letter runtime are completed in Stage 08.

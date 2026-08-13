@@ -20,6 +20,10 @@ import { productRoutes } from "./modules/products/routes.js";
 import { giftRoutes } from "./modules/gifts/routes.js";
 import { GiftsService } from "./modules/gifts/service.js";
 import { ProductRefreshQueue } from "./modules/products/refresh-queue.js";
+import { NotificationQueue } from "./modules/notifications/queue.js";
+import { reservationRoutes } from "./modules/reservations/routes.js";
+import { ReservationsService } from "./modules/reservations/service.js";
+import { notificationRoutes } from "./modules/notifications/routes.js";
 import { MODULE_NAMES } from "./modules/index.js";
 
 export type AppOptions = {
@@ -111,11 +115,12 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
         { prefix: "/health" },
       );
       if (options.database) {
-        const auth = new AuthService(options.database.client, config);
+        const notifications = options.redis ? new NotificationQueue(options.redis) : undefined;
+        const auth = new AuthService(options.database.client, config, notifications);
         await api.register(authRoutes(auth, config), {
           prefix: "/auth",
         });
-        const lists = new ListsService(options.database.client, config);
+        const lists = new ListsService(options.database.client, config, notifications);
         await api.register(listRoutes(lists, auth, config));
         await api.register(
           giftRoutes(
@@ -128,7 +133,13 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
             config,
           ),
         );
+        await api.register(notificationRoutes(options.database.client, auth, config));
         await api.register(productRoutes(auth, config));
+        await api.register(
+          reservationRoutes(
+            new ReservationsService(options.database.client, config, notifications),
+          ),
+        );
       }
     },
     { prefix: "/api/v1" },

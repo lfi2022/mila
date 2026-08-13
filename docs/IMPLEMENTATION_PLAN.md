@@ -80,13 +80,13 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 07 — Guest reservations and notifications
 
-- [ ] Implement account-free reservation with minimal guest fields and opaque management token.
-- [ ] Atomically prevent overbooking and double reservations using constraints/transactions.
-- [ ] Support consult, cancel, message update, and mark-purchased actions with expiration/revocation.
-- [ ] Keep reserved, paid, funded, ordered, shipped, received, cancelled, and unavailable states distinct.
-- [ ] Implement surprise mode and reserved-gift display policy.
-- [ ] Queue welcome, verification, reset, invitation, reservation, cancellation, purchased, and parent notification emails.
-- [ ] Add granular in-app/email preferences, grouping, and anti-spam controls.
+- [x] Implement account-free reservation with minimal guest fields and a 256-bit opaque management token stored only as a keyed digest.
+- [x] Atomically prevent overbooking/double reservation with a conditional quantity update inside a serializable MySQL transaction.
+- [x] Support consult, cancel, message update, and mark-purchased actions with expiration and one-winning state transitions.
+- [x] Keep reserved, purchased, funded, ordered, shipped, received, cancelled, expired, and unavailable states distinct.
+- [x] Implement surprise-mode notification redaction and configurable reserved-gift hiding.
+- [x] Queue welcome, verification, reset, invitation, reservation, cancellation, purchased, and parent notification work in Redis Streams.
+- [x] Add granular in-app/email preferences, immediate/daily/weekly/never grouping choices, Redis limits, and generic forgot-password responses.
 
 ## Stage 08 — Storage, workers, Redis, and Docker
 
