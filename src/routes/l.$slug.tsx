@@ -317,6 +317,13 @@ function GiftCard({
           ) : null}
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
+          {gift.kind === "CONTRIBUTION" ? (
+            <Button asChild size="sm" className="min-h-10">
+              <Link to="/contribuer/$giftToken" params={{ giftToken: gift.public_token }}>
+                Participer
+              </Link>
+            </Button>
+          ) : null}
           {gift.has_link ? (
             <Button asChild variant="outline" size="sm" className="min-h-10">
               <a

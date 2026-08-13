@@ -258,6 +258,7 @@ model User {
   acceptedInvitations     ListInvitation[]         @relation("InvitationAccepter")
   reservations            Reservation[]
   paymentAccounts         PaymentAccount[]
+  requestedPayouts        Payout[]                 @relation("PayoutRequester")
   requestedRedemptions    RewardRedemption[]
   sentReferrals           Referral[]               @relation("Referrer")
   receivedReferral        Referral?                @relation("Referred")
@@ -373,6 +374,9 @@ model GiftList {
   wallet                   RewardWallet?
   payments                 Payment[]
   bankTransfers            BankTransfer[]
+  fundsEntries             FundsLedgerEntry[]
+  holdingBalances          HoldingBalance[]
+  payouts                  Payout[]
   ledgerEntries            FinancialLedgerEntry[]
   orderGroups              OrderGroup[]
   notifications            Notification[]
@@ -424,31 +428,31 @@ model ListInvitation {
 }
 
 model Merchant {
-  id                   String                @id @default(uuid()) @db.Char(36)
-  name                 String                @db.VarChar(180)
-  slug                 String                @unique @db.VarChar(120)
-  logoKey              String?               @map("logo_key") @db.VarChar(512)
-  active               Boolean               @default(true)
-  affiliationEnabled   Boolean               @default(false) @map("affiliation_enabled")
-  affiliateNetwork     String?               @map("affiliate_network") @db.VarChar(120)
-  affiliateIdentifier  String?               @map("affiliate_identifier") @db.VarChar(255)
+  id                    String                @id @default(uuid()) @db.Char(36)
+  name                  String                @db.VarChar(180)
+  slug                  String                @unique @db.VarChar(120)
+  logoKey               String?               @map("logo_key") @db.VarChar(512)
+  active                Boolean               @default(true)
+  affiliationEnabled    Boolean               @default(false) @map("affiliation_enabled")
+  affiliateNetwork      String?               @map("affiliate_network") @db.VarChar(120)
+  affiliateIdentifier   String?               @map("affiliate_identifier") @db.VarChar(255)
   affiliateLinkTemplate String?               @map("affiliate_link_template") @db.VarChar(2048)
-  affiliateRules       Json?                 @map("affiliate_rules")
-  rewardEnabled        Boolean               @default(false) @map("reward_enabled")
-  rewardShareRateBps   Int?                  @map("reward_share_rate_bps") @db.UnsignedSmallInt
-  connectorType        String                @default("MANUAL") @map("connector_type") @db.VarChar(64)
-  automationTrustLevel Int                   @default(0) @map("automation_trust_level") @db.UnsignedTinyInt
-  connectorConfig      Json?                 @map("connector_config")
-  createdAt            DateTime              @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt            DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
-  domains              MerchantDomain[]
-  gifts                Gift[]
-  images               GiftImage[]
-  offers               MerchantOffer[]
-  snapshots            PriceSnapshot[]
-  clicks               AffiliateClick[]
-  commissions          AffiliateCommission[]
-  orderGroups          OrderGroup[]
+  affiliateRules        Json?                 @map("affiliate_rules")
+  rewardEnabled         Boolean               @default(false) @map("reward_enabled")
+  rewardShareRateBps    Int?                  @map("reward_share_rate_bps") @db.UnsignedSmallInt
+  connectorType         String                @default("MANUAL") @map("connector_type") @db.VarChar(64)
+  automationTrustLevel  Int                   @default(0) @map("automation_trust_level") @db.UnsignedTinyInt
+  connectorConfig       Json?                 @map("connector_config")
+  createdAt             DateTime              @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime              @updatedAt @map("updated_at") @db.DateTime(3)
+  domains               MerchantDomain[]
+  gifts                 Gift[]
+  images                GiftImage[]
+  offers                MerchantOffer[]
+  snapshots             PriceSnapshot[]
+  clicks                AffiliateClick[]
+  commissions           AffiliateCommission[]
+  orderGroups           OrderGroup[]
 
   @@index([active, affiliationEnabled])
   @@map("merchants")
@@ -635,25 +639,31 @@ model Reservation {
 }
 
 model Contribution {
-  id               String             @id @default(uuid()) @db.Char(36)
-  listId           String             @map("list_id") @db.Char(36)
-  giftId           String             @map("gift_id") @db.Char(36)
-  reservationId    String?            @map("reservation_id") @db.Char(36)
-  paymentId        String?            @unique @map("payment_id") @db.Char(36)
-  contributorName  String?            @map("contributor_name") @db.VarChar(120)
-  contributorEmail String?            @map("contributor_email") @db.VarChar(255)
-  anonymous        Boolean            @default(false)
-  message          String?            @db.VarChar(800)
-  amountMinor      BigInt             @map("amount_minor")
-  currency         String             @default("EUR") @db.Char(3)
-  status           ContributionStatus @default(PENDING)
-  createdAt        DateTime           @default(now()) @map("created_at") @db.DateTime(3)
-  confirmedAt      DateTime?          @map("confirmed_at") @db.DateTime(3)
-  updatedAt        DateTime           @updatedAt @map("updated_at") @db.DateTime(3)
-  list             GiftList           @relation(fields: [listId], references: [id], onDelete: Restrict)
-  gift             Gift               @relation(fields: [giftId], references: [id], onDelete: Restrict)
-  reservation      Reservation?       @relation(fields: [reservationId], references: [id], onDelete: SetNull)
-  payment          Payment?           @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  id                 String             @id @default(uuid()) @db.Char(36)
+  listId             String             @map("list_id") @db.Char(36)
+  giftId             String?            @map("gift_id") @db.Char(36)
+  reservationId      String?            @map("reservation_id") @db.Char(36)
+  paymentId          String?            @unique @map("payment_id") @db.Char(36)
+  idempotencyKey     String             @unique @map("idempotency_key") @db.VarChar(255)
+  contributorName    String?            @map("contributor_name") @db.VarChar(120)
+  contributorEmail   String?            @map("contributor_email") @db.VarChar(255)
+  anonymous          Boolean            @default(false)
+  message            String?            @db.VarChar(800)
+  amountMinor        BigInt             @map("amount_minor")
+  feeMinor           BigInt             @default(0) @map("fee_minor")
+  platformShareMinor BigInt             @default(0) @map("platform_share_minor")
+  metadata           Json?
+  currency           String             @default("EUR") @db.Char(3)
+  status             ContributionStatus @default(PENDING)
+  createdAt          DateTime           @default(now()) @map("created_at") @db.DateTime(3)
+  confirmedAt        DateTime?          @map("confirmed_at") @db.DateTime(3)
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.DateTime(3)
+  list               GiftList           @relation(fields: [listId], references: [id], onDelete: Restrict)
+  gift               Gift?              @relation(fields: [giftId], references: [id], onDelete: Restrict)
+  reservation        Reservation?       @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  payment            Payment?           @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  bankTransfer       BankTransfer?
+  fundsEntries       FundsLedgerEntry[]
 
   @@index([listId, status])
   @@index([giftId, status])
@@ -937,24 +947,98 @@ model Chargeback {
 }
 
 model BankTransfer {
-  id                  String         @id @default(uuid()) @db.Char(36)
-  listId              String         @map("list_id") @db.Char(36)
-  reference           String         @unique @db.VarChar(64)
-  expectedAmountMinor BigInt         @map("expected_amount_minor")
-  receivedAmountMinor BigInt?        @map("received_amount_minor")
-  currency            String         @default("EUR") @db.Char(3)
-  status              TransferStatus @default(WAITING_TRANSFER)
-  payerName           String?        @map("payer_name") @db.VarChar(180)
-  receivedAt          DateTime?      @map("received_at") @db.DateTime(3)
-  matchedAt           DateTime?      @map("matched_at") @db.DateTime(3)
+  id                  String               @id @default(uuid()) @db.Char(36)
+  listId              String               @map("list_id") @db.Char(36)
+  contributionId      String?              @unique @map("contribution_id") @db.Char(36)
+  reference           String               @unique @db.VarChar(64)
+  expectedAmountMinor BigInt               @map("expected_amount_minor")
+  receivedAmountMinor BigInt?              @map("received_amount_minor")
+  currency            String               @default("EUR") @db.Char(3)
+  status              TransferStatus       @default(WAITING_TRANSFER)
+  payerName           String?              @map("payer_name") @db.VarChar(180)
+  receivedAt          DateTime?            @map("received_at") @db.DateTime(3)
+  matchedAt           DateTime?            @map("matched_at") @db.DateTime(3)
   metadata            Json?
-  createdAt           DateTime       @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt           DateTime       @updatedAt @map("updated_at") @db.DateTime(3)
-  list                GiftList       @relation(fields: [listId], references: [id], onDelete: Restrict)
+  createdAt           DateTime             @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.DateTime(3)
+  list                GiftList             @relation(fields: [listId], references: [id], onDelete: Restrict)
+  contribution        Contribution?        @relation(fields: [contributionId], references: [id], onDelete: SetNull)
+  instruction         TransferInstruction?
 
   @@index([listId, status])
   @@index([status, receivedAt])
   @@map("bank_transfers")
+}
+
+model FundsLedgerEntry {
+  id             String        @id @default(uuid()) @db.Char(36)
+  listId         String        @map("list_id") @db.Char(36)
+  contributionId String?       @map("contribution_id") @db.Char(36)
+  type           String        @db.VarChar(64)
+  status         LedgerStatus  @default(PENDING)
+  amountMinor    BigInt        @map("amount_minor")
+  currency       String        @default("EUR") @db.Char(3)
+  idempotencyKey String        @unique @map("idempotency_key") @db.VarChar(255)
+  sourceType     String?       @map("source_type") @db.VarChar(120)
+  sourceId       String?       @map("source_id") @db.VarChar(255)
+  metadata       Json?
+  settledAt      DateTime?     @map("settled_at") @db.DateTime(3)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  list           GiftList      @relation(fields: [listId], references: [id], onDelete: Restrict)
+  contribution   Contribution? @relation(fields: [contributionId], references: [id], onDelete: SetNull)
+
+  @@index([listId, status, createdAt])
+  @@index([sourceType, sourceId])
+  @@map("funds_ledger_entries")
+}
+
+model HoldingBalance {
+  id          String   @id @default(uuid()) @db.Char(36)
+  listId      String   @map("list_id") @db.Char(36)
+  currency    String   @default("EUR") @db.Char(3)
+  cachedMinor BigInt   @default(0) @map("cached_minor")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  list        GiftList @relation(fields: [listId], references: [id], onDelete: Restrict)
+
+  @@unique([listId, currency])
+  @@map("holding_balances")
+}
+
+model TransferInstruction {
+  id             String       @id @default(uuid()) @db.Char(36)
+  bankTransferId String       @unique @map("bank_transfer_id") @db.Char(36)
+  beneficiary    String       @db.VarChar(180)
+  ibanMasked     String       @map("iban_masked") @db.VarChar(64)
+  reference      String       @db.VarChar(64)
+  amountMinor    BigInt       @map("amount_minor")
+  currency       String       @default("EUR") @db.Char(3)
+  expiresAt      DateTime     @map("expires_at") @db.DateTime(3)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  bankTransfer   BankTransfer @relation(fields: [bankTransferId], references: [id], onDelete: Cascade)
+
+  @@map("transfer_instructions")
+}
+
+model Payout {
+  id            String    @id @default(uuid()) @db.Char(36)
+  listId        String    @map("list_id") @db.Char(36)
+  requestedById String    @map("requested_by_id") @db.Char(36)
+  amountMinor   BigInt    @map("amount_minor")
+  currency      String    @default("EUR") @db.Char(3)
+  status        String    @default("DISABLED") @db.VarChar(32)
+  provider      String?   @db.VarChar(64)
+  externalId    String?   @map("external_id") @db.VarChar(255)
+  metadata      Json?
+  processedAt   DateTime? @map("processed_at") @db.DateTime(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  list          GiftList  @relation(fields: [listId], references: [id], onDelete: Restrict)
+  requestedBy   User      @relation("PayoutRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  @@index([listId, status])
+  @@index([provider, externalId])
+  @@map("payouts")
 }
 
 model FinancialLedgerEntry {

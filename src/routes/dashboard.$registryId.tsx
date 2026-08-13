@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { ListAppearanceEditor, type AppearancePatch } from "@/components/ListAppearanceEditor";
 import { ShareCard } from "@/components/ShareCard";
+import { ContributionsPanel } from "@/components/ContributionsPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -347,6 +348,7 @@ function RegistryDetail() {
           <TabsTrigger value="appearance">Apparence</TabsTrigger>
           <TabsTrigger value="share">Partage</TabsTrigger>
           <TabsTrigger value="parents">Parents</TabsTrigger>
+          <TabsTrigger value="contributions">Contributions</TabsTrigger>
           <TabsTrigger value="settings">Réglages</TabsTrigger>
         </TabsList>
 
@@ -608,6 +610,10 @@ function RegistryDetail() {
               ))}
             </ul>
           </section>
+        </TabsContent>
+
+        <TabsContent value="contributions" className="mt-6">
+          <ContributionsPanel listId={registryId} />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6 grid gap-8 lg:grid-cols-2">

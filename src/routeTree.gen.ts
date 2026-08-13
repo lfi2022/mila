@@ -26,6 +26,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as VerificationEmailRouteImport } from './routes/verification-email'
+import { Route as ContribuerGiftTokenRouteImport } from './routes/contribuer.$giftToken'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardRegistryIdRouteImport } from './routes/dashboard.$registryId'
 import { Route as GoTokenRouteImport } from './routes/go.$token'
@@ -123,6 +124,11 @@ const VerificationEmailRoute = VerificationEmailRouteImport.update({
   path: '/verification-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContribuerGiftTokenRoute = ContribuerGiftTokenRouteImport.update({
+  id: '/contribuer/$giftToken',
+  path: '/contribuer/$giftToken',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/profil': typeof ProfilRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/verification-email': typeof VerificationEmailRoute
+  '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/profil': typeof ProfilRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/verification-email': typeof VerificationEmailRoute
+  '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -257,6 +265,7 @@ export interface FileRoutesById {
   '/profil': typeof ProfilRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/verification-email': typeof VerificationEmailRoute
+  '/contribuer/$giftToken': typeof ContribuerGiftTokenRoute
   '/dashboard/$registryId': typeof DashboardRegistryIdRoute
   '/go/$token': typeof GoTokenRoute
   '/invitation/$token': typeof InvitationTokenRoute
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/reinitialiser-mot-de-passe'
     | '/verification-email'
+    | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
     | '/go/$token'
     | '/invitation/$token'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/reinitialiser-mot-de-passe'
     | '/verification-email'
+    | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
     | '/go/$token'
     | '/invitation/$token'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/reinitialiser-mot-de-passe'
     | '/verification-email'
+    | '/contribuer/$giftToken'
     | '/dashboard/$registryId'
     | '/go/$token'
     | '/invitation/$token'
@@ -379,6 +391,7 @@ export interface RootRouteChildren {
   ProfilRoute: typeof ProfilRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   VerificationEmailRoute: typeof VerificationEmailRoute
+  ContribuerGiftTokenRoute: typeof ContribuerGiftTokenRoute
   GoTokenRoute: typeof GoTokenRoute
   InvitationTokenRoute: typeof InvitationTokenRoute
   LSlugRoute: typeof LSlugRoute
@@ -511,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerificationEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contribuer/$giftToken': {
+      id: '/contribuer/$giftToken'
+      path: '/contribuer/$giftToken'
+      fullPath: '/contribuer/$giftToken'
+      preLoaderRoute: typeof ContribuerGiftTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/': {
       id: '/dashboard/'
       path: '/'
@@ -623,6 +643,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfilRoute: ProfilRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   VerificationEmailRoute: VerificationEmailRoute,
+  ContribuerGiftTokenRoute: ContribuerGiftTokenRoute,
   GoTokenRoute: GoTokenRoute,
   InvitationTokenRoute: InvitationTokenRoute,
   LSlugRoute: LSlugRoute,

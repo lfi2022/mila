@@ -33,6 +33,12 @@ Migration deployment must run once before replacing application containers. Appl
 
 `202608130006_entitlement_payment` links an event entitlement to the exact internal payment that funded it. A list's unique entitlement row also reserves an in-progress Premium checkout, preventing concurrent purchases. Provider payment/refund/chargeback rows remain distinct from append-only `financial_ledger_entries`; browser redirects never write settlement or entitlement state.
 
+## Contribution funds invariants
+
+`202608130007_contribution_funds` keeps contribution intent, bank receipt, transfer instruction and third-party-funds accounting in separate tables. Contribution idempotency keys and transfer references are globally unique. Only masked IBAN data is persisted in `transfer_instructions`; the configured full IBAN remains an application secret and is returned only with a freshly requested instruction.
+
+`funds_ledger_entries` is distinct from Mila's `financial_ledger_entries`: confirmed parent funds are derived from signed, settled entries, never from `holding_balances.cached_minor`. Pending reservations do not count as held funds. Confirmation expires the pending marker and appends a confirmed entry; a refund appends a negative compensating entry. `payouts` is modeled for the regulated-provider target architecture but remains disabled and has no creation route.
+
 ## Backups and restore test
 
 - Enable provider-managed encrypted daily full backups and point-in-time recovery/binlog retention for at least 14 days.

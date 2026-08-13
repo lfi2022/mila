@@ -93,4 +93,28 @@ describe("database environment", () => {
       }),
     ).toThrow(/official Mollie API origin/);
   });
+
+  it("requires contribution and bank details before enabling bank transfers", () => {
+    expect(() => loadConfig({ ...valid, FEATURE_BANK_TRANSFERS: "true" })).toThrow(
+      /FEATURE_CONTRIBUTIONS/,
+    );
+    expect(() =>
+      loadConfig({ ...valid, FEATURE_BANK_TRANSFERS: "true", FEATURE_CONTRIBUTIONS: "true" }),
+    ).toThrow(/beneficiary and IBAN/);
+    expect(
+      loadConfig({
+        ...valid,
+        FEATURE_BANK_TRANSFERS: "true",
+        FEATURE_CONTRIBUTIONS: "true",
+        BANK_TRANSFER_BENEFICIARY: "Mila Test",
+        BANK_TRANSFER_IBAN: "BE68539007547034",
+      }).FEATURE_BANK_TRANSFERS,
+    ).toBe(true);
+  });
+
+  it("keeps parent payouts disabled without Mollie Connect", () => {
+    expect(() => loadConfig({ ...valid, FEATURE_PARENT_PAYOUTS: "true" })).toThrow(
+      /Mollie Connect/,
+    );
+  });
 });

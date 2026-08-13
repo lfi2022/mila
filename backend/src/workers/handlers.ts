@@ -108,6 +108,34 @@ export function cleanupProcessor(database: DatabaseService): StreamProcessor {
           reservation.giftId,
         );
       }
+      const expiredTransfers = await transaction.bankTransfer.findMany({
+        where: {
+          status: "WAITING_TRANSFER",
+          instruction: { expiresAt: { lte: now } },
+          contribution: { status: "PENDING" },
+        },
+        select: { id: true, contributionId: true },
+        take: 500,
+      });
+      for (const transfer of expiredTransfers) {
+        await transaction.bankTransfer.update({
+          where: { id: transfer.id },
+          data: {
+            status: "MANUAL_REVIEW",
+            metadata: { reason: "transfer_instruction_expired" },
+          },
+        });
+        if (transfer.contributionId) {
+          await transaction.contribution.update({
+            where: { id: transfer.contributionId },
+            data: { status: "CANCELLED" },
+          });
+          await transaction.fundsLedgerEntry.updateMany({
+            where: { contributionId: transfer.contributionId, status: "PENDING" },
+            data: { status: "EXPIRED" },
+          });
+        }
+      }
       await transaction.session.deleteMany({ where: { expiresAt: { lte: now } } });
       await transaction.emailVerificationToken.deleteMany({ where: { expiresAt: { lte: now } } });
       await transaction.passwordResetToken.deleteMany({ where: { expiresAt: { lte: now } } });

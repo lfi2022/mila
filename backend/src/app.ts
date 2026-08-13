@@ -37,6 +37,8 @@ import { rewardRoutes } from "./modules/rewards/routes.js";
 import { MollieClient } from "./modules/payments/mollie.js";
 import { PaymentsService } from "./modules/payments/service.js";
 import { paymentRoutes } from "./modules/payments/routes.js";
+import { ContributionsService } from "./modules/contributions/service.js";
+import { contributionRoutes } from "./modules/contributions/routes.js";
 
 export type AppOptions = {
   config?: AppConfig;
@@ -148,6 +150,13 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
               lists,
               options.redis ? new ProductRefreshQueue(options.redis) : undefined,
             ),
+            auth,
+            config,
+          ),
+        );
+        await api.register(
+          contributionRoutes(
+            new ContributionsService(options.database.client, config, lists),
             auth,
             config,
           ),

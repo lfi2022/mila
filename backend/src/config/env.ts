@@ -65,6 +65,9 @@ const envSchema = z
     FEATURE_BANK_PAYOUT: booleanString,
     FEATURE_MOLLIE_PAYMENTS: booleanString,
     FEATURE_MOLLIE_CONNECT: booleanString,
+    FEATURE_CONTRIBUTIONS: booleanString,
+    FEATURE_BANK_TRANSFERS: booleanString,
+    FEATURE_PARENT_PAYOUTS: booleanString,
     FEATURE_PREMIUM: booleanString,
     MOLLIE_MODE: z.enum(["test", "live"]).default("test"),
     MOLLIE_API_KEY: z.string().optional().default(""),
@@ -77,6 +80,12 @@ const envSchema = z
       .string()
       .regex(/^[A-Z]{3}$/)
       .default("EUR"),
+    CONTRIBUTION_FEE_RATE_BPS: z.coerce.number().int().min(0).max(10_000).default(0),
+    CONTRIBUTION_PLATFORM_SHARE_RATE_BPS: z.coerce.number().int().min(0).max(10_000).default(0),
+    CONTRIBUTION_MIN_MINOR: z.coerce.number().int().min(1).default(100),
+    BANK_TRANSFER_BENEFICIARY: z.string().trim().optional().default(""),
+    BANK_TRANSFER_IBAN_MASKED: z.string().trim().optional().default(""),
+    BANK_TRANSFER_IBAN: z.string().trim().optional().default(""),
     REWARD_DEFAULT_SHARE_RATE_BPS: z.coerce.number().int().min(0).max(10_000).default(2_500),
     REWARD_MIN_REDEMPTION_MINOR: z.coerce.number().int().min(1).default(1_000),
     REFERRAL_REWARD_MINOR: z.coerce.number().int().min(0).default(500),
@@ -209,6 +218,36 @@ const envSchema = z
           message: "MOLLIE_REDIRECT_URL must use the application origin",
         });
       }
+    }
+    if (env.FEATURE_BANK_TRANSFERS) {
+      if (!env.FEATURE_CONTRIBUTIONS) {
+        context.addIssue({
+          code: "custom",
+          path: ["FEATURE_CONTRIBUTIONS"],
+          message: "FEATURE_CONTRIBUTIONS must be enabled with bank transfers",
+        });
+      }
+      if (!env.BANK_TRANSFER_BENEFICIARY || !env.BANK_TRANSFER_IBAN) {
+        context.addIssue({
+          code: "custom",
+          path: ["BANK_TRANSFER_IBAN"],
+          message: "Bank beneficiary and IBAN are required when bank transfers are enabled",
+        });
+      }
+    }
+    if (env.FEATURE_PARENT_PAYOUTS && !env.FEATURE_MOLLIE_CONNECT) {
+      context.addIssue({
+        code: "custom",
+        path: ["FEATURE_MOLLIE_CONNECT"],
+        message: "Mollie Connect is required before parent payouts can be enabled",
+      });
+    }
+    if (env.CONTRIBUTION_FEE_RATE_BPS + env.CONTRIBUTION_PLATFORM_SHARE_RATE_BPS >= 10_000) {
+      context.addIssue({
+        code: "custom",
+        path: ["CONTRIBUTION_FEE_RATE_BPS"],
+        message: "Contribution fee and platform share must total less than 100%",
+      });
     }
   });
 
