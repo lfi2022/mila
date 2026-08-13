@@ -557,3 +557,43 @@ External blockers:
 - automatic orders remain `BLOCKED_EXTERNAL` until an official merchant API or contract, credentials, explicit consent, payment/address handling and returns policy are approved;
 - no purchase automation through scraping or browser robots is implemented or permitted;
 - contribution allocation remains a budget plan until the regulated third-party-funds architecture is approved and activated.
+
+## Stage 16 — Second hand, messages, thank-yous, and memories
+
+Status: DONE_WITH_MEDIA_OPERATIONS_CONFIGURATION_PENDING
+
+Commit: `e4fdb6a`
+
+Implemented:
+
+- explicit new-only, second-hand-allowed and second-hand-preferred gift choices in parent gift creation;
+- token-protected second-hand proposals with condition, comment, optional private photo, withdrawal and parent acceptance/rejection;
+- serializable acceptance that claims available quantity and closes competing pending proposals;
+- reservation-scoped private text, audio and video messages with MIME/signature, size, duration, owner-prefix and SHA-256 controls;
+- fail-closed malware-scan metadata checks, short-lived signed downloads, soft deletion plus object removal, retention deadlines and optional transcode state;
+- received and thanked tracking, unthanked filtering, editable drafts whose approval resets on change, parent-approved digital cards and CSV export;
+- parent-only message authorization and selected-item memory books with themes, introduction, retention setting and authenticated print/PDF-ready export;
+- a unified `/dashboard/memories` review center plus public proposal and reservation-message interfaces.
+
+Migration: `202608130010_memories_and_second_hand`.
+
+Validation:
+
+- `npm run check`: PASS;
+- frontend tests: 14 PASS;
+- backend tests: 64 PASS, including second-hand policy, controlled media and explicit memory-consent behavior;
+- frontend and backend production builds: PASS;
+- Prisma validation, legacy migration audit and Docker Compose configuration: PASS;
+- lint: PASS with 8 pre-existing Fast Refresh warnings.
+
+Environment variables:
+
+- `FEATURE_SECOND_HAND_OFFERS`, `FEATURE_MEDIA_MESSAGES`, `FEATURE_THANK_YOUS`, `FEATURE_MEMORY_BOOK`;
+- `FEATURE_MEDIA_TRANSCODING`, `MEDIA_AUDIO_MAX_BYTES`, `MEDIA_VIDEO_MAX_BYTES`, `MEDIA_RETENTION_DAYS`.
+
+External configuration:
+
+- production media activation requires deployment and monitoring of an authorized malware scanner that writes clean/infected object metadata; until then downloads fail closed;
+- optional production transcoding remains disabled until an approved transcoder, codecs, queue capacity and cost/retention policy are configured;
+- physical book printing is export/print-ready only and requires a commercial printer contract, proofs, fulfilment and returns policy;
+- retention duration, parental consent copy and child-media privacy handling require final legal/DPO approval before production activation.

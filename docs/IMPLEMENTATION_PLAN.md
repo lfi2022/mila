@@ -163,10 +163,10 @@ Status legend: `[ ]` pending, `[x]` completed, `BLOCKED_EXTERNAL` requires a sec
 
 ## Stage 16 — Second hand, messages, thank-yous, and memories
 
-- [ ] Implement new-only/second-hand-allowed/preferred preferences and coordinated offer/condition/photo/comment/acceptance flow.
-- [ ] Implement text messages and controlled private audio/video uploads with limits, scanning hooks, signed URLs, deletion, and optional transcoding.
-- [ ] Implement received/thank-you tracking, filters, parent-approved drafts, digital cards, and export.
-- [ ] Implement memory book with authorized content, PDF/print-ready export preparation, themes, and retention settings.
+- [x] Implement new-only/second-hand-allowed/preferred preferences and coordinated offer/condition/photo/comment/acceptance flow.
+- [x] Implement text messages and controlled private audio/video uploads with limits, scanning hooks, signed URLs, deletion, and optional transcoding.
+- [x] Implement received/thank-you tracking, filters, parent-approved drafts, digital cards, and export.
+- [x] Implement memory book with authorized content, PDF/print-ready export preparation, themes, and retention settings.
 
 ## Stage 17 — Admin, moderation, legal, and privacy
 
