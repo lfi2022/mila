@@ -22,9 +22,9 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
   style="
     margin:0;
     padding:0;
-    background:#f6f1ee;
+    background:linear-gradient(180deg,#f8f3f1 0%,#f2ebe8 100%);
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
-    color:#34384e;
+    color:#2d2f3a;
   "
 >
   ${
@@ -51,13 +51,12 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
     border="0"
     style="
       width:100%;
-      background:#f6f1ee;
+      background:linear-gradient(180deg,#f7f1ef 0%,#f2e8e4 100%);
     "
   >
     <tr>
       <td align="center" style="padding:32px 14px 22px;">
 
-        <!-- LOGO OUTSIDE CARD -->
         <table
           role="presentation"
           width="100%"
@@ -71,40 +70,52 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
         >
           <tr>
             <td align="center" style="padding:4px 0 22px;">
-             <a
-  href="${escapeHtml(appUrl)}"
-  style="
-    text-decoration:none;
-    display:inline-block;
-  "
->
-  <img
-    src="${escapeHtml(new URL("/icon-192.png", appUrl).toString())}"
-    alt="Mila"
-    width="96"
-    height="96"
-    style="
-      display:block;
-      width:96px;
-      height:96px;
-      margin:0 auto;
-      border:0;
-      outline:none;
-      text-decoration:none;
-      border-radius:24px;
-    "
-  >
-</a>
+              <a
+                href="${escapeHtml(appUrl)}"
+                style="
+                  text-decoration:none;
+                  display:inline-block;
+                "
+              >
+                <div
+                  style="
+                    width:92px;
+                    height:92px;
+                    margin:0 auto 10px;
+                    background:linear-gradient(135deg,#f7d8d3 0%,#ead9ef 50%,#dfe6ff 100%);
+                    border:2px solid rgba(255,255,255,0.9);
+                    border-radius:24px;
+                    box-shadow:0 16px 30px rgba(90,74,74,0.16);
+                    text-align:center;
+                    line-height:92px;
+                  "
+                >
+                  <img
+                    src="${escapeHtml(new URL("/icon-192.png", appUrl).toString())}"
+                    alt="Mila"
+                    width="56"
+                    height="56"
+                    style="
+                      display:inline-block;
+                      width:56px;
+                      height:56px;
+                      vertical-align:middle;
+                      border:0;
+                      outline:none;
+                      text-decoration:none;
+                    "
+                  >
+                </div>
+              </a>
 
               <div
                 style="
-                  margin-top:9px;
                   font-size:10px;
-                  line-height:1.4;
+                  line-height:1.5;
                   font-weight:700;
                   letter-spacing:2px;
                   text-transform:uppercase;
-                  color:#a8918d;
+                  color:#a68b86;
                 "
               >
                 Vos envies, réunies avec douceur
@@ -113,7 +124,6 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
           </tr>
         </table>
 
-        <!-- MAIN CARD -->
         <table
           role="presentation"
           width="100%"
@@ -124,19 +134,17 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
             width:100%;
             max-width:620px;
             background:#ffffff;
-            border:1px solid #ebe3df;
-            border-radius:28px;
+            border:1px solid #f3e6e2;
+            border-radius:30px;
             overflow:hidden;
-            box-shadow:0 10px 30px rgba(73,58,54,0.05);
+            box-shadow:0 22px 42px rgba(76,58,55,0.10);
           "
         >
-
-          <!-- SOFT TOP STRIP -->
           <tr>
             <td
               style="
-                height:10px;
-                background:#ead0cd;
+                height:12px;
+                background:linear-gradient(90deg,#edc9c5 0%,#d8c4db 100%);
                 font-size:0;
                 line-height:0;
               "
@@ -145,25 +153,23 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
             </td>
           </tr>
 
-          <!-- CONTENT -->
           <tr>
             <td
               style="
-                padding:46px 42px 34px;
+                padding:42px 42px 30px;
               "
             >
               ${content}
             </td>
           </tr>
 
-          <!-- FOOTER -->
           <tr>
             <td
               align="center"
               style="
-                padding:28px 34px 32px;
-                background:#fbf8f6;
-                border-top:1px solid #f0e9e5;
+                padding:26px 34px 30px;
+                background:linear-gradient(180deg,#fbf7f6 0%,#f7f3f1 100%);
+                border-top:1px solid #f1e8e4;
               "
             >
               <div
@@ -171,7 +177,7 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
                   margin-bottom:10px;
                   font-size:13px;
                   line-height:1.6;
-                  color:#8e8b95;
+                  color:#7d7a88;
                 "
               >
                 Une question ou simplement envie de retrouver vos listes ?
@@ -180,7 +186,7 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
               <a
                 href="${escapeHtml(appUrl)}"
                 style="
-                  color:#575c78;
+                  color:#3d4662;
                   text-decoration:none;
                   font-size:13px;
                   font-weight:700;
@@ -194,7 +200,7 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
                   margin-top:24px;
                   font-size:11px;
                   line-height:1.7;
-                  color:#aaa5ab;
+                  color:#a09ca8;
                 "
               >
                 Cet e-mail a été envoyé automatiquement par Mila.<br>
@@ -204,7 +210,6 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
           </tr>
         </table>
 
-        <!-- SECURITY NOTE -->
         <table
           role="presentation"
           width="100%"
@@ -223,7 +228,7 @@ export function renderEmailLayout({ title, preheader, content, appUrl }: EmailLa
                 padding:18px 24px 0;
                 font-size:10px;
                 line-height:1.6;
-                color:#aaa5ab;
+                color:#a39ba3;
               "
             >
               Pour votre sécurité, ne transmettez jamais un lien privé reçu par e-mail
@@ -253,22 +258,25 @@ export function emailButton(label: string, url: string) {
   <tr>
     <td
       align="center"
-      bgcolor="#4b506b"
       style="
+        background:linear-gradient(135deg,#4e587d 0%,#726179 100%);
         border-radius:999px;
+        box-shadow:0 12px 20px rgba(78,88,125,0.22);
       "
     >
       <a
         href="${escapeHtml(url)}"
         style="
           display:inline-block;
-          padding:15px 27px;
+          padding:16px 30px;
           font-size:15px;
           font-weight:700;
           line-height:1.1;
+          letter-spacing:0.2px;
           color:#ffffff;
           text-decoration:none;
           border-radius:999px;
+          border:1px solid rgba(255,255,255,0.18);
         "
       >
         ${escapeHtml(label)}
@@ -283,11 +291,11 @@ export function emailHeading(title: string) {
 <h1
   style="
     margin:0 0 16px;
-    font-size:30px;
-    line-height:1.24;
-    font-weight:750;
-    letter-spacing:-0.7px;
-    color:#34384e;
+    font-size:31px;
+    line-height:1.23;
+    font-weight:800;
+    letter-spacing:-0.8px;
+    color:#2d2f3a;
   "
 >
   ${escapeHtml(title)}
@@ -315,8 +323,9 @@ export function emailParagraph(text: string) {
   style="
     margin:0 0 18px;
     font-size:16px;
-    line-height:1.75;
-    color:#686a78;
+    line-height:1.8;
+    font-weight:500;
+    color:#5f6473;
   "
 >
   ${escapeHtml(text)}
@@ -356,9 +365,9 @@ export function emailNotice(text: string) {
       style="
         padding:17px 18px;
         border-radius:16px;
-        background:#faf5f2;
-        border:1px solid #f1e6e1;
-        color:#7b7882;
+        background:linear-gradient(180deg,#faf3f2 0%,#f5efee 100%);
+        border:1px solid #efdfe0;
+        color:#6f6a78;
         font-size:13px;
         line-height:1.65;
       "
@@ -386,9 +395,10 @@ export function emailHighlight(title: string, text: string, icon = "✨") {
     <td
       style="
         padding:22px;
-        background:#fbf7f5;
-        border:1px solid #eee4df;
+        background:linear-gradient(180deg,#fffdfc 0%,#faf4f2 100%);
+        border:1px solid #f0e5e1;
         border-radius:20px;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,0.8);
       "
     >
       <table
@@ -419,7 +429,7 @@ export function emailHighlight(title: string, text: string, icon = "✨") {
                 font-size:15px;
                 line-height:1.4;
                 font-weight:700;
-                color:#464a61;
+                color:#3b4153;
               "
             >
               ${escapeHtml(title)}
@@ -429,7 +439,7 @@ export function emailHighlight(title: string, text: string, icon = "✨") {
               style="
                 font-size:14px;
                 line-height:1.65;
-                color:#777885;
+                color:#707587;
               "
             >
               ${escapeHtml(text)}

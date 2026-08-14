@@ -5,6 +5,8 @@ import {
   emailButton,
   emailFallbackLink,
   emailHeading,
+  emailHighlight,
+  emailLead,
   emailNotice,
   emailParagraph,
   escapeHtml,
@@ -70,18 +72,24 @@ function welcomeEmail(appUrl: string): EmailMessage {
   const content = `
     ${emailHeading("Bienvenue chez Mila ✨")}
 
-    ${emailParagraph(
-      "Votre espace est prêt ! Il ne vous reste plus qu'à imaginer la liste qui vous ressemble.",
+    ${emailLead(
+      "Votre espace est prêt. Il ne vous reste plus qu'à imaginer la liste qui vous ressemble.",
+    )}
+
+    ${emailHighlight(
+      "Créez votre univers",
+      "Ajoutez vos coups de cœur, rassemblez toutes vos envies au même endroit et partagez-les facilement avec vos proches.",
+      "🎁",
     )}
 
     ${emailParagraph(
-      "Ajoutez vos coups de cœur, rassemblez toutes vos envies au même endroit et partagez-les facilement avec les personnes qui comptent pour vous.",
+      "Grande enseigne, petite boutique, création artisanale ou simple idée cadeau : avec Mila, toutes vos envies ont leur place.",
     )}
 
     ${emailButton("Créer ma première liste", appUrl)}
 
     ${emailNotice(
-      "Grande enseigne, petite boutique, création artisanale ou simple idée cadeau : avec Mila, toutes vos envies ont leur place.",
+      "La bonne surprise commence toujours par une petite envie…",
     )}
   `;
 
@@ -127,8 +135,14 @@ function verificationEmail(appUrl: string, token?: string): EmailMessage {
   const content = `
     ${emailHeading("Encore une toute petite étape ✨")}
 
-    ${emailParagraph(
+    ${emailLead(
       "Votre espace Mila est presque prêt. Confirmez simplement votre adresse e-mail pour finaliser votre inscription.",
+    )}
+
+    ${emailHighlight(
+      "Confirmer votre compte",
+      "Une validation rapide suffit pour commencer à organiser vos envies et les partager avec votre entourage.",
+      "✅",
     )}
 
     ${emailButton("Confirmer mon adresse", link)}
@@ -182,8 +196,14 @@ function passwordResetEmail(appUrl: string, token?: string): EmailMessage {
   const content = `
     ${emailHeading("Un petit oubli ? 💌")}
 
-    ${emailParagraph(
+    ${emailLead(
       "Pas de souci, cela arrive à tout le monde. Nous avons reçu une demande pour modifier le mot de passe de votre compte Mila.",
+    )}
+
+    ${emailHighlight(
+      "Réinitialiser votre accès",
+      "Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe en quelques secondes.",
+      "🔐",
     )}
 
     ${emailButton("Créer un nouveau mot de passe", link)}
@@ -233,10 +253,12 @@ function listInvitationEmail(appUrl: string, token?: string): EmailMessage {
   const content = `
     ${emailHeading("Vous êtes invité(e) 💌")}
 
-    ${emailParagraph("Quelqu'un a choisi de partager un petit bout de son univers avec vous.")}
+    ${emailLead("Quelqu'un a choisi de partager un petit bout de son univers avec vous.")}
 
-    ${emailParagraph(
-      "Vous avez été invité(e) à rejoindre une liste Mila et à participer à sa gestion.",
+    ${emailHighlight(
+      "Une invitation à ouvrir",
+      "Vous avez été invité(e) à rejoindre une liste Mila et à participer à sa gestion en toute simplicité.",
+      "✨",
     )}
 
     ${emailButton("Découvrir l’invitation", link)}
@@ -285,7 +307,13 @@ function priceDropEmail(appUrl: string, body?: string): EmailMessage {
   const content = `
     ${emailHeading("Une jolie surprise ✨")}
 
-    ${emailParagraph(message)}
+    ${emailLead("Bonne nouvelle : un de vos coups de cœur a peut-être trouvé un meilleur moment.")}
+
+    ${emailHighlight(
+      "Prix en baisse",
+      message,
+      "📉",
+    )}
 
     ${emailParagraph("C'est peut-être le bon moment pour aller y jeter un petit coup d'œil.")}
 
@@ -333,7 +361,13 @@ function stockUnavailableEmail(appUrl: string, body?: string): EmailMessage {
   const content = `
     ${emailHeading("Un cadeau joue à cache-cache 🎁")}
 
-    ${emailParagraph(message)}
+    ${emailLead("Une petite vérification peut être utile.")}
+
+    ${emailHighlight(
+      "Disponibilité à surveiller",
+      message,
+      "🛍️",
+    )}
 
     ${emailParagraph(
       "Il peut simplement s'agir d'une rupture temporaire ou d'un changement chez le marchand.",
@@ -383,7 +417,13 @@ function deadLinkEmail(appUrl: string, body?: string): EmailMessage {
   const content = `
     ${emailHeading("Un petit lien s’est égaré 🔗")}
 
-    ${emailParagraph(message)}
+    ${emailLead("Mila n'a pas pu retrouver le produit avec certitude.")}
+
+    ${emailHighlight(
+      "Lien à vérifier",
+      message,
+      "🔎",
+    )}
 
     ${emailParagraph(
       "Cela arrive parfois lorsqu'une boutique modifie, déplace ou retire une page produit.",
@@ -426,7 +466,13 @@ function genericEmail(appUrl: string, body?: string): EmailMessage {
   const content = `
     ${emailHeading("Une petite nouveauté vous attend ✨")}
 
-    ${emailParagraph(message)}
+    ${emailLead("Du nouveau dans votre univers Mila.")}
+
+    ${emailHighlight(
+      "À l'affiche",
+      message,
+      "✨",
+    )}
 
     ${emailButton("Découvrir sur Mila", appUrl)}
   `;
