@@ -8,6 +8,7 @@ export type Gift = {
   quantity: number;
   reservedQuantity: number;
   unitPriceMinor: string | null;
+  currency: string;
   status: string;
   kind: "LINK" | "PRODUCT" | "SERVICE" | "EXPERIENCE" | "FREE_GIFT" | "CONTRIBUTION";
   contributionTargetMinor: string | null;

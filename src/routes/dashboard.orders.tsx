@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -16,8 +16,12 @@ import {
 } from "@/components/ui/select";
 import { orderApi, type OrderGroup, type OrderStatus } from "@/features/orders/api";
 import { formatCents } from "@/lib/money";
+import { runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/dashboard/orders")({
+  beforeLoad: () => {
+    if (!runtimeConfig.orderFulfilmentEnabled) throw redirect({ to: "/dashboard" });
+  },
   head: () => ({ meta: [{ title: "À commander — Mila" }] }),
   component: OrdersPage,
 });

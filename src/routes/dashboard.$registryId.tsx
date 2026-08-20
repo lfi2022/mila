@@ -467,6 +467,17 @@ function RegistryDetail() {
   }
 
   const giftRows = items.data ?? [];
+  const valuesByCurrency = Object.entries(
+    giftRows.reduce<Record<string, bigint>>((totals, gift) => {
+      const value = gift.unitPriceMinor
+        ? BigInt(gift.unitPriceMinor) * BigInt(gift.quantity)
+        : gift.contributionTargetMinor
+          ? BigInt(gift.contributionTargetMinor)
+          : 0n;
+      if (value > 0n) totals[gift.currency] = (totals[gift.currency] ?? 0n) + value;
+      return totals;
+    }, {}),
+  );
   const filteredGifts = giftRows.filter((gift) =>
     `${gift.title} ${gift.description ?? ""}`
       .toLocaleLowerCase("fr")
@@ -856,6 +867,20 @@ function RegistryDetail() {
                 );
               })}
             </ul>
+            {valuesByCurrency.length > 0 ? (
+              <div className="surface-card mt-6 p-5 text-center">
+                <p className="text-sm text-muted-foreground">Valeur totale de la liste</p>
+                <p className="mt-1 font-display text-2xl">
+                  {valuesByCurrency
+                    .map(([currency, amountMinor]) =>
+                      new Intl.NumberFormat("fr-BE", { style: "currency", currency }).format(
+                        Number(amountMinor) / 100,
+                      ),
+                    )
+                    .join(" · ")}
+                </p>
+              </div>
+            ) : null}
           </section>
 
           <section>

@@ -278,20 +278,6 @@ function PublicListPage() {
             Aucun cadeau ne correspond à cette recherche.
           </p>
         ) : null}
-        {totals.valuesByCurrency.length > 0 ? (
-          <div className="mt-10 rounded-xl border bg-card p-5 text-center">
-            <p className="text-sm text-muted-foreground">Valeur totale de la liste</p>
-            <p className="mt-1 font-display text-2xl">
-              {totals.valuesByCurrency
-                .map(({ currency, amountMinor }) =>
-                  new Intl.NumberFormat("fr-BE", { style: "currency", currency }).format(
-                    Number(amountMinor) / 100,
-                  ),
-                )
-                .join(" · ")}
-            </p>
-          </div>
-        ) : null}
         <ReportList listId={list.id} />
       </main>
     </div>

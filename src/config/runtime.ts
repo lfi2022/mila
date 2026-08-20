@@ -38,7 +38,18 @@ export const runtimeConfig = {
         serverEnv("VITE_FEATURE_REWARDS_PREMIUM") ||
         "false",
     ) === "true",
+  orderFulfilmentEnabled: String(viteEnv["VITE_FEATURE_ORDER_FULFILMENT"] || "false") === "true",
+  secondHandOffersEnabled: String(viteEnv["VITE_FEATURE_SECOND_HAND_OFFERS"] || "false") === "true",
+  mediaMessagesEnabled: String(viteEnv["VITE_FEATURE_MEDIA_MESSAGES"] || "false") === "true",
+  thankYousEnabled: String(viteEnv["VITE_FEATURE_THANK_YOUS"] || "false") === "true",
+  memoryBookEnabled: String(viteEnv["VITE_FEATURE_MEMORY_BOOK"] || "false") === "true",
 } as const;
+
+export const memoriesUiEnabled =
+  runtimeConfig.secondHandOffersEnabled ||
+  runtimeConfig.mediaMessagesEnabled ||
+  runtimeConfig.thankYousEnabled ||
+  runtimeConfig.memoryBookEnabled;
 
 export function buildPublicUrl(path = "/"): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;

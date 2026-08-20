@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
-import { runtimeConfig } from "@/config/runtime";
+import { memoriesUiEnabled, runtimeConfig } from "@/config/runtime";
 
 export function SiteHeader() {
   const { user, signOut } = useAuth();
@@ -53,12 +53,16 @@ export function SiteHeader() {
                 <Link to="/profil">Profil</Link>
               </Button>
               <NotificationsBell />
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/dashboard/orders">À commander</Link>
-              </Button>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/dashboard/memories">Souvenirs</Link>
-              </Button>
+              {runtimeConfig.orderFulfilmentEnabled ? (
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/dashboard/orders">À commander</Link>
+                </Button>
+              ) : null}
+              {memoriesUiEnabled ? (
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/dashboard/memories">Souvenirs</Link>
+                </Button>
+              ) : null}
               <Button asChild size="sm">
                 <Link to="/dashboard">Mon espace</Link>
               </Button>
@@ -109,12 +113,16 @@ export function SiteHeader() {
                     <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
                       <Link to="/dashboard">Mes listes</Link>
                     </Button>
-                    <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
-                      <Link to="/dashboard/orders">À commander</Link>
-                    </Button>
-                    <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
-                      <Link to="/dashboard/memories">Souvenirs</Link>
-                    </Button>
+                    {runtimeConfig.orderFulfilmentEnabled ? (
+                      <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
+                        <Link to="/dashboard/orders">À commander</Link>
+                      </Button>
+                    ) : null}
+                    {memoriesUiEnabled ? (
+                      <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
+                        <Link to="/dashboard/memories">Souvenirs</Link>
+                      </Button>
+                    ) : null}
                     <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
                       <Link to="/profil">Profil</Link>
                     </Button>
