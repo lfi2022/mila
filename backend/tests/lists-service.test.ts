@@ -95,6 +95,8 @@ describe("ListsService", () => {
       visibility: "UNLISTED",
       status: "ACTIVE",
       accessCodeHash: "sensitive-hash",
+      hideReservedGifts: false,
+      showReservationNames: false,
       gifts: [],
     });
     const service = new ListsService(
@@ -114,6 +116,7 @@ describe("ListsService", () => {
       status: "ACTIVE",
       accessCodeHash: null,
       hideReservedGifts: false,
+      showReservationNames: true,
       gifts: [
         {
           id: "gift-1",
@@ -129,6 +132,13 @@ describe("ListsService", () => {
           reservedQuantity: 1,
           fundedAmountMinor: 500n,
           contributionTargetMinor: null,
+          secondHandPolicy: "NEW_ONLY",
+          reservations: [
+            { guestName: "Camille", status: "PURCHASED" },
+            { guestName: "Noah", status: "RESERVED" },
+          ],
+          images: [],
+          genericImageCategory: "STROLLER",
         },
       ],
     });
@@ -142,8 +152,57 @@ describe("ListsService", () => {
       unitPriceMinor: "12345",
       fundedAmountMinor: "500",
       hasLink: true,
+      secondHandPolicy: "NEW_ONLY",
+      reservationLabels: [
+        { name: "Camille", purchased: true },
+        { name: "Noah", purchased: false },
+      ],
     });
+    expect(list.totals.valuesByCurrency).toEqual([{ currency: "EUR", amountMinor: "24690" }]);
     expect(list.gifts[0]).not.toHaveProperty("url");
+  });
+
+  it("keeps reservation names private unless the parent explicitly enables them", async () => {
+    const findFirst = vi.fn().mockResolvedValue({
+      id: "list-1",
+      slug: "naissance",
+      title: "Naissance",
+      visibility: "UNLISTED",
+      status: "ACTIVE",
+      accessCodeHash: null,
+      hideReservedGifts: false,
+      showReservationNames: false,
+      gifts: [
+        {
+          id: "gift-1",
+          publicToken: "a".repeat(64),
+          title: "Poussette",
+          description: null,
+          kind: "LINK",
+          status: "RESERVED",
+          url: null,
+          currency: "EUR",
+          unitPriceMinor: null,
+          quantity: 1,
+          reservedQuantity: 1,
+          fundedAmountMinor: 0n,
+          contributionTargetMinor: null,
+          secondHandPolicy: "NEW_ONLY",
+          reservations: [{ guestName: "Prénom privé", status: "RESERVED" }],
+          images: [],
+          genericImageCategory: "OTHER",
+        },
+      ],
+    });
+    const service = new ListsService(
+      { giftList: { findFirst } } as unknown as PrismaClient,
+      config,
+    );
+
+    const list = await service.publicList("naissance");
+
+    expect(list.gifts[0]?.reservationLabels).toEqual([]);
+    expect(JSON.stringify(list)).not.toContain("Prénom privé");
   });
 
   it("rejects member writes without an allowed role", async () => {

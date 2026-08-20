@@ -17,6 +17,8 @@ export type PublicGift = {
   is_reserved: boolean;
   contribution_target: number | null;
   contribution_collected: number;
+  second_hand_policy: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
+  reservation_labels: Array<{ name: string; purchased: boolean }>;
 };
 
 type PublicListPayload = {
@@ -33,6 +35,7 @@ type PublicListPayload = {
   surpriseMode: boolean;
   allowIndexing: boolean;
   showProgress: boolean;
+  showReservationNames: boolean;
   theme: string;
   accentColor: string | null;
   heroStyle: string;
@@ -51,10 +54,16 @@ type PublicListPayload = {
     reservedQuantity: number;
     fundedAmountMinor: string;
     contributionTargetMinor: string | null;
+    secondHandPolicy: PublicGift["second_hand_policy"];
     isReserved: boolean;
     imageUrl: string;
+    reservationLabels: Array<{ name: string; purchased: boolean }>;
   }>;
-  totals: { items: number; taken: number };
+  totals: {
+    items: number;
+    taken: number;
+    valuesByCurrency: Array<{ currency: string; amountMinor: string }>;
+  };
 };
 
 export type PublicListResult =
@@ -83,9 +92,10 @@ export type PublicListResult =
         layout: string;
         show_progress: boolean;
         reserved_display: "SHOW" | "HIDE";
+        show_reservation_names: boolean;
       };
       gifts: PublicGift[];
-      totals: { items: number; taken: number };
+      totals: PublicListPayload["totals"];
     };
 
 export async function getPublicList(slug: string, wrongCode = false): Promise<PublicListResult> {
@@ -118,6 +128,7 @@ export async function getPublicList(slug: string, wrongCode = false): Promise<Pu
         layout: list.layout,
         show_progress: list.showProgress,
         reserved_display: "SHOW",
+        show_reservation_names: list.showReservationNames,
       },
       gifts: list.gifts.map((gift) => ({
         id: gift.id,
@@ -136,6 +147,8 @@ export async function getPublicList(slug: string, wrongCode = false): Promise<Pu
         contribution_target:
           gift.contributionTargetMinor == null ? null : Number(gift.contributionTargetMinor) / 100,
         contribution_collected: Number(gift.fundedAmountMinor) / 100,
+        second_hand_policy: gift.secondHandPolicy,
+        reservation_labels: gift.reservationLabels,
       })),
       totals: list.totals,
     };

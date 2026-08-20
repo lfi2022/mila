@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -8,8 +8,12 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { paymentApi } from "@/features/payments/api";
 import { formatCents } from "@/lib/money";
 import { track } from "@/lib/analytics";
+import { runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/premium/$listId")({
+  beforeLoad: () => {
+    if (!runtimeConfig.rewardsPremiumUiEnabled) throw redirect({ to: "/" });
+  },
   head: () => ({ meta: [{ title: "Mila Premium" }, { name: "robots", content: "noindex" }] }),
   component: PremiumPage,
 });

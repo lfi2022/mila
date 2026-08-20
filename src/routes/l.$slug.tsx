@@ -19,7 +19,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LAYOUT_CLASSES, appearanceStyle, getHeroStyle, getLayout } from "@/lib/list-theme";
+import {
+  LAYOUT_CLASSES,
+  appearanceStyle,
+  getHeroStyle,
+  getLayout,
+  type ListLayout,
+} from "@/lib/list-theme";
 import {
   getPublicList,
   reserveGift,
@@ -101,6 +107,7 @@ function PublicListPage() {
   const [code, setCode] = useState("");
   const [wrongCode, setWrongCode] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const [giftSearch, setGiftSearch] = useState("");
 
   if (data.state === "not_found") return <Unavailable />;
 
@@ -152,6 +159,11 @@ function PublicListPage() {
   const heroStyle = getHeroStyle(list.hero_style);
   const layout = getLayout(list.layout);
   const progress = totals.items > 0 ? Math.round((totals.taken / totals.items) * 100) : 0;
+  const filteredGifts = gifts.filter((gift) =>
+    `${gift.title} ${gift.description ?? ""}`
+      .toLocaleLowerCase("fr")
+      .includes(giftSearch.trim().toLocaleLowerCase("fr")),
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground" style={appearanceStyle(list)}>
@@ -227,19 +239,59 @@ function PublicListPage() {
           </div>
         ) : null}
 
+        {gifts.length > 4 ? (
+          <div className="mb-8 max-w-md space-y-2">
+            <Label htmlFor="public-gift-search">Rechercher dans la liste</Label>
+            <Input
+              id="public-gift-search"
+              type="search"
+              placeholder="Nom ou description du cadeau…"
+              value={giftSearch}
+              onChange={(event) => setGiftSearch(event.target.value)}
+            />
+          </div>
+        ) : null}
+
         {gifts.length === 0 ? (
           <p className="rounded-xl border border-dashed p-10 text-center text-muted-foreground">
             Tous les cadeaux ont trouvé preneur. Merci pour les futurs parents !
           </p>
         ) : (
           <ul className={LAYOUT_CLASSES[layout]}>
-            {gifts.map((gift) => (
-              <li key={gift.id}>
-                <GiftCard gift={gift} horizontal={layout === "list"} isDemo={list.is_demo} />
+            {filteredGifts.map((gift, index) => (
+              <li
+                key={gift.id}
+                className={layout === "magazine" && index % 3 === 0 ? "md:col-span-2" : undefined}
+              >
+                <GiftCard
+                  gift={gift}
+                  layout={layout}
+                  featured={layout === "magazine" && index % 3 === 0}
+                  isDemo={list.is_demo}
+                />
               </li>
             ))}
           </ul>
         )}
+        {filteredGifts.length === 0 && gifts.length > 0 ? (
+          <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
+            Aucun cadeau ne correspond à cette recherche.
+          </p>
+        ) : null}
+        {totals.valuesByCurrency.length > 0 ? (
+          <div className="mt-10 rounded-xl border bg-card p-5 text-center">
+            <p className="text-sm text-muted-foreground">Valeur totale de la liste</p>
+            <p className="mt-1 font-display text-2xl">
+              {totals.valuesByCurrency
+                .map(({ currency, amountMinor }) =>
+                  new Intl.NumberFormat("fr-BE", { style: "currency", currency }).format(
+                    Number(amountMinor) / 100,
+                  ),
+                )
+                .join(" · ")}
+            </p>
+          </div>
+        ) : null}
         <ReportList listId={list.id} />
       </main>
     </div>
@@ -331,13 +383,16 @@ function ReportList({ listId }: { listId: string }) {
 
 function GiftCard({
   gift,
-  horizontal = false,
+  layout,
+  featured = false,
   isDemo = false,
 }: {
   gift: PublicGift;
-  horizontal?: boolean;
+  layout: ListLayout;
+  featured?: boolean;
   isDemo?: boolean;
 }) {
+  const horizontal = layout === "list";
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -378,7 +433,9 @@ function GiftCard({
       className={`${
         horizontal
           ? "grid overflow-hidden sm:grid-cols-[200px_1fr]"
-          : "flex h-full flex-col overflow-hidden"
+          : featured
+            ? "flex h-full flex-col overflow-hidden md:row-span-2"
+            : "flex h-full flex-col overflow-hidden"
       }${gift.is_reserved ? " bg-muted/40" : ""}`}
     >
       {gift.image_url ? (
@@ -387,7 +444,7 @@ function GiftCard({
           alt={gift.title}
           loading="lazy"
           decoding="async"
-          className={`${horizontal ? "h-full max-h-52 w-full object-cover" : "h-44 w-full object-cover"}${
+          className={`${horizontal ? "h-full max-h-52 w-full object-cover" : featured ? "h-72 w-full object-cover" : "h-44 w-full object-cover"}${
             gift.is_reserved ? " opacity-60" : ""
           }`}
         />
@@ -418,6 +475,13 @@ function GiftCard({
               })}
             </p>
           ) : null}
+          {gift.reservation_labels.length > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {gift.reservation_labels
+                .map(({ name, purchased }) => `${purchased ? "Acheté" : "Réservé"} par ${name}`)
+                .join(" · ")}
+            </p>
+          ) : null}
           {gift.has_link ? <PriceSuggestion giftToken={gift.public_token} /> : null}
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
@@ -439,7 +503,7 @@ function GiftCard({
               </a>
             </Button>
           ) : null}
-          {!gift.is_reserved && !isDemo ? (
+          {!gift.is_reserved && !isDemo && gift.second_hand_policy !== "NEW_ONLY" ? (
             <Dialog open={offerOpen} onOpenChange={setOfferOpen}>
               <Button
                 variant="outline"
@@ -525,7 +589,7 @@ function GiftCard({
               </DialogContent>
             </Dialog>
           ) : null}
-          {gift.is_reserved ? (
+          {gift.kind === "CONTRIBUTION" ? null : gift.is_reserved ? (
             <Button size="sm" className="min-h-10" disabled>
               Déjà réservé
             </Button>

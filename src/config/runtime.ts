@@ -32,6 +32,12 @@ export const runtimeConfig = {
   seoIndexingEnabled:
     String(viteEnv["VITE_SEO_INDEXING_ENABLED"] || serverEnv("SEO_INDEXING_ENABLED") || "false") ===
     "true",
+  rewardsPremiumUiEnabled:
+    String(
+      viteEnv["VITE_FEATURE_REWARDS_PREMIUM"] ||
+        serverEnv("VITE_FEATURE_REWARDS_PREMIUM") ||
+        "false",
+    ) === "true",
 } as const;
 
 export function buildPublicUrl(path = "/"): string {

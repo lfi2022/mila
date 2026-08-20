@@ -11,7 +11,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { FAQ_ENTRIES } from "@/lib/faq-content";
+import { visibleFaqEntries } from "@/lib/faq-content";
+import { runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/faq")({
   head: () => ({
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/faq")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          mainEntity: FAQ_ENTRIES.map((entry) => ({
+          mainEntity: visibleFaqEntries(runtimeConfig.rewardsPremiumUiEnabled).map((entry) => ({
             "@type": "Question",
             name: entry.question,
             acceptedAnswer: { "@type": "Answer", text: entry.answer },
@@ -66,7 +67,7 @@ function FaqPage() {
         </p>
 
         <Accordion type="single" collapsible className="mt-10">
-          {FAQ_ENTRIES.map((entry) => (
+          {visibleFaqEntries(runtimeConfig.rewardsPremiumUiEnabled).map((entry) => (
             <AccordionItem key={entry.question} value={entry.question}>
               <AccordionTrigger className="text-left text-base">{entry.question}</AccordionTrigger>
               <AccordionContent className="text-sm text-muted-foreground">

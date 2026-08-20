@@ -79,10 +79,10 @@ export const genericImageUrls: Record<GenericImageCategory, string> = {
   PLUSH_RABBIT: "/generic-images/plush-rabbit.webp",
   BABY_BOUNCER: "/generic-images/baby-bouncer.webp",
   BABY_CRIB: "/generic-images/baby-crib.webp",
-  CLOTHING: "/generic-images/plush-rabbit.webp",
-  FEEDING: "/generic-images/baby-bouncer.webp",
-  BATH: "/generic-images/plush-rabbit.webp",
-  TOY: "/generic-images/plush-rabbit.webp",
+  CLOTHING: "/generic-images/baby-clothing.webp",
+  FEEDING: "/generic-images/baby-feeding.webp",
+  BATH: "/generic-images/baby-bath.webp",
+  TOY: "/generic-images/baby-toys.webp",
   OTHER: "/generic-images/plush-rabbit.webp",
 };
 
@@ -91,7 +91,7 @@ export function detectGenericImageCategory(...values: Array<string | null | unde
   if (/poussette|stroller|buggy/.test(text)) return "STROLLER" as const;
   if (/lapin|doudou|peluche|rabbit|bunny/.test(text)) return "PLUSH_RABBIT" as const;
   if (/transat|balancelle|bouncer/.test(text)) return "BABY_BOUNCER" as const;
-  if (/lit|berceau|couffin|crib|cot/.test(text)) return "BABY_CRIB" as const;
+  if (/\b(?:lit|berceau|couffin|crib|cot)\b/.test(text)) return "BABY_CRIB" as const;
   if (/body|pyjama|vêtement|vetement|bonnet|chausson/.test(text)) return "CLOTHING" as const;
   if (/biberon|repas|assiette|chaise haute/.test(text)) return "FEEDING" as const;
   if (/bain|baignoire|toilette/.test(text)) return "BATH" as const;

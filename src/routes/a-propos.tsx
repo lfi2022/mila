@@ -5,6 +5,7 @@ import { buildPublicUrl } from "@/config/runtime";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
+import { runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/a-propos")({
   head: () => ({
@@ -57,12 +58,17 @@ function AboutPage() {
           <p className="text-sm text-muted-foreground">
             Créer une liste est gratuit. Lorsqu'un proche passe par un lien de votre liste vers
             certaines boutiques partenaires des réseaux d'affiliation, Mila peut recevoir une
-            commission — sans que le prix payé change. Une partie de cette commission peut être
-            reversée aux parents via les{" "}
-            <Link to="/recompenses" className="underline">
-              Récompenses Mila
-            </Link>
-            .
+            commission — sans que le prix payé change.
+            {runtimeConfig.rewardsPremiumUiEnabled ? (
+              <>
+                {" "}
+                Une partie de cette commission peut être reversée aux parents via les{" "}
+                <Link to="/recompenses" className="underline">
+                  Récompenses Mila
+                </Link>
+                .
+              </>
+            ) : null}
           </p>
         </section>
 

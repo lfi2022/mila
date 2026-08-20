@@ -1,10 +1,14 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect } from "@tanstack/react-router";
 
 import { RewardsPanel } from "@/features/rewards/components";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
+import { runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/recompenses/$registryId")({
+  beforeLoad: () => {
+    if (!runtimeConfig.rewardsPremiumUiEnabled) throw redirect({ to: "/" });
+  },
   head: () => ({
     meta: [
       { title: "Récompenses Mila — vos cadeaux vous récompensent" },

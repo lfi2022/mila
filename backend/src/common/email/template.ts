@@ -88,9 +88,7 @@ function welcomeEmail(appUrl: string): EmailMessage {
 
     ${emailButton("Créer ma première liste", appUrl)}
 
-    ${emailNotice(
-      "La bonne surprise commence toujours par une petite envie…",
-    )}
+    ${emailNotice("La bonne surprise commence toujours par une petite envie…")}
   `;
 
   return {
@@ -309,11 +307,7 @@ function priceDropEmail(appUrl: string, body?: string): EmailMessage {
 
     ${emailLead("Bonne nouvelle : un de vos coups de cœur a peut-être trouvé un meilleur moment.")}
 
-    ${emailHighlight(
-      "Prix en baisse",
-      message,
-      "📉",
-    )}
+    ${emailHighlight("Prix en baisse", message, "📉")}
 
     ${emailParagraph("C'est peut-être le bon moment pour aller y jeter un petit coup d'œil.")}
 
@@ -363,11 +357,7 @@ function stockUnavailableEmail(appUrl: string, body?: string): EmailMessage {
 
     ${emailLead("Une petite vérification peut être utile.")}
 
-    ${emailHighlight(
-      "Disponibilité à surveiller",
-      message,
-      "🛍️",
-    )}
+    ${emailHighlight("Disponibilité à surveiller", message, "🛍️")}
 
     ${emailParagraph(
       "Il peut simplement s'agir d'une rupture temporaire ou d'un changement chez le marchand.",
@@ -419,11 +409,7 @@ function deadLinkEmail(appUrl: string, body?: string): EmailMessage {
 
     ${emailLead("Mila n'a pas pu retrouver le produit avec certitude.")}
 
-    ${emailHighlight(
-      "Lien à vérifier",
-      message,
-      "🔎",
-    )}
+    ${emailHighlight("Lien à vérifier", message, "🔎")}
 
     ${emailParagraph(
       "Cela arrive parfois lorsqu'une boutique modifie, déplace ou retire une page produit.",
@@ -468,11 +454,7 @@ function genericEmail(appUrl: string, body?: string): EmailMessage {
 
     ${emailLead("Du nouveau dans votre univers Mila.")}
 
-    ${emailHighlight(
-      "À l'affiche",
-      message,
-      "✨",
-    )}
+    ${emailHighlight("À l'affiche", message, "✨")}
 
     ${emailButton("Découvrir sur Mila", appUrl)}
   `;

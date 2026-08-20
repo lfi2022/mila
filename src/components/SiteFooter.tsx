@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import markAsset from "@/assets/mila-mark.png.asset.json";
+import { runtimeConfig } from "@/config/runtime";
 
 export function SiteFooter() {
   return (
@@ -37,11 +38,13 @@ export function SiteFooter() {
                   Comment ça marche
                 </Link>
               </li>
-              <li>
-                <Link to="/recompenses" className="hover:text-foreground">
-                  Récompenses Mila
-                </Link>
-              </li>
+              {runtimeConfig.rewardsPremiumUiEnabled ? (
+                <li>
+                  <Link to="/recompenses" className="hover:text-foreground">
+                    Récompenses Mila
+                  </Link>
+                </li>
+              ) : null}
               <li>
                 <Link to="/faq" className="hover:text-foreground">
                   FAQ

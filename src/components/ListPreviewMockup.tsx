@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 type MockGift = {
   title: string;
   price: string;
-  store: string;
   state: "available" | "reserved";
   image: string;
 };
@@ -12,28 +11,24 @@ const GIFTS: MockGift[] = [
   {
     title: "Poussette Cybex",
     price: "499 €",
-    store: "Amazon",
     state: "available",
     image: "/generic-images/stroller.webp",
   },
   {
     title: "Doudou lapin",
     price: "24,90 €",
-    store: "Petite boutique",
     state: "available",
     image: "/generic-images/plush-rabbit.webp",
   },
   {
     title: "Transat bébé",
     price: "89 €",
-    store: "Vertbaudet",
     state: "reserved",
     image: "/generic-images/baby-bouncer.webp",
   },
   {
     title: "Lit évolutif en hêtre",
     price: "149 €",
-    store: "IKEA",
     state: "available",
     image: "/generic-images/baby-crib.webp",
   },
@@ -87,9 +82,7 @@ export function ListPreviewMockup() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{gift.title}</p>
 
-                  <p className="text-xs text-muted-foreground">
-                    {gift.price} · {gift.store}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{gift.price}</p>
                 </div>
 
                 {gift.state === "reserved" ? (

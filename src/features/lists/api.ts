@@ -18,6 +18,7 @@ export type ListPatch = Partial<{
   accessCode: string | null;
   surpriseMode: boolean;
   hideReservedGifts: boolean;
+  showReservationNames: boolean;
   allowIndexing: boolean;
   showProgress: boolean;
   theme: string;
@@ -42,6 +43,7 @@ export type MilaList = ListPatch & {
   coverMediaKey: string | null;
   surpriseMode: boolean;
   hideReservedGifts: boolean;
+  showReservationNames: boolean;
   allowIndexing: boolean;
   showProgress: boolean;
   theme: string;

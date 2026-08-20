@@ -164,21 +164,29 @@ function AuthPage() {
                 <TabsTrigger value="signup">Inscription</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="signin" className="mt-6 space-y-4">
-                <Field id="email" label="Email" value={email} onChange={setEmail} type="email" />
-                <Field
-                  id="password"
-                  label="Mot de passe"
-                  value={password}
-                  onChange={setPassword}
-                  type="password"
-                />
-                <Button className="w-full" disabled={busy} onClick={signIn}>
-                  Se connecter
-                </Button>
-                <Button asChild variant="link" className="w-full">
-                  <Link to="/mot-de-passe-oublie">Mot de passe oublié ?</Link>
-                </Button>
+              <TabsContent value="signin" className="mt-6">
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void signIn();
+                  }}
+                >
+                  <Field id="email" label="Email" value={email} onChange={setEmail} type="email" />
+                  <Field
+                    id="password"
+                    label="Mot de passe"
+                    value={password}
+                    onChange={setPassword}
+                    type="password"
+                  />
+                  <Button type="submit" className="w-full" disabled={busy}>
+                    Se connecter
+                  </Button>
+                  <Button asChild variant="link" className="w-full">
+                    <Link to="/mot-de-passe-oublie">Mot de passe oublié ?</Link>
+                  </Button>
+                </form>
               </TabsContent>
 
               <TabsContent value="signup" className="mt-6 space-y-4">

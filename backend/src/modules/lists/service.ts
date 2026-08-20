@@ -26,6 +26,7 @@ type ListInput = {
   accessCode?: string | null;
   surpriseMode: boolean;
   hideReservedGifts: boolean;
+  showReservationNames?: boolean;
   allowIndexing: boolean;
   showProgress: boolean;
   theme: string;
@@ -283,6 +284,7 @@ export class ListsService {
         visibility: true,
         surpriseMode: true,
         hideReservedGifts: true,
+        showReservationNames: true,
         allowIndexing: true,
         showProgress: true,
         closedAt: true,
@@ -306,6 +308,7 @@ export class ListsService {
             reservedQuantity: true,
             fundedAmountMinor: true,
             contributionTargetMinor: true,
+            secondHandPolicy: true,
             genericImageCategory: true,
             images: {
               where: { status: "ACTIVE" },
@@ -317,6 +320,11 @@ export class ListsService {
                 publicUrl: true,
                 storedObjectKey: true,
               },
+            },
+            reservations: {
+              where: { status: { in: ["RESERVED", "PURCHASED"] } },
+              select: { guestName: true, status: true },
+              orderBy: { createdAt: "asc" },
             },
           },
         },
@@ -341,10 +349,17 @@ export class ListsService {
       reservedQuantity: gift.reservedQuantity,
       fundedAmountMinor: gift.fundedAmountMinor.toString(),
       contributionTargetMinor: gift.contributionTargetMinor?.toString() ?? null,
+      secondHandPolicy: gift.secondHandPolicy,
       imageUrl: selectProductImage(gift.images, gift.genericImageCategory),
       isReserved:
         gift.reservedQuantity >= gift.quantity ||
         ["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status),
+      reservationLabels: list.showReservationNames
+        ? gift.reservations.map((reservation) => ({
+            name: reservation.guestName,
+            purchased: reservation.status === "PURCHASED",
+          }))
+        : [],
     }));
     return {
       ...safe,
@@ -356,6 +371,17 @@ export class ListsService {
       totals: {
         items: publicGifts.length,
         taken: publicGifts.filter((gift) => gift.isReserved).length,
+        valuesByCurrency: Object.entries(
+          gifts.reduce<Record<string, bigint>>((totals, gift) => {
+            if (gift.unitPriceMinor !== null) {
+              totals[gift.currency] =
+                (totals[gift.currency] ?? 0n) + gift.unitPriceMinor * BigInt(gift.quantity);
+            } else if (gift.contributionTargetMinor !== null) {
+              totals[gift.currency] = (totals[gift.currency] ?? 0n) + gift.contributionTargetMinor;
+            }
+            return totals;
+          }, {}),
+        ).map(([currency, amount]) => ({ currency, amountMinor: amount.toString() })),
       },
     };
   }
@@ -499,6 +525,9 @@ function listData(input: Partial<ListInput>) {
     ...(input.surpriseMode !== undefined ? { surpriseMode: input.surpriseMode } : {}),
     ...(input.hideReservedGifts !== undefined
       ? { hideReservedGifts: input.hideReservedGifts }
+      : {}),
+    ...(input.showReservationNames !== undefined
+      ? { showReservationNames: input.showReservationNames }
       : {}),
     ...(input.allowIndexing !== undefined ? { allowIndexing: input.allowIndexing } : {}),
     ...(input.showProgress !== undefined ? { showProgress: input.showProgress } : {}),

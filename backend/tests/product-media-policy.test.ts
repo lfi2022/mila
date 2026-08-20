@@ -57,6 +57,10 @@ describe("product media deny-by-default policy", () => {
     ["Doudou lapin", "PLUSH_RABBIT"],
     ["Transat bébé", "BABY_BOUNCER"],
     ["Lit à barreaux", "BABY_CRIB"],
+    ["Body bébé en coton", "CLOTHING"],
+    ["Assiette et cuillère", "FEEDING"],
+    ["Cape de bain", "BATH"],
+    ["Jouet d'éveil", "TOY"],
   ])("categorizes %s", (title, expected) => {
     expect(detectGenericImageCategory(title)).toBe(expected);
   });

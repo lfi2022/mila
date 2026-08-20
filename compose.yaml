@@ -29,6 +29,7 @@ services:
       args:
         VITE_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
         VITE_SEO_INDEXING_ENABLED: ${SEO_INDEXING_ENABLED:-false}
+        VITE_FEATURE_REWARDS_PREMIUM: ${VITE_FEATURE_REWARDS_PREMIUM:-false}
     env_file:
       - path: ${MILA_ENV_FILE:-.env}
         required: false
@@ -40,6 +41,7 @@ services:
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
       API_INTERNAL_URL: http://backend:3000/api/v1
       SEO_INDEXING_ENABLED: ${SEO_INDEXING_ENABLED:-false}
+      VITE_FEATURE_REWARDS_PREMIUM: ${VITE_FEATURE_REWARDS_PREMIUM:-false}
     restart: unless-stopped
     healthcheck:
       test:

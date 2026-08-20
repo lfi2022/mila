@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
 import { listApi } from "@/features/lists/api";
 import { notificationApi } from "@/features/notifications/api";
+import { runtimeConfig } from "@/config/runtime";
 import { queryKeys } from "@/app/query";
 
 export const Route = createFileRoute("/dashboard/")({
@@ -275,13 +276,15 @@ function DashboardHome() {
                       : ""}
                   </p>
                 </Link>
-                <Link
-                  to="/recompenses/$registryId"
-                  params={{ registryId: registry.id }}
-                  className="inline-flex text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  Voir les Récompenses Mila de cette liste →
-                </Link>
+                {runtimeConfig.rewardsPremiumUiEnabled ? (
+                  <Link
+                    to="/recompenses/$registryId"
+                    params={{ registryId: registry.id }}
+                    className="inline-flex text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    Voir les Récompenses Mila de cette liste →
+                  </Link>
+                ) : null}
               </div>
             );
           })}

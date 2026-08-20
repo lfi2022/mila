@@ -35,6 +35,7 @@ import {
   createAppearanceSaveQueue,
   rollbackAppearancePatch,
 } from "@/features/lists/appearance-save";
+import { runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/dashboard/$registryId")({
   head: () => ({
@@ -83,9 +84,24 @@ const itemSchema = z.object({
   description: z.string().trim().max(400),
   imageUrl: z.string().trim().max(2000),
   secondHandPolicy: z.enum(["NEW_ONLY", "SECOND_HAND_ALLOWED", "SECOND_HAND_PREFERRED"]),
+  kind: z.enum(["GIFT", "CONTRIBUTION"]),
+  contributionTarget: z.string().max(12),
 });
 
-const emptyItem = {
+type ItemForm = {
+  title: string;
+  store: string;
+  url: string;
+  price: string;
+  quantity: number;
+  description: string;
+  imageUrl: string;
+  secondHandPolicy: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
+  kind: "GIFT" | "CONTRIBUTION";
+  contributionTarget: string;
+};
+
+const emptyItem: ItemForm = {
   title: "",
   store: "",
   url: "",
@@ -93,7 +109,9 @@ const emptyItem = {
   quantity: 1,
   description: "",
   imageUrl: "",
-  secondHandPolicy: "NEW_ONLY" as const,
+  secondHandPolicy: "NEW_ONLY",
+  kind: "GIFT",
+  contributionTarget: "",
 };
 
 type LegacyListPatch = Partial<{
@@ -107,6 +125,7 @@ type LegacyListPatch = Partial<{
   surprise_mode: boolean;
   allow_indexing: boolean;
   reserved_display: "SHOW" | "HIDE";
+  show_reservation_names: boolean;
   theme: string;
   accent_color: string | null;
   hero_style: "soft" | "cover" | "minimal";
@@ -127,6 +146,10 @@ function RegistryDetail() {
   const [futureDate, setFutureDate] = useState("");
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImageRights, setProductImageRights] = useState(false);
+  const [giftSearch, setGiftSearch] = useState("");
+  const [reservationSearch, setReservationSearch] = useState("");
+  const [editingGiftId, setEditingGiftId] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState(emptyItem);
   const registry = useQuery({
     queryKey: queryKeys.list(registryId),
     queryFn: async () => {
@@ -272,6 +295,11 @@ function RegistryDetail() {
         quantity: parsed.data.quantity,
         description: parsed.data.description || null,
         secondHandPolicy: parsed.data.secondHandPolicy,
+        ...(parsed.data.kind === "CONTRIBUTION" ? { kind: "CONTRIBUTION" as const } : {}),
+        contributionTargetMinor:
+          parsed.data.kind === "CONTRIBUTION" && parsed.data.contributionTarget
+            ? String(Math.round(Number(parsed.data.contributionTarget.replace(",", ".")) * 100))
+            : null,
       });
       if (productImage) {
         if (!productImageRights) {
@@ -297,6 +325,35 @@ function RegistryDetail() {
     onSuccess: () => {
       toast.success("Cadeau supprimé");
       refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const updateItem = useMutation({
+    mutationFn: async () => {
+      if (!editingGiftId) throw new Error("Aucun cadeau sélectionné");
+      const parsed = itemSchema.safeParse(editItem);
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Champs invalides");
+      return giftApi.update(registryId, editingGiftId, {
+        title: parsed.data.title,
+        description: parsed.data.description || null,
+        url: parsed.data.url || null,
+        quantity: parsed.data.quantity,
+        unitPriceMinor: parsed.data.price
+          ? String(Math.round(Number(parsed.data.price.replace(",", ".")) * 100))
+          : null,
+        contributionTargetMinor:
+          parsed.data.kind === "CONTRIBUTION" && parsed.data.contributionTarget
+            ? String(Math.round(Number(parsed.data.contributionTarget.replace(",", ".")) * 100))
+            : null,
+        secondHandPolicy: parsed.data.secondHandPolicy,
+      });
+    },
+    onSuccess: () => {
+      setEditingGiftId(null);
+      toast.success("Cadeau modifié");
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gifts(registryId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.list(registryId) });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -410,6 +467,16 @@ function RegistryDetail() {
   }
 
   const giftRows = items.data ?? [];
+  const filteredGifts = giftRows.filter((gift) =>
+    `${gift.title} ${gift.description ?? ""}`
+      .toLocaleLowerCase("fr")
+      .includes(giftSearch.trim().toLocaleLowerCase("fr")),
+  );
+  const filteredReservations = (reservations.data ?? []).filter((reservation) =>
+    `${reservation.items?.title ?? ""} ${reservation.guest_name} ${reservation.guest_email ?? ""}`
+      .toLocaleLowerCase("fr")
+      .includes(reservationSearch.trim().toLocaleLowerCase("fr")),
+  );
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12">
@@ -426,16 +493,20 @@ function RegistryDetail() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link to="/recompenses/$registryId" params={{ registryId }}>
-              Récompenses
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/premium/$listId" params={{ listId: registryId }}>
-              Premium
-            </Link>
-          </Button>
+          {runtimeConfig.rewardsPremiumUiEnabled ? (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/recompenses/$registryId" params={{ registryId }}>
+                  Récompenses
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/premium/$listId" params={{ listId: registryId }}>
+                  Premium
+                </Link>
+              </Button>
+            </>
+          ) : null}
           <Badge variant={list.status === "ACTIVE" ? "default" : "secondary"}>
             {list.status === "ACTIVE"
               ? list.visibility === "PUBLIC"
@@ -467,47 +538,76 @@ function RegistryDetail() {
             <h2 className="text-xl">Ajouter un cadeau</h2>
             <div className="surface-card mt-4 space-y-4 p-6">
               <div className="space-y-2">
-                <Label htmlFor="item-url">Lien du produit (n'importe quelle boutique)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="item-url"
-                    placeholder="https://www.amazon.fr/…"
-                    value={item.url}
-                    onChange={(e) => setItem({ ...item, url: e.target.value })}
-                  />
-                  <Button
-                    variant="secondary"
-                    disabled={fetchPreview.isPending}
-                    onClick={() => fetchPreview.mutate()}
-                  >
-                    Remplir
-                  </Button>
+                <Label>Type d'ajout</Label>
+                <Select
+                  value={item.kind}
+                  onValueChange={(value) =>
+                    setItem({
+                      ...item,
+                      kind: value as typeof item.kind,
+                      url: value === "CONTRIBUTION" ? "" : item.url,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GIFT">Cadeau ou produit</SelectItem>
+                    <SelectItem value="CONTRIBUTION">Participation libre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {item.kind === "GIFT" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="item-url">Lien du produit (n'importe quelle boutique)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="item-url"
+                      placeholder="https://www.amazon.fr/…"
+                      value={item.url}
+                      onChange={(e) => setItem({ ...item, url: e.target.value })}
+                    />
+                    <Button
+                      variant="secondary"
+                      disabled={fetchPreview.isPending}
+                      onClick={() => fetchPreview.mutate()}
+                    >
+                      Remplir
+                    </Button>
+                  </div>
+                  <p className="text-sm">
+                    Collez simplement le lien d'un produit. Mila s'occupe du reste.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Mila récupère les informations descriptives. Une image marchande n’est affichée
+                    que si ses droits sont vérifiés ; sinon Mila utilise une illustration générique.
+                  </p>
                 </div>
-                <p className="text-sm">
-                  Collez simplement le lien d'un produit. Mila s'occupe du reste.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Mila récupère les informations descriptives. Une image marchande n’est affichée
-                  que si ses droits sont vérifiés ; sinon Mila utilise une illustration générique.
-                </p>
-              </div>
-              <div className="space-y-2 rounded-lg border p-3">
-                <Label htmlFor="item-image">Ma propre image (facultatif)</Label>
-                <Input
-                  id="item-image"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(event) => setProductImage(event.target.files?.[0] ?? null)}
-                />
-                <label className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Checkbox
-                    checked={productImageRights}
-                    onCheckedChange={(checked) => setProductImageRights(checked === true)}
+              ) : (
+                <div className="rounded-lg bg-secondary/60 p-4 text-sm text-muted-foreground">
+                  Vos proches choisissent librement leur montant. L'objectif est facultatif.
+                </div>
+              )}
+              {item.kind === "GIFT" ? (
+                <div className="space-y-2 rounded-lg border p-3">
+                  <Label htmlFor="item-image">Ma propre image (facultatif)</Label>
+                  <Input
+                    id="item-image"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => setProductImage(event.target.files?.[0] ?? null)}
                   />
-                  Je confirme être l’auteur de cette image ou disposer des droits nécessaires pour
-                  son affichage sur Mila. Cette case n’est jamais pré-cochée.
-                </label>
-              </div>
+                  <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <Checkbox
+                      checked={productImageRights}
+                      onCheckedChange={(checked) => setProductImageRights(checked === true)}
+                    />
+                    Je confirme être l’auteur de cette image ou disposer des droits nécessaires pour
+                    son affichage sur Mila. Cette case n’est jamais pré-cochée.
+                  </label>
+                </div>
+              ) : null}
               <div className="space-y-2">
                 <Label htmlFor="item-title">Nom du cadeau</Label>
                 <Input
@@ -517,20 +617,30 @@ function RegistryDetail() {
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
+                {item.kind === "GIFT" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="item-store">Magasin</Label>
+                    <Input
+                      id="item-store"
+                      value={item.store}
+                      onChange={(e) => setItem({ ...item, store: e.target.value })}
+                    />
+                  </div>
+                ) : null}
                 <div className="space-y-2">
-                  <Label htmlFor="item-store">Magasin</Label>
-                  <Input
-                    id="item-store"
-                    value={item.store}
-                    onChange={(e) => setItem({ ...item, store: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="item-price">Prix (€)</Label>
+                  <Label htmlFor="item-price">
+                    {item.kind === "CONTRIBUTION" ? "Objectif facultatif (€)" : "Prix (€)"}
+                  </Label>
                   <Input
                     id="item-price"
-                    value={item.price}
-                    onChange={(e) => setItem({ ...item, price: e.target.value })}
+                    value={item.kind === "CONTRIBUTION" ? item.contributionTarget : item.price}
+                    onChange={(e) =>
+                      setItem(
+                        item.kind === "CONTRIBUTION"
+                          ? { ...item, contributionTarget: e.target.value }
+                          : { ...item, price: e.target.value },
+                      )
+                    }
                   />
                 </div>
               </div>
@@ -554,37 +664,53 @@ function RegistryDetail() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Préférence seconde main</Label>
-                <Select
-                  value={item.secondHandPolicy}
-                  onValueChange={(value) =>
-                    setItem({ ...item, secondHandPolicy: value as typeof item.secondHandPolicy })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NEW_ONLY">Neuf uniquement</SelectItem>
-                    <SelectItem value="SECOND_HAND_ALLOWED">Seconde main acceptée</SelectItem>
-                    <SelectItem value="SECOND_HAND_PREFERRED">Seconde main préférée</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {item.kind === "GIFT" ? (
+                <div className="space-y-2">
+                  <Label>Préférence seconde main</Label>
+                  <Select
+                    value={item.secondHandPolicy}
+                    onValueChange={(value) =>
+                      setItem({ ...item, secondHandPolicy: value as typeof item.secondHandPolicy })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NEW_ONLY">Neuf uniquement</SelectItem>
+                      <SelectItem value="SECOND_HAND_ALLOWED">Seconde main acceptée</SelectItem>
+                      <SelectItem value="SECOND_HAND_PREFERRED">Seconde main préférée</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
               <Button disabled={addItem.isPending} onClick={() => addItem.mutate()}>
                 Ajouter à la liste
               </Button>
             </div>
 
-            <h2 className="mt-10 text-xl">Cadeaux ({giftRows.length})</h2>
+            <div className="mt-10 flex flex-wrap items-end justify-between gap-3">
+              <h2 className="text-xl">Cadeaux ({giftRows.length})</h2>
+              <div className="w-full max-w-xs space-y-1">
+                <Label htmlFor="gift-search" className="sr-only">
+                  Rechercher un cadeau
+                </Label>
+                <Input
+                  id="gift-search"
+                  type="search"
+                  placeholder="Rechercher un cadeau…"
+                  value={giftSearch}
+                  onChange={(event) => setGiftSearch(event.target.value)}
+                />
+              </div>
+            </div>
             <ul className="mt-4 space-y-3">
-              {giftRows.map((gift) => {
+              {filteredGifts.map((gift) => {
                 const fullyReserved = gift.reserved_qty >= gift.quantity;
                 return (
                   <li
                     key={gift.id}
-                    className="surface-card flex items-start justify-between gap-4 p-4"
+                    className="surface-card flex flex-wrap items-start justify-between gap-4 p-4"
                   >
                     <div className="flex gap-3">
                       <img
@@ -605,10 +731,127 @@ function RegistryDetail() {
                       <Badge variant={fullyReserved ? "default" : "secondary"}>
                         {fullyReserved ? "Masqué (réservé)" : "Visible"}
                       </Badge>
-                      <Button variant="ghost" size="sm" onClick={() => deleteItem.mutate(gift.id)}>
-                        Supprimer
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingGiftId(gift.id);
+                            setEditItem({
+                              ...emptyItem,
+                              title: gift.title,
+                              description: gift.description ?? "",
+                              url: gift.url ?? "",
+                              price: gift.unitPriceMinor
+                                ? String(Number(gift.unitPriceMinor) / 100)
+                                : "",
+                              quantity: gift.quantity,
+                              secondHandPolicy: gift.secondHandPolicy,
+                              kind: gift.kind === "CONTRIBUTION" ? "CONTRIBUTION" : "GIFT",
+                              contributionTarget: gift.contributionTargetMinor
+                                ? String(Number(gift.contributionTargetMinor) / 100)
+                                : "",
+                            });
+                          }}
+                        >
+                          Modifier
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteItem.mutate(gift.id)}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
                     </div>
+                    {editingGiftId === gift.id ? (
+                      <div className="col-span-full w-full space-y-3 border-t pt-4">
+                        <Input
+                          value={editItem.title}
+                          onChange={(e) => setEditItem({ ...editItem, title: e.target.value })}
+                        />
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <Input
+                            aria-label="Prix"
+                            placeholder="Prix en euros"
+                            value={
+                              editItem.kind === "CONTRIBUTION"
+                                ? editItem.contributionTarget
+                                : editItem.price
+                            }
+                            onChange={(e) =>
+                              setEditItem(
+                                editItem.kind === "CONTRIBUTION"
+                                  ? { ...editItem, contributionTarget: e.target.value }
+                                  : { ...editItem, price: e.target.value },
+                              )
+                            }
+                          />
+                          <Input
+                            type="number"
+                            min={1}
+                            aria-label="Quantité"
+                            value={editItem.quantity}
+                            onChange={(e) =>
+                              setEditItem({ ...editItem, quantity: Number(e.target.value) || 1 })
+                            }
+                          />
+                          <Select
+                            value={editItem.secondHandPolicy}
+                            onValueChange={(value) =>
+                              setEditItem({
+                                ...editItem,
+                                secondHandPolicy: value as typeof editItem.secondHandPolicy,
+                              })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="NEW_ONLY">Neuf uniquement</SelectItem>
+                              <SelectItem value="SECOND_HAND_ALLOWED">
+                                Seconde main acceptée
+                              </SelectItem>
+                              <SelectItem value="SECOND_HAND_PREFERRED">
+                                Seconde main préférée
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {editItem.kind !== "CONTRIBUTION" ? (
+                          <Input
+                            placeholder="Lien du produit"
+                            value={editItem.url}
+                            onChange={(e) => setEditItem({ ...editItem, url: e.target.value })}
+                          />
+                        ) : null}
+                        <Textarea
+                          placeholder="Description"
+                          value={editItem.description}
+                          onChange={(e) =>
+                            setEditItem({ ...editItem, description: e.target.value })
+                          }
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            disabled={updateItem.isPending}
+                            onClick={() => updateItem.mutate()}
+                          >
+                            Enregistrer
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingGiftId(null)}
+                          >
+                            Annuler
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
                   </li>
                 );
               })}
@@ -616,7 +859,17 @@ function RegistryDetail() {
           </section>
 
           <section>
-            <h2 className="text-xl">Réservations reçues</h2>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h2 className="text-xl">Réservations reçues</h2>
+              <Input
+                className="w-full max-w-xs"
+                type="search"
+                aria-label="Rechercher une réservation"
+                placeholder="Cadeau, nom ou e-mail…"
+                value={reservationSearch}
+                onChange={(event) => setReservationSearch(event.target.value)}
+              />
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {list.surprise_mode
                 ? "Mode surprise activé : vos proches ne voient rien, mais vous gardez le détail ici."
@@ -628,7 +881,7 @@ function RegistryDetail() {
                   Aucune réservation pour le moment.
                 </li>
               )}
-              {reservations.data?.map((reservation) => (
+              {filteredReservations.map((reservation) => (
                 <li key={reservation.id} className="surface-card p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-medium">{reservation.items?.title}</p>
@@ -774,8 +1027,7 @@ function RegistryDetail() {
             <h2 className="text-xl">Clôture et souvenirs</h2>
             <p className="text-sm text-muted-foreground">
               Clôturer bloque immédiatement les nouvelles réservations, tout en laissant les
-              remerciements, souvenirs et récompenses accessibles. L’archivage masque ensuite la
-              page publique.
+              remerciements et souvenirs accessibles. L’archivage masque ensuite la page publique.
             </p>
             <div className="grid gap-3 text-sm sm:grid-cols-3">
               <p>
@@ -785,10 +1037,12 @@ function RegistryDetail() {
                 Souvenirs sélectionnés :{" "}
                 <strong>{lifecycle.data?.memoryBook?._count.items ?? 0}</strong>
               </p>
-              <p>
-                Récompenses confirmées :{" "}
-                <strong>{lifecycle.data?.confirmedRewardMinor ?? "0"} centimes</strong>
-              </p>
+              {runtimeConfig.rewardsPremiumUiEnabled ? (
+                <p>
+                  Récompenses confirmées :{" "}
+                  <strong>{lifecycle.data?.confirmedRewardMinor ?? "0"} centimes</strong>
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-3">
               {!lifecycle.data?.closedAt ? (
@@ -1006,6 +1260,21 @@ function RegistryDetail() {
 
             <div className="flex items-center justify-between gap-4 border-t pt-4">
               <div>
+                <p className="text-sm font-medium">Afficher qui a réservé ou acheté</p>
+                <p className="text-xs text-muted-foreground">
+                  Désactivé par défaut. Seul le prénom est montré publiquement, jamais l’e-mail.
+                </p>
+              </div>
+              <Switch
+                checked={list.show_reservation_names}
+                onCheckedChange={(checked) =>
+                  updateRegistry.mutate({ show_reservation_names: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 border-t pt-4">
+              <div>
                 <p className="text-sm font-medium">Mode surprise</p>
                 <p className="text-xs text-muted-foreground">
                   Vous ne verrez plus qui réserve quoi jusqu'à la révélation.
@@ -1046,6 +1315,7 @@ function toLegacyList(value: Awaited<ReturnType<typeof listApi.get>>) {
     surprise_mode: value.surpriseMode,
     allow_indexing: value.allowIndexing,
     reserved_display: value.hideReservedGifts ? ("HIDE" as const) : ("SHOW" as const),
+    show_reservation_names: value.showReservationNames,
     accent_color: value.accentColor,
     hero_style: value.heroStyle,
     font_pair: value.fontPair,
@@ -1070,6 +1340,9 @@ function fromLegacyPatch(patch: LegacyListPatch): ListPatch {
     ...(patch.allow_indexing !== undefined ? { allowIndexing: patch.allow_indexing } : {}),
     ...(patch.reserved_display !== undefined
       ? { hideReservedGifts: patch.reserved_display === "HIDE" }
+      : {}),
+    ...(patch.show_reservation_names !== undefined
+      ? { showReservationNames: patch.show_reservation_names }
       : {}),
     ...(patch.theme !== undefined ? { theme: patch.theme } : {}),
     ...(patch.accent_color !== undefined ? { accentColor: patch.accent_color } : {}),

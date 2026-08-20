@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
+import { runtimeConfig } from "@/config/runtime";
 
 export function SiteHeader() {
   const { user, signOut } = useAuth();
@@ -20,9 +21,11 @@ export function SiteHeader() {
           Comment ça marche
         </Link>
       </Button>
-      <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
-        <Link to="/recompenses">Récompenses</Link>
-      </Button>
+      {runtimeConfig.rewardsPremiumUiEnabled ? (
+        <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
+          <Link to="/recompenses">Récompenses</Link>
+        </Button>
+      ) : null}
       <Button asChild variant="ghost" size="sm" onClick={() => setOpen(false)}>
         <Link to="/faq">FAQ</Link>
       </Button>

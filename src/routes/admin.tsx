@@ -51,6 +51,7 @@ import {
   adminSaveMerchantMediaPolicy,
   getAdminStats,
 } from "@/features/admin/api";
+import { runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -264,7 +265,9 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
             <TabsTrigger value="merchants">Marchands</TabsTrigger>
             <TabsTrigger value="media">Médias</TabsTrigger>
             <TabsTrigger value="partners">Partenaires</TabsTrigger>
-            <TabsTrigger value="rewards">Récompenses</TabsTrigger>
+            {runtimeConfig.rewardsPremiumUiEnabled ? (
+              <TabsTrigger value="rewards">Récompenses</TabsTrigger>
+            ) : null}
             <TabsTrigger value="payments">Paiements</TabsTrigger>
             <TabsTrigger value="moderation">Modération</TabsTrigger>
             {isAdmin ? <TabsTrigger value="privacy">RGPD</TabsTrigger> : null}
@@ -299,7 +302,13 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
                 />
                 <Stat label="Cadeaux achetés" value={s.gifts.purchased} />
                 <Stat label="Signalements ouverts" value={s.moderation.openReports} />
-                <Stat label="Listes premium" value={s.lists.premium} hint="Revenus non connectés" />
+                {runtimeConfig.rewardsPremiumUiEnabled ? (
+                  <Stat
+                    label="Listes premium"
+                    value={s.lists.premium}
+                    hint="Revenus non connectés"
+                  />
+                ) : null}
               </div>
             )}
 
@@ -533,9 +542,11 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
             </div>
           </TabsContent>
 
-          <TabsContent value="rewards" className="mt-6">
-            <RewardsAdmin />
-          </TabsContent>
+          {runtimeConfig.rewardsPremiumUiEnabled ? (
+            <TabsContent value="rewards" className="mt-6">
+              <RewardsAdmin />
+            </TabsContent>
+          ) : null}
 
           <TabsContent value="partners" className="mt-6">
             {isAdmin ? (

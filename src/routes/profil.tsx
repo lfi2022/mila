@@ -11,6 +11,7 @@ import { formatCents } from "@/lib/money";
 import { getMyReferral, refreshMyReferrals } from "@/features/rewards/api";
 import { authApi, type PrivacyRequest } from "@/features/auth/api";
 import { openCookieManager } from "@/features/privacy/cookie-consent";
+import { runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/profil")({
   head: () => ({
@@ -124,7 +125,7 @@ function ProfilePage() {
 
         <PrivacyControls />
 
-        <ReferralSection />
+        {runtimeConfig.rewardsPremiumUiEnabled ? <ReferralSection /> : null}
 
         <section className="surface-card space-y-4 border-destructive/40 p-6">
           <div>

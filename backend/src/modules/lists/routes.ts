@@ -27,6 +27,7 @@ const listInput = z.object({
   accessCode: z.string().min(6).max(128).nullable().optional(),
   surpriseMode: z.boolean().default(false),
   hideReservedGifts: z.boolean().default(false),
+  showReservationNames: z.boolean().default(false),
   allowIndexing: z.boolean().default(false),
   showProgress: z.boolean().default(true),
   theme: z.string().min(1).max(64).default("default"),

@@ -1,6 +1,6 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect } from "@tanstack/react-router";
 
-import { buildPublicUrl } from "@/config/runtime";
+import { buildPublicUrl, runtimeConfig } from "@/config/runtime";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -13,6 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/recompenses/")({
+  beforeLoad: () => {
+    if (!runtimeConfig.rewardsPremiumUiEnabled) throw redirect({ to: "/" });
+  },
   head: () => ({
     meta: [
       { title: "Récompenses Mila — comment ça fonctionne" },

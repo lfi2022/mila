@@ -43,3 +43,9 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       "Oui. Votre liste peut être publique, non répertoriée (accessible uniquement via son lien) ou protégée par un code d'accès que vous partagez à vos proches. Vous pouvez changer d'avis à tout moment.",
   },
 ];
+
+export function visibleFaqEntries(rewardsPremiumEnabled: boolean): FaqEntry[] {
+  return rewardsPremiumEnabled
+    ? FAQ_ENTRIES
+    : FAQ_ENTRIES.filter((entry) => !entry.question.includes("Récompenses Mila"));
+}

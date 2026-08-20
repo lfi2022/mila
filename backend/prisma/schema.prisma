@@ -387,6 +387,7 @@ model GiftList {
   accessCodeHash           String?                @map("access_code_hash") @db.VarChar(255)
   surpriseMode             Boolean                @default(false) @map("surprise_mode")
   hideReservedGifts        Boolean                @default(false) @map("hide_reserved_gifts")
+  showReservationNames     Boolean                @default(false) @map("show_reservation_names")
   allowIndexing            Boolean                @default(false) @map("allow_indexing")
   showProgress             Boolean                @default(true) @map("show_progress")
   theme                    String                 @default("default") @db.VarChar(64)

@@ -15,8 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
-import { FAQ_ENTRIES } from "@/lib/faq-content";
-import { buildPublicUrl } from "@/config/runtime";
+import { visibleFaqEntries } from "@/lib/faq-content";
+import { buildPublicUrl, runtimeConfig } from "@/config/runtime";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -47,11 +47,13 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          mainEntity: FAQ_ENTRIES.slice(0, 6).map((entry) => ({
-            "@type": "Question",
-            name: entry.question,
-            acceptedAnswer: { "@type": "Answer", text: entry.answer },
-          })),
+          mainEntity: visibleFaqEntries(runtimeConfig.rewardsPremiumUiEnabled)
+            .slice(0, 6)
+            .map((entry) => ({
+              "@type": "Question",
+              name: entry.question,
+              acceptedAnswer: { "@type": "Answer", text: entry.answer },
+            })),
         }),
       },
     ],
@@ -244,7 +246,11 @@ function Index() {
           <div className="mx-auto max-w-6xl px-4 py-16">
             <h2 className="text-3xl">Pourquoi Mila ?</h2>
             <div className="mt-10 grid gap-6 sm:grid-cols-2">
-              {ADVANTAGES.map((item) => (
+              {ADVANTAGES.filter(
+                (item) =>
+                  runtimeConfig.rewardsPremiumUiEnabled ||
+                  item.title !== "Des récompenses pour les parents",
+              ).map((item) => (
                 <article key={item.title} className="surface-card flex gap-4 p-6">
                   <span aria-hidden="true" className="text-2xl">
                     {item.icon}
@@ -259,48 +265,50 @@ function Index() {
           </div>
         </section>
 
-        {/* 6 — Récompenses Mila */}
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
-            <div>
-              <h2 className="text-3xl text-balance-pretty">
-                Vos cadeaux peuvent aussi vous faire des cadeaux. ❤️
-              </h2>
-              <p className="mt-5 text-muted-foreground">
-                Certains achats éligibles réalisés depuis votre liste peuvent générer des
-                Récompenses Mila. Lorsque Mila reçoit une commission sur un achat éligible, une
-                partie peut être ajoutée à vos récompenses.
-              </p>
-              <Button
-                asChild
-                variant="outline"
-                className="mt-6 min-h-11"
-                onClick={() => track("rewards_learn_more_clicked", { location: "homepage" })}
-              >
-                <Link to="/recompenses">Comment fonctionnent les Récompenses Mila ?</Link>
-              </Button>
-            </div>
+        {/* 6 — Récompenses Mila, conservé mais masqué par configuration. */}
+        {runtimeConfig.rewardsPremiumUiEnabled ? (
+          <section className="mx-auto max-w-6xl px-4 py-16">
+            <div className="grid items-center gap-10 lg:grid-cols-2">
+              <div>
+                <h2 className="text-3xl text-balance-pretty">
+                  Vos cadeaux peuvent aussi vous faire des cadeaux. ❤️
+                </h2>
+                <p className="mt-5 text-muted-foreground">
+                  Certains achats éligibles réalisés depuis votre liste peuvent générer des
+                  Récompenses Mila. Lorsque Mila reçoit une commission sur un achat éligible, une
+                  partie peut être ajoutée à vos récompenses.
+                </p>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="mt-6 min-h-11"
+                  onClick={() => track("rewards_learn_more_clicked", { location: "homepage" })}
+                >
+                  <Link to="/recompenses">Comment fonctionnent les Récompenses Mila ?</Link>
+                </Button>
+              </div>
 
-            <div aria-hidden="true" className="surface-card p-6">
-              <p className="text-sm text-muted-foreground">Vos Récompenses Mila</p>
-              <p className="font-display mt-1 text-4xl">16,70 €</p>
-              <p className="text-sm text-muted-foreground">disponibles · +4,20 € en attente</p>
-              <ul className="mt-5 space-y-2 text-sm">
-                <li className="flex items-center justify-between rounded-lg bg-secondary/60 px-3 py-2">
-                  <span>Achat éligible</span>
-                  <span className="font-medium">+1,50 €</span>
-                </li>
-                <li className="flex items-center justify-between rounded-lg bg-secondary/60 px-3 py-2">
-                  <span>Parrainage</span>
-                  <span className="font-medium">+3,00 €</span>
-                </li>
-              </ul>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Exemple visuel — montants fictifs.
-              </p>
+              <div aria-hidden="true" className="surface-card p-6">
+                <p className="text-sm text-muted-foreground">Vos Récompenses Mila</p>
+                <p className="font-display mt-1 text-4xl">16,70 €</p>
+                <p className="text-sm text-muted-foreground">disponibles · +4,20 € en attente</p>
+                <ul className="mt-5 space-y-2 text-sm">
+                  <li className="flex items-center justify-between rounded-lg bg-secondary/60 px-3 py-2">
+                    <span>Achat éligible</span>
+                    <span className="font-medium">+1,50 €</span>
+                  </li>
+                  <li className="flex items-center justify-between rounded-lg bg-secondary/60 px-3 py-2">
+                    <span>Parrainage</span>
+                    <span className="font-medium">+3,00 €</span>
+                  </li>
+                </ul>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Exemple visuel — montants fictifs.
+                </p>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         {/* 7 — Confiance */}
         <section className="border-y border-border/70 bg-cream/60">
@@ -338,16 +346,18 @@ function Index() {
         <section className="mx-auto max-w-3xl px-4 py-16">
           <h2 className="text-3xl">Questions fréquentes</h2>
           <Accordion type="single" collapsible className="mt-6">
-            {FAQ_ENTRIES.slice(0, 6).map((entry) => (
-              <AccordionItem key={entry.question} value={entry.question}>
-                <AccordionTrigger className="text-left text-base">
-                  {entry.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">
-                  {entry.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
+            {visibleFaqEntries(runtimeConfig.rewardsPremiumUiEnabled)
+              .slice(0, 6)
+              .map((entry) => (
+                <AccordionItem key={entry.question} value={entry.question}>
+                  <AccordionTrigger className="text-left text-base">
+                    {entry.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground">
+                    {entry.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
           </Accordion>
           <p className="mt-6 text-sm">
             <Link to="/faq" className="underline">
