@@ -82,20 +82,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Mila — Listes de naissance" },
+      { title: "Mila — liste de naissance gratuite et multi-enseignes" },
       {
         name: "description",
         content:
-          "Créez une liste de naissance élégante, ajoutez des cadeaux de tous les magasins et laissez vos proches réserver.",
+          "Créez une liste de naissance gratuite, ajoutez des cadeaux de toutes les boutiques et partagez un seul lien avec vos proches.",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Mila" },
+      { property: "og:locale", content: "fr_BE" },
       { property: "og:image", content: buildPublicUrl("/mila-social-card.png") },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: "Mila — Listes de naissance" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Mila — tous les magasins, une seule liste" },
+      {
+        name: "twitter:description",
+        content:
+          "Une liste de naissance gratuite et simple à partager, sans compte pour les proches.",
+      },
       { name: "twitter:image", content: buildPublicUrl("/mila-social-card.png") },
+      { name: "twitter:image:alt", content: "Mila — listes de naissance" },
       {
         name: "robots",
         content: runtimeConfig.seoIndexingEnabled ? "index, follow" : "noindex, nofollow",

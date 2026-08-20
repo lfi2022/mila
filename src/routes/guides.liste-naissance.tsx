@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { RelatedReading } from "@/components/marketing/RelatedReading";
 import { Button } from "@/components/ui/button";
 import { buildPublicUrl } from "@/config/runtime";
 
@@ -18,8 +19,14 @@ export const Route = createFileRoute("/guides/liste-naissance")({
       },
       { property: "og:type", content: "article" },
       { property: "og:title", content: "Le guide pratique de la liste de naissance" },
+      {
+        property: "og:description",
+        content:
+          "Quand créer sa liste de naissance, quoi y mettre et comment proposer des cadeaux adaptés à tous les budgets.",
+      },
       { property: "og:url", content: buildPublicUrl(path) },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Le guide pratique de la liste de naissance" },
     ],
     links: [{ rel: "canonical", href: buildPublicUrl(path) }],
     scripts: [
@@ -64,14 +71,42 @@ function BirthListGuide() {
       <main className="mx-auto max-w-3xl space-y-10 px-4 py-16">
         <header className="space-y-4">
           <p className="text-sm font-semibold text-muted-foreground">Guide pratique · 8 min</p>
-          <h1 className="text-4xl">Créer une liste de naissance vraiment utile</h1>
+          <h1 className="text-4xl sm:text-5xl">Créer une liste de naissance vraiment utile</h1>
           <p className="text-lg text-muted-foreground">
             Une bonne liste aide les proches sans dicter leurs cadeaux. Elle rassemble les besoins,
             évite les doublons et laisse plusieurs budgets possibles.
           </p>
         </header>
 
-        <section className="space-y-3">
+        <nav className="surface-card p-6" aria-labelledby="guide-summary">
+          <h2 id="guide-summary" className="text-lg">
+            Dans ce guide
+          </h2>
+          <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+            <li>
+              <a href="#quand-creer" className="underline underline-offset-4">
+                Quand créer et partager la liste
+              </a>
+            </li>
+            <li>
+              <a href="#quoi-mettre" className="underline underline-offset-4">
+                Quoi mettre sur la liste
+              </a>
+            </li>
+            <li>
+              <a href="#deuxieme-enfant" className="underline underline-offset-4">
+                Préparer une liste pour un deuxième enfant
+              </a>
+            </li>
+            <li>
+              <a href="#choisir-service" className="underline underline-offset-4">
+                Choisir le bon type de liste
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <section id="quand-creer" className="scroll-mt-24 space-y-3">
           <h2 className="text-2xl">Quand la créer et la partager ?</h2>
           <p className="text-muted-foreground">
             Commencez dès que vos besoins deviennent clairs, puis partagez-la lorsque vous êtes à
@@ -80,7 +115,7 @@ function BirthListGuide() {
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section id="quoi-mettre" className="scroll-mt-24 space-y-3">
           <h2 className="text-2xl">Que mettre sur la liste ?</h2>
           <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
             <li>Le quotidien : langes, textiles, soin et petits accessoires.</li>
@@ -96,7 +131,17 @@ function BirthListGuide() {
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section id="deuxieme-enfant" className="scroll-mt-24 space-y-3">
+          <h2 className="text-2xl">Et pour un deuxième enfant ?</h2>
+          <p className="text-muted-foreground">
+            Commencez par ce que vous possédez encore, puis listez uniquement les besoins nouveaux :
+            consommables, équipement usé, couchage supplémentaire ou articles adaptés à une autre
+            saison. Une liste courte et précise aide les proches à offrir quelque chose de vraiment
+            utile, sans recréer artificiellement une première liste.
+          </p>
+        </section>
+
+        <section id="choisir-service" className="scroll-mt-24 space-y-3">
           <h2 className="text-2xl">Gratuite, universelle ou liée à une enseigne ?</h2>
           <p className="text-muted-foreground">
             Une liste multi-enseignes permet de choisir chaque article là où il vous convient et de
@@ -130,9 +175,14 @@ function BirthListGuide() {
 
         <div className="text-center">
           <Button asChild size="lg">
-            <Link to="/auth">Créer ma liste gratuitement</Link>
+            <Link to="/auth">Créer ma liste</Link>
           </Button>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Gratuit · Sans carte bancaire · Réservation sans compte
+          </p>
         </div>
+
+        <RelatedReading currentPath={path} />
       </main>
       <SiteFooter />
     </div>

@@ -27,7 +27,7 @@ export function SiteFooter() {
             <h2 id="footer-mila" className="text-sm font-semibold">
               Mila
             </h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <ul className="mt-3 text-sm text-muted-foreground [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center">
               <li>
                 <Link to="/a-propos" className="hover:text-foreground">
                   À propos
@@ -67,7 +67,7 @@ export function SiteFooter() {
             <h2 id="footer-parents" className="text-sm font-semibold">
               Parents
             </h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <ul className="mt-3 text-sm text-muted-foreground [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center">
               <li>
                 <Link to="/auth" className="hover:text-foreground">
                   Créer ma liste
@@ -95,7 +95,7 @@ export function SiteFooter() {
             <h2 id="footer-infos" className="text-sm font-semibold">
               Informations
             </h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <ul className="mt-3 text-sm text-muted-foreground [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_button]:min-h-11">
               <li>
                 <Link to="/confidentialite" className="hover:text-foreground">
                   Confidentialité

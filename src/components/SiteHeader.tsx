@@ -91,13 +91,19 @@ export function SiteHeader() {
           <Button
             asChild
             size="sm"
+            className="min-h-11"
             onClick={() => track("signup_cta_clicked", { location: "header_mobile" })}
           >
             <Link to={user ? "/dashboard" : "/auth"}>{user ? "Mon espace" : "Créer ma liste"}</Link>
           </Button>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Ouvrir le menu">
+              <Button
+                variant="outline"
+                size="icon"
+                className="min-h-11 min-w-11"
+                aria-label="Ouvrir le menu"
+              >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </Button>
             </SheetTrigger>

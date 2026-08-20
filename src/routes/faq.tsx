@@ -21,17 +21,18 @@ export const Route = createFileRoute("/faq")({
       {
         name: "description",
         content:
-          "Tout ce qu'il faut savoir sur les listes de naissance Mila : gratuité, multi-magasins, réservations, confidentialité et Récompenses Mila.",
+          "Réponses claires sur la liste de naissance Mila : achat, réservation, boutiques, prix, commission, confidentialité et suppression.",
       },
       { property: "og:title", content: "Questions fréquentes — Mila" },
       {
         property: "og:description",
         content:
-          "Gratuité, réservations, confidentialité, récompenses : les réponses aux questions des parents.",
+          "Achat auprès des marchands, réservations sans compte, prix et confidentialité : toutes les réponses utiles.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: buildPublicUrl("/faq") },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Questions fréquentes sur Mila" },
     ],
     links: [{ rel: "canonical", href: buildPublicUrl("/faq") }],
     scripts: [
@@ -57,7 +58,11 @@ function FaqPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-4 py-16">
-        <h1 className="text-4xl">Questions fréquentes</h1>
+        <h1 className="text-4xl sm:text-5xl">Questions fréquentes</h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          Comment fonctionne une réservation ? Où le cadeau est-il acheté ? Retrouvez des réponses
+          courtes sur le parcours Mila.
+        </p>
         <p className="mt-4 text-muted-foreground">
           Une question qui n'est pas ici ? Écrivez-nous depuis la page{" "}
           <Link to="/contact" className="underline">
@@ -78,9 +83,9 @@ function FaqPage() {
         </Accordion>
 
         <div className="surface-card mt-12 space-y-4 p-8 text-center">
-          <h2 className="text-2xl">Prêts à créer votre liste ? ❤️</h2>
+          <h2 className="text-2xl">Prêts à réunir toutes vos idées ?</h2>
           <Button asChild size="lg">
-            <Link to="/auth">Créer ma liste gratuitement</Link>
+            <Link to="/auth">Créer ma liste</Link>
           </Button>
           <p className="text-xs text-muted-foreground">Gratuit · Sans carte bancaire</p>
         </div>

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 import heroImage from "@/assets/hero-nursery.jpg";
 import { ListPreviewMockup } from "@/components/ListPreviewMockup";
+import { TestimonialsSection } from "@/components/marketing/TestimonialsSection";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
@@ -21,15 +22,15 @@ import { buildPublicUrl, runtimeConfig } from "@/config/runtime";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Mila — liste de naissance en ligne, gratuite et multi-magasins" },
+      { title: "Mila — liste de naissance gratuite et multi-enseignes" },
       {
         name: "description",
         content:
-          "Créez une liste de naissance universelle et gratuite : ajoutez les cadeaux de tous vos magasins, partagez un seul lien et évitez les doublons.",
+          "Créez gratuitement votre liste de naissance multi-enseignes en Belgique : tous vos cadeaux, un seul lien et aucune inscription pour vos proches.",
       },
       {
         property: "og:title",
-        content: "Mila — liste de naissance en ligne, gratuite et multi-magasins",
+        content: "Tous les magasins. Une seule liste de naissance.",
       },
       {
         property: "og:description",
@@ -37,8 +38,15 @@ export const Route = createFileRoute("/")({
           "Tous les magasins. Une seule liste. Vos proches réservent en un clic, sans créer de compte.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:locale", content: "fr_BE" },
       { property: "og:url", content: buildPublicUrl("/") },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Mila — liste de naissance gratuite et multi-enseignes" },
+      {
+        name: "twitter:description",
+        content:
+          "Tous les magasins, les idées libres et les petites boutiques sur une seule liste.",
+      },
     ],
     links: [{ rel: "canonical", href: buildPublicUrl("/") }],
     scripts: [
@@ -56,6 +64,24 @@ export const Route = createFileRoute("/")({
             })),
         }),
       },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Mila",
+          url: buildPublicUrl("/"),
+          inLanguage: "fr-BE",
+          description:
+            "Service de création et de partage de listes de naissance gratuites et multi-enseignes.",
+          publisher: {
+            "@type": "Organization",
+            name: "Mila",
+            url: buildPublicUrl("/"),
+            logo: buildPublicUrl("/mila-logo.png"),
+          },
+        }),
+      },
     ],
   }),
   component: Index,
@@ -63,28 +89,38 @@ export const Route = createFileRoute("/")({
 
 const STEPS = [
   {
-    icon: "✨",
-    title: "Créez votre liste",
-    body: "Personnalisez votre liste en quelques minutes : photo, couleurs, mot d'accueil.",
-  },
-  {
     icon: "🔗",
-    title: "Ajoutez toutes vos envies",
-    body: "Collez les liens de vos magasins préférés. Mila rassemble tout au même endroit.",
+    title: "Les parents ajoutent",
+    body: "Un lien marchand ou une idée libre rejoint la liste Mila.",
   },
   {
-    icon: "💌",
-    title: "Partagez avec vos proches",
-    body: "Un seul lien à envoyer. Aucun compte nécessaire pour consulter ou réserver.",
+    icon: "👀",
+    title: "Le proche consulte",
+    body: "Il découvre tous les cadeaux depuis un seul lien, sans compte.",
+  },
+  {
+    icon: "🎁",
+    title: "Il réserve",
+    body: "La quantité disponible est mise à jour pour éviter les doublons.",
+  },
+  {
+    icon: "🛍️",
+    title: "Il achète",
+    body: "L'achat est finalisé directement auprès du magasin ou du site concerné.",
+  },
+  {
+    icon: "✓",
+    title: "La liste reste claire",
+    body: "Les autres proches voient ce qui est encore disponible.",
   },
 ];
 
 const ADVANTAGES = [
   { icon: "🛍️", title: "Tous vos magasins", body: "Ne soyez plus limité à une seule enseigne." },
   {
-    icon: "🎁",
+    icon: "✓",
     title: "Fini les doublons",
-    body: "Les cadeaux réservés sont immédiatement indiqués.",
+    body: "Les quantités réservées sont indiquées aux visiteurs suivants.",
   },
   {
     icon: "👨‍👩‍👧",
@@ -118,17 +154,17 @@ function Index() {
 
       <main>
         {/* 1 — Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
-          <div>
+        <section className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 px-4 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
+          <div className="min-w-0">
             <p className="text-xs uppercase tracking-[0.3em] text-primary">
               Liste de naissance en ligne
             </p>
-            <h1 className="mt-5 text-5xl leading-[1.05] text-balance-pretty">
-              Tous les magasins. Une seule liste. Pour un moment unique. ❤️
+            <h1 className="mt-5 text-4xl leading-[1.08] text-balance-pretty sm:text-5xl">
+              Tous les magasins. Une seule liste.
             </h1>
             <p className="mt-6 max-w-lg text-balance-pretty text-lg text-muted-foreground">
-              Ajoutez les cadeaux de vos magasins préférés, partagez une seule liste avec vos
-              proches et évitez les cadeaux en double.
+              Réunissez les cadeaux qui vous ressemblent, partagez-les avec vos proches et préparez
+              l’arrivée de bébé sans multiplier les listes.
             </p>
             <p className="mt-3 max-w-lg text-sm text-muted-foreground">
               Amazon, IKEA, Vertbaudet, petites boutiques… Mila rassemble tout au même endroit.
@@ -142,7 +178,7 @@ function Index() {
                 onClick={() => track("signup_cta_clicked", { location: "hero" })}
               >
                 <Link to={user ? "/dashboard" : "/auth"}>
-                  {user ? "Voir mes listes" : "Créer ma liste gratuitement"}
+                  {user ? "Voir mes listes" : "Créer ma liste"}
                 </Link>
               </Button>
               <Button
@@ -152,7 +188,7 @@ function Index() {
                 className="min-h-12"
                 onClick={() => track("demo_clicked", { location: "hero" })}
               >
-                <Link to="/demo">Voir une liste de démonstration</Link>
+                <Link to="/demo">Voir la démo</Link>
               </Button>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
@@ -164,17 +200,77 @@ function Index() {
           <ListPreviewMockup />
         </section>
 
-        {/* 3 — Comment ça marche */}
+        {/* 2 — Comparaison immédiate */}
+        <section
+          className="border-y border-border/70 bg-cream/60"
+          aria-labelledby="comparison-title"
+        >
+          <div className="mx-auto max-w-6xl px-4 py-16">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                La différence en un regard
+              </p>
+              <h2 id="comparison-title" className="mt-3 text-3xl">
+                Votre liste ne devrait pas dépendre d’un seul magasin
+              </h2>
+            </div>
+
+            <div className="mt-9 grid gap-6 lg:grid-cols-2">
+              <article className="rounded-3xl border bg-background/70 p-6 sm:p-8">
+                <p className="text-sm font-semibold text-muted-foreground">Liste classique</p>
+                <div className="mt-6 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-center">
+                  <span className="rounded-xl border bg-card px-4 py-3 text-sm">Un magasin</span>
+                  <span
+                    aria-hidden="true"
+                    className="rotate-90 text-xl text-muted-foreground sm:rotate-0"
+                  >
+                    →
+                  </span>
+                  <span className="rounded-xl bg-muted px-4 py-3 text-sm font-medium">
+                    Une liste limitée à ce magasin
+                  </span>
+                </div>
+              </article>
+
+              <article className="rounded-3xl border border-primary/25 bg-secondary/70 p-6 shadow-soft sm:p-8">
+                <p className="text-sm font-semibold text-primary">Avec Mila</p>
+                <div className="mt-6 grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+                  {["Grande enseigne", "Petite boutique", "Autre site", "Idée libre"].map(
+                    (source) => (
+                      <span
+                        key={source}
+                        className="rounded-xl bg-card px-3 py-3 text-xs shadow-soft"
+                      >
+                        {source}
+                      </span>
+                    ),
+                  )}
+                </div>
+                <div className="mt-4 text-center">
+                  <span aria-hidden="true" className="text-xl text-primary">
+                    ↓
+                  </span>
+                  <p className="mx-auto mt-2 max-w-xs rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground">
+                    Une seule liste Mila
+                  </p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* 3 — Parcours réel */}
         <section
           id="comment-ca-marche"
           className="scroll-mt-20 border-y border-border/70 bg-cream/60"
         >
           <div className="mx-auto max-w-6xl px-4 py-16">
-            <h2 className="text-3xl">Comment ça marche</h2>
+            <h2 className="text-3xl">Du choix des parents à l’achat du proche</h2>
             <p className="mt-3 max-w-xl text-muted-foreground">
-              Trois étapes, quelques minutes, et votre liste est prête à circuler dans la famille.
+              Mila organise la liste et les réservations. Le cadeau reste acheté directement auprès
+              du marchand concerné.
             </p>
-            <div className="mt-10 grid gap-6 md:grid-cols-3">
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {STEPS.map((step, index) => (
                 <article key={step.title} className="surface-card p-6">
                   <span aria-hidden="true" className="text-2xl">
@@ -186,11 +282,12 @@ function Index() {
                 </article>
               ))}
             </div>
-            <p className="mt-8 max-w-2xl text-sm text-muted-foreground">
+            <p className="mt-8 max-w-3xl text-sm text-muted-foreground">
               Collez simplement le lien d'un produit. Mila s'occupe du reste.{" "}
               <span className="text-xs">
                 Lorsque c'est possible, Mila récupère automatiquement le nom, l'image et le prix du
-                produit. Vous pouvez ensuite tout modifier.
+                produit. Vous pouvez ensuite tout modifier. Le prix et les conditions du marchand au
+                moment de l’achat restent la référence.
               </span>
             </p>
           </div>
@@ -200,11 +297,20 @@ function Index() {
         <section className="mx-auto max-w-6xl px-4 py-16">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div>
-              <h2 className="text-3xl">Une liste vraiment universelle</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                Plus de liberté, moins de dispersion
+              </p>
+              <h2 className="mt-3 text-3xl">
+                Préparer son arrivée sans courir après plusieurs listes
+              </h2>
               <p className="mt-5 text-muted-foreground text-balance-pretty">
                 La poussette chez Amazon, le mobilier chez IKEA, un doudou dans une petite boutique
-                et une création artisanale ailleurs ? Aucun problème. Tout peut vivre dans la même
-                liste Mila.
+                et une création artisanale ailleurs ? Tout peut vivre dans la même liste Mila. Vous
+                gardez la liberté de choisir ce qui convient vraiment à votre famille.
+              </p>
+              <p className="mt-4 text-muted-foreground">
+                Un seul lien suffit pour inviter vos proches à participer à ce moment, sans leur
+                imposer une enseigne ni une inscription.
               </p>
               <p className="font-display mt-6 text-2xl text-accent">Un lien. Tous vos cadeaux.</p>
               <div className="mt-6 flex flex-wrap gap-2">
@@ -225,6 +331,11 @@ function Index() {
                 Marques citées à titre d'exemple : Mila n'est pas affilié officiellement à ces
                 enseignes.
               </p>
+              <Button asChild className="mt-7 min-h-11">
+                <Link to={user ? "/dashboard" : "/auth"}>
+                  {user ? "Voir mes listes" : "Créer ma liste"}
+                </Link>
+              </Button>
             </div>
             <div className="relative">
               <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-accent/20 blur-2xl" />
@@ -264,6 +375,8 @@ function Index() {
             </div>
           </div>
         </section>
+
+        <TestimonialsSection />
 
         {/* 6 — Récompenses Mila, conservé mais masqué par configuration. */}
         {runtimeConfig.rewardsPremiumUiEnabled ? (
@@ -342,7 +455,53 @@ function Index() {
           </div>
         </section>
 
-        {/* 8 — FAQ */}
+        {/* 8 — Guides */}
+        <section className="border-y border-border/70 bg-cream/60" aria-labelledby="guides-title">
+          <div className="mx-auto max-w-6xl px-4 py-16">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                Conseils pratiques
+              </p>
+              <h2 id="guides-title" className="mt-3 text-3xl">
+                Construire une liste utile, à votre rythme
+              </h2>
+              <p className="mt-4 text-muted-foreground">
+                Des repères concrets pour savoir quand commencer, quoi ajouter et comment proposer
+                des idées adaptées à chaque budget.
+              </p>
+            </div>
+            <div className="mt-8 grid gap-5 md:grid-cols-2">
+              <Link
+                to="/guides/liste-naissance"
+                className="surface-card block p-6 transition-transform motion-safe:hover:-translate-y-0.5"
+              >
+                <h3 className="text-xl">Le guide de la liste de naissance</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Quand la créer, les catégories utiles et les questions à se poser, y compris pour
+                  un deuxième enfant.
+                </p>
+                <span className="mt-5 inline-block text-sm font-medium underline underline-offset-4">
+                  Lire le guide
+                </span>
+              </Link>
+              <Link
+                to="/guides/budget-cadeaux"
+                className="surface-card block p-6 transition-transform motion-safe:hover:-translate-y-0.5"
+              >
+                <h3 className="text-xl">Des cadeaux pour tous les budgets</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Des idées de naissance à petit budget jusqu’aux cadeaux importants à offrir à
+                  plusieurs.
+                </p>
+                <span className="mt-5 inline-block text-sm font-medium underline underline-offset-4">
+                  Explorer les budgets
+                </span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* 9 — FAQ */}
         <section className="mx-auto max-w-3xl px-4 py-16">
           <h2 className="text-3xl">Questions fréquentes</h2>
           <Accordion type="single" collapsible className="mt-6">
@@ -366,7 +525,7 @@ function Index() {
           </p>
         </section>
 
-        {/* 9 — CTA final */}
+        {/* 10 — CTA final */}
         <section className="border-t border-border/70 bg-secondary/40">
           <div className="mx-auto max-w-2xl px-4 py-20 text-center">
             <h2 className="text-4xl text-balance-pretty">Prêts à créer votre liste ? ❤️</h2>
@@ -380,7 +539,7 @@ function Index() {
               onClick={() => track("signup_cta_clicked", { location: "final_cta" })}
             >
               <Link to={user ? "/dashboard" : "/auth"}>
-                {user ? "Voir mes listes" : "Créer ma liste gratuitement"}
+                {user ? "Voir mes listes" : "Créer ma liste"}
               </Link>
             </Button>
             <p className="mt-4 text-xs text-muted-foreground">Gratuit · Sans carte bancaire</p>

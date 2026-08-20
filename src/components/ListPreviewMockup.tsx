@@ -9,7 +9,7 @@ type MockGift = {
 
 const GIFTS: MockGift[] = [
   {
-    title: "Poussette Cybex",
+    title: "Poussette compacte",
     price: "499 €",
     state: "available",
     image: "/generic-images/stroller.webp",
@@ -40,7 +40,7 @@ const GIFTS: MockGift[] = [
  */
 export function ListPreviewMockup() {
   return (
-    <div aria-hidden="true" className="relative mx-auto w-full max-w-sm">
+    <div aria-hidden="true" className="relative mx-auto min-w-0 w-full max-w-sm">
       <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-accent/25 blur-2xl" />
 
       <div className="rounded-[2.25rem] border border-border bg-card p-3 shadow-lift">
@@ -99,7 +99,7 @@ export function ListPreviewMockup() {
           </ul>
 
           <p className="px-4 pb-4 text-center text-[11px] text-muted-foreground">
-            1 cadeaux sur 4 ont déjà été réservés ❤️
+            1 cadeau sur 4 a déjà trouvé quelqu’un ❤️
           </p>
         </div>
       </div>

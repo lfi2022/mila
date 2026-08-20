@@ -19,6 +19,13 @@ an affiliation disclosure. Do not generate city/product/keyword variants without
 content. Merchant links in editorial content must use `rel="sponsored"` and visibly disclose when
 Mila can receive a commission.
 
+The public acquisition pages reuse the same factual product vocabulary: multi-shop list, guest
+reservation without an account, purchase completed with the third-party merchant, and explicit
+affiliate disclosure. The homepage includes WebSite and FAQ structured data, a visual comparison,
+the real five-step purchase path and links into the editorial cluster. Placeholder testimonials
+must retain a visible fictional/demo label until replaced by reviewed, attributable customer
+feedback; no rating, customer count or adoption claim may be inferred from placeholders.
+
 ## Analytics truth and privacy
 
 The browser sends nothing until the visitor affirmatively enables internal measurement. Refusal is
@@ -56,6 +63,9 @@ descriptive or intentionally empty image alternatives. New UI must preserve a mi
 touch target where controls are isolated. A release audit must cover keyboard-only use at 320 px and
 200% zoom, screen-reader names, contrast, reduced motion and automated WCAG checks; real-device and
 assistive-technology evidence is `BLOCKED_EXTERNAL` until a release candidate is deployed.
+Public marketing layouts use single-column mobile defaults and add columns only at `sm`, `md` or
+`lg` breakpoints. Global reduced-motion rules collapse non-essential animation and transition
+durations when the user requests it.
 
 ## PWA safety boundary
 
