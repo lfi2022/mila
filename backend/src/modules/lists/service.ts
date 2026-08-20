@@ -80,6 +80,7 @@ export class ListsService {
     const accessCodeHash = await this.accessCodeHash(input.visibility, input.accessCode);
     const data = {
       ownerId: userId,
+      contributionRecipientId: userId,
       ...listData(input),
       title: input.title.trim(),
       slug: input.slug.trim().toLowerCase(),
@@ -221,6 +222,7 @@ export class ListsService {
       const future = await tx.giftList.create({
         data: {
           ownerId: source.ownerId,
+          contributionRecipientId: source.ownerId,
           sourceListId: source.id,
           title: input.title.trim(),
           slug: input.slug.trim().toLowerCase(),
@@ -265,7 +267,19 @@ export class ListsService {
     if (member.role === "OWNER" || member.userId === userId) {
       throw new AppError(403, "LIST_MEMBER_REMOVE_FORBIDDEN", "This member cannot be removed");
     }
-    await this.prisma.listMember.delete({ where: { id: member.id } });
+    await this.prisma.$transaction(async (transaction) => {
+      const list = await transaction.giftList.findUniqueOrThrow({
+        where: { id: listId },
+        select: { ownerId: true, contributionRecipientId: true },
+      });
+      if (list.contributionRecipientId === member.userId) {
+        await transaction.giftList.update({
+          where: { id: listId },
+          data: { contributionRecipientId: list.ownerId },
+        });
+      }
+      await transaction.listMember.delete({ where: { id: member.id } });
+    });
   }
 
   async publicList(slug: string, grant?: string) {

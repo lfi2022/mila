@@ -57,6 +57,15 @@ export function contributionRoutes(
       const { listId } = z.object({ listId: z.string().uuid() }).parse(request.params);
       return service.listForManager(user.id, listId);
     });
+    app.put("/lists/:listId/contributions/recipient", async (request) => {
+      csrf(request);
+      const user = await current(request);
+      const { listId } = z.object({ listId: z.string().uuid() }).parse(request.params);
+      const { recipientUserId } = z
+        .object({ recipientUserId: z.string().uuid() })
+        .parse(request.body);
+      return service.setListRecipient(user.id, listId, recipientUserId);
+    });
     app.post("/lists/:listId/contributions/:contributionId/confirm", async (request) => {
       csrf(request);
       const user = await current(request);

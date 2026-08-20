@@ -283,6 +283,7 @@ model User {
   verificationTokens       EmailVerificationToken[]
   resetTokens              PasswordResetToken[]
   ownedLists               GiftList[]                @relation("ListOwner")
+  contributionRecipientLists GiftList[]              @relation("ListContributionRecipient")
   memberships              ListMember[]
   sentInvitations          ListInvitation[]          @relation("InvitationSender")
   acceptedInvitations      ListInvitation[]          @relation("InvitationAccepter")
@@ -313,6 +314,7 @@ model User {
   auditLogs                AdminAuditLog[]           @relation("AuditActor")
   bankAccount              ParentBankAccount?
   confirmedContributions   Contribution[]            @relation("ContributionConfirmer")
+  receivedTransferInstructions TransferInstruction[] @relation("TransferRecipient")
 
   @@index([createdAt])
   @@map("users")
@@ -376,6 +378,7 @@ model PasswordResetToken {
 model GiftList {
   id                       String                 @id @default(uuid()) @db.Char(36)
   ownerId                  String                 @map("owner_id") @db.Char(36)
+  contributionRecipientId  String                 @map("contribution_recipient_id") @db.Char(36)
   slug                     String                 @unique @db.VarChar(120)
   title                    String                 @db.VarChar(180)
   description              String?                @db.Text
@@ -411,6 +414,7 @@ model GiftList {
   createdAt                DateTime               @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt                DateTime               @updatedAt @map("updated_at") @db.DateTime(3)
   owner                    User                   @relation("ListOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  contributionRecipient    User                   @relation("ListContributionRecipient", fields: [contributionRecipientId], references: [id], onDelete: Restrict)
   members                  ListMember[]
   invitations              ListInvitation[]
   gifts                    Gift[]
@@ -438,6 +442,7 @@ model GiftList {
   lifecycleEvents          ListLifecycleEvent[]
 
   @@index([ownerId, status])
+  @@index([contributionRecipientId])
   @@index([visibility, status])
   @@index([dueDate])
   @@index([sourceListId, createdAt])
@@ -1240,6 +1245,7 @@ model HoldingBalance {
 model TransferInstruction {
   id             String       @id @default(uuid()) @db.Char(36)
   bankTransferId String       @unique @map("bank_transfer_id") @db.Char(36)
+  recipientUserId String      @map("recipient_user_id") @db.Char(36)
   beneficiary    String       @db.VarChar(180)
   ibanMasked     String       @map("iban_masked") @db.VarChar(64)
   ibanEncrypted  String?      @map("iban_encrypted") @db.VarChar(512)
@@ -1249,7 +1255,9 @@ model TransferInstruction {
   expiresAt      DateTime     @map("expires_at") @db.DateTime(3)
   createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime(3)
   bankTransfer   BankTransfer @relation(fields: [bankTransferId], references: [id], onDelete: Cascade)
+  recipient      User         @relation("TransferRecipient", fields: [recipientUserId], references: [id], onDelete: Restrict)
 
+  @@index([recipientUserId])
   @@map("transfer_instructions")
 }
 

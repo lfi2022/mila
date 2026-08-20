@@ -86,6 +86,7 @@ try {
       where: { slug: "demo-mila" },
       create: {
         ownerId: owner.id,
+        contributionRecipientId: owner.id,
         slug: "demo-mila",
         title: "La liste de naissance de Mila",
         description: "Une liste fictive pour découvrir l’expérience proposée à vos proches.",

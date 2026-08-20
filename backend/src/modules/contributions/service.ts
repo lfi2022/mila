@@ -27,7 +27,13 @@ export class ContributionsService {
         listId: true,
         contributionTargetMinor: true,
         currency: true,
-        list: { select: { owner: { select: { bankAccount: { select: { id: true } } } } } },
+        list: {
+          select: {
+            contributionRecipient: {
+              select: { bankAccount: { select: { id: true } } },
+            },
+          },
+        },
       },
     });
     if (!gift) throw new AppError(404, "GIFT_NOT_FOUND", "Gift not found");
@@ -40,7 +46,7 @@ export class ContributionsService {
     return {
       enabled: this.config.FEATURE_CONTRIBUTIONS,
       bankTransferEnabled:
-        this.config.FEATURE_BANK_TRANSFERS && Boolean(gift.list.owner.bankAccount),
+        this.config.FEATURE_BANK_TRANSFERS && Boolean(gift.list.contributionRecipient.bankAccount),
       gift: { id: gift.id, title: gift.title },
       targetCents: target === null ? null : safeNumber(target),
       committedCents: safeNumber(committed),
@@ -84,8 +90,9 @@ export class ContributionsService {
         contributionTargetMinor: true,
         list: {
           select: {
-            owner: {
+            contributionRecipient: {
               select: {
+                id: true,
                 bankAccount: {
                   select: { beneficiary: true, ibanEncrypted: true, ibanMasked: true },
                 },
@@ -96,7 +103,8 @@ export class ContributionsService {
       },
     });
     if (!gift) throw new AppError(404, "GIFT_NOT_FOUND", "Gift not found");
-    const bankAccount = gift.list.owner.bankAccount;
+    const recipient = gift.list.contributionRecipient;
+    const bankAccount = recipient.bankAccount;
     if (!bankAccount)
       throw new AppError(
         409,
@@ -164,6 +172,7 @@ export class ContributionsService {
             currency: gift.currency,
             instruction: {
               create: {
+                recipientUserId: recipient.id,
                 beneficiary: bankAccount.beneficiary,
                 ibanMasked: bankAccount.ibanMasked,
                 ibanEncrypted: bankAccount.ibanEncrypted,
@@ -187,14 +196,51 @@ export class ContributionsService {
     const [rows, list] = await Promise.all([
       this.prisma.contribution.findMany({
         where: { listId },
-        include: { bankTransfer: true },
+        include: { bankTransfer: { include: { instruction: true } } },
         orderBy: { createdAt: "desc" },
       }),
       this.prisma.giftList.findUnique({
         where: { id: listId },
-        select: { owner: { select: { bankAccount: { select: { ibanMasked: true } } } } },
+        select: {
+          owner: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+              bankAccount: { select: { beneficiary: true, ibanMasked: true } },
+            },
+          },
+          contributionRecipient: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+              bankAccount: { select: { beneficiary: true, ibanMasked: true } },
+            },
+          },
+          members: {
+            where: { role: "CO_OWNER" },
+            select: {
+              role: true,
+              user: {
+                select: {
+                  id: true,
+                  displayName: true,
+                  email: true,
+                  bankAccount: { select: { beneficiary: true, ibanMasked: true } },
+                },
+              },
+            },
+          },
+        },
       }),
     ]);
+    const recipients = list
+      ? [
+          { ...list.owner, role: "OWNER" as const },
+          ...list.members.map((member) => ({ ...member.user, role: member.role })),
+        ]
+      : [];
     return {
       contributions: rows.map((row) => ({
         id: row.id,
@@ -210,6 +256,13 @@ export class ContributionsService {
         status: row.status,
         transferStatus: row.bankTransfer?.status ?? null,
         reference: row.bankTransfer?.reference ?? null,
+        transferDestination: row.bankTransfer?.instruction
+          ? {
+              userId: row.bankTransfer.instruction.recipientUserId,
+              beneficiary: row.bankTransfer.instruction.beneficiary,
+              ibanMasked: row.bankTransfer.instruction.ibanMasked,
+            }
+          : null,
         createdAt: row.createdAt.toISOString(),
       })),
       receivedCents: safeNumber(
@@ -217,9 +270,68 @@ export class ContributionsService {
           .filter((row) => row.status === "CONFIRMED")
           .reduce((sum, row) => sum + row.amountMinor, 0n),
       ),
-      destination: list?.owner.bankAccount ?? null,
+      destination:
+        list?.contributionRecipient.bankAccount === null || !list
+          ? null
+          : {
+              userId: list.contributionRecipient.id,
+              displayName: list.contributionRecipient.displayName,
+              email: list.contributionRecipient.email,
+              ...list.contributionRecipient.bankAccount,
+            },
+      recipientUserId: list?.contributionRecipient.id ?? null,
+      recipients: recipients.map((recipient) => ({
+        userId: recipient.id,
+        displayName: recipient.displayName,
+        email: recipient.email,
+        role: recipient.role,
+        beneficiary: recipient.bankAccount?.beneficiary ?? null,
+        ibanMasked: recipient.bankAccount?.ibanMasked ?? null,
+        hasBankAccount: Boolean(recipient.bankAccount),
+      })),
       canConfirm: role === "OWNER" || role === "CO_OWNER",
+      canManageDestination: role === "OWNER" || role === "CO_OWNER",
     };
+  }
+
+  async setListRecipient(userId: string, listId: string, recipientUserId: string) {
+    await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    const list = await this.prisma.giftList.findFirst({
+      where: {
+        id: listId,
+        deletedAt: null,
+        OR: [
+          { ownerId: recipientUserId },
+          { members: { some: { userId: recipientUserId, role: "CO_OWNER" } } },
+        ],
+      },
+      select: {
+        contributionRecipientId: true,
+      },
+    });
+    if (!list)
+      throw new AppError(
+        400,
+        "CONTRIBUTION_RECIPIENT_INVALID",
+        "The recipient must be the owner or a co-owner of the list",
+      );
+    const bankAccount = await this.prisma.parentBankAccount.findUnique({
+      where: { userId: recipientUserId },
+      select: { ibanMasked: true },
+    });
+    if (!bankAccount)
+      throw new AppError(
+        409,
+        "PARENT_BANK_ACCOUNT_REQUIRED",
+        "The selected parent has not configured a bank account",
+      );
+    if (list.contributionRecipientId !== recipientUserId) {
+      await this.prisma.giftList.update({
+        where: { id: listId },
+        data: { contributionRecipientId: recipientUserId },
+      });
+    }
+    return { recipientUserId, ibanMasked: bankAccount.ibanMasked };
   }
 
   async confirmByParent(userId: string, listId: string, contributionId: string) {

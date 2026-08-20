@@ -58,12 +58,43 @@ export const contributionApi = {
         status: string;
         transferStatus: string | null;
         reference: string | null;
+        transferDestination: {
+          userId: string;
+          beneficiary: string;
+          ibanMasked: string;
+        } | null;
         createdAt: string;
       }>;
       receivedCents: number;
-      destination: { ibanMasked: string } | null;
+      destination: {
+        userId: string;
+        displayName: string | null;
+        email: string;
+        beneficiary: string;
+        ibanMasked: string;
+      } | null;
+      recipientUserId: string | null;
+      recipients: Array<{
+        userId: string;
+        displayName: string | null;
+        email: string;
+        role: "OWNER" | "CO_OWNER";
+        beneficiary: string | null;
+        ibanMasked: string | null;
+        hasBankAccount: boolean;
+      }>;
       canConfirm: boolean;
+      canManageDestination: boolean;
     }>(`/lists/${listId}/contributions`),
+  setRecipient: (listId: string, recipientUserId: string) =>
+    apiRequest<{ recipientUserId: string; ibanMasked: string }>(
+      `/lists/${listId}/contributions/recipient`,
+      {
+        method: "PUT",
+        csrf: true,
+        body: JSON.stringify({ recipientUserId }),
+      },
+    ),
   confirm: (listId: string, contributionId: string) =>
     apiRequest<{ status: string }>(`/lists/${listId}/contributions/${contributionId}/confirm`, {
       method: "POST",

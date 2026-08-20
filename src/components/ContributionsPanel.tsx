@@ -20,6 +20,14 @@ export function ContributionsPanel({ listId }: { listId: string }) {
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const recipientAction = useMutation({
+    mutationFn: (recipientUserId: string) => contributionApi.setRecipient(listId, recipientUserId),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["contributions", listId] });
+      toast.success("Compte destinataire mis à jour");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   if (query.isLoading) return <p className="text-sm text-muted-foreground">Chargement…</p>;
   const data = query.data;
   if (!data) return <p className="text-sm text-muted-foreground">Contributions indisponibles.</p>;
@@ -34,6 +42,50 @@ export function ContributionsPanel({ listId }: { listId: string }) {
           fonds.
         </p>
       </div>
+      {data.canManageDestination ? (
+        <div className="rounded-xl border p-4">
+          <label htmlFor="contribution-recipient" className="text-sm font-medium">
+            Parent qui reçoit les prochains virements
+          </label>
+          <select
+            id="contribution-recipient"
+            className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
+            value={data.recipientUserId ?? ""}
+            disabled={recipientAction.isPending}
+            onChange={(event) => {
+              const recipientUserId = event.target.value;
+              if (!recipientUserId || recipientUserId === data.recipientUserId) return;
+              if (
+                window.confirm(
+                  "Utiliser le compte de ce parent pour toutes les prochaines participations ? Les instructions déjà créées ne seront pas modifiées.",
+                )
+              )
+                recipientAction.mutate(recipientUserId);
+            }}
+          >
+            <option value="" disabled>
+              Choisir un parent
+            </option>
+            {data.recipients.map((recipient) => (
+              <option
+                key={recipient.userId}
+                value={recipient.userId}
+                disabled={!recipient.hasBankAccount}
+              >
+                {recipient.displayName || recipient.email} ·{" "}
+                {recipient.role === "OWNER" ? "Parent principal" : "Coparent"}
+                {recipient.hasBankAccount
+                  ? ` · ${recipient.ibanMasked}`
+                  : " · aucun compte configuré"}
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Chaque parent configure son propre IBAN dans son profil. Un changement ne concerne que
+            les nouvelles instructions de virement.
+          </p>
+        </div>
+      ) : null}
       {data.contributions.length === 0 ? (
         <p className="text-sm text-muted-foreground">Aucune contribution.</p>
       ) : (
@@ -57,6 +109,12 @@ export function ContributionsPanel({ listId }: { listId: string }) {
             {row.reference ? (
               <p className="mt-1 font-mono text-xs text-muted-foreground">
                 Communication : {row.reference}
+              </p>
+            ) : null}
+            {row.transferDestination ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Destinataire : {row.transferDestination.beneficiary} ·{" "}
+                {row.transferDestination.ibanMasked}
               </p>
             ) : null}
             {row.message && <p className="mt-2 text-sm text-muted-foreground">{row.message}</p>}

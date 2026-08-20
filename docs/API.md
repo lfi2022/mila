@@ -100,13 +100,13 @@ Administrators list and reconcile payments and request partial/full refunds belo
 
 ## Contribution and bank-transfer routes
 
-`GET /api/v1/public/contributions/:giftToken` returns the target, committed and remaining amounts for an active contribution gift. The throttled `POST /api/v1/public/contributions/:giftToken/bank-transfer` accepts an integer-minor-unit amount, optional name/e-mail/message and anonymous display choice. It requires `X-Idempotency-Key`, reserves the amount in a serializable transaction, refuses target oversubscription, and returns the list owner's beneficiary, decrypted IBAN, unique reference, amount and 48-hour expiry. Reusing a key with different contribution data returns a conflict.
+`GET /api/v1/public/contributions/:giftToken` returns the target, committed and remaining amounts for an active contribution gift. The throttled `POST /api/v1/public/contributions/:giftToken/bank-transfer` accepts an integer-minor-unit amount, optional name/e-mail/message and anonymous display choice. It requires `X-Idempotency-Key`, reserves the amount in a serializable transaction, refuses target oversubscription, and returns the beneficiary selected for the list, decrypted IBAN, unique reference, amount and 48-hour expiry. Reusing a key with different contribution data returns a conflict.
 
-Authorized list editors read contribution history at `GET /api/v1/lists/:listId/contributions`. Owners and co-owners confirm or cancel pending transfers through `/confirm` and `/cancel`. Confirmation records the actor and time; anonymous contributor identity is not exposed.
+Authorized list editors read contribution history at `GET /api/v1/lists/:listId/contributions`. Owners and co-owners select the receiving parent through the CSRF-protected `PUT /api/v1/lists/:listId/contributions/recipient`; the recipient must be the owner or a co-owner and must have configured an account. They confirm or cancel pending transfers through `/confirm` and `/cancel`. Confirmation records the actor and time; anonymous contributor identity is not exposed. Changing the list recipient affects only future instructions because every instruction snapshots its recipient and encrypted IBAN.
 
 `GET`, `PUT` and `DELETE /api/v1/auth/bank-account` manage the parent's destination account after password verification. The full IBAN is encrypted with AES-256-GCM; a keyed fingerprint and masked form support comparison and display. Expired unpaid instructions are cancelled by cleanup work and release their reserved target amount.
 
-Public contribution creation stays disabled unless both `FEATURE_CONTRIBUTIONS` and `FEATURE_BANK_TRANSFERS` are enabled, `BANK_ACCOUNT_ENCRYPTION_KEY` is configured and the list owner has saved an account. Funds move directly from guest to parent: Mila has no holding balance, payout or refund route for this flow.
+Public contribution creation stays disabled unless both `FEATURE_CONTRIBUTIONS` and `FEATURE_BANK_TRANSFERS` are enabled, `BANK_ACCOUNT_ENCRYPTION_KEY` is configured and the parent selected for the list has saved an account. Funds move directly from guest to parent: Mila has no holding balance, payout or refund route for this flow.
 
 ## Price tracking and comparison routes
 
