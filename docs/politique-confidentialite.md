@@ -69,7 +69,9 @@ Mila peut traiter :
 - identifiant fourni par le prestataire de paiement ;
 - données nécessaires au rapprochement comptable et à la prévention de la fraude.
 
-Les données complètes de carte bancaire sont normalement traitées directement par le prestataire de paiement et ne sont pas stockées par Mila.
+Lorsqu'un Parent active les participations par virement direct, Mila conserve également le nom du titulaire et l'IBAN du compte destinataire. L'IBAN complet est chiffré ; une version masquée et une empreinte non réversible sont utilisées pour l'administration et les contrôles techniques. Il est communiqué à l'invité uniquement après la création d'une instruction de virement.
+
+Les données complètes de carte bancaire sont normalement traitées directement par le prestataire de paiement et ne sont pas stockées par Mila. Dans le flux de virement manuel, Mila ne reçoit ni ne conserve les fonds : le Parent confirme lui-même leur réception.
 
 ### Données techniques
 

@@ -52,6 +52,19 @@ export const authApi = {
         body: JSON.stringify({ displayName }),
       })
     ).user,
+  bankAccount: () => apiRequest<{ bankAccount: BankAccountSummary | null }>("/auth/bank-account"),
+  saveBankAccount: (input: { beneficiary: string; iban: string; password: string }) =>
+    apiRequest<{ bankAccount: BankAccountSummary }>("/auth/bank-account", {
+      method: "PUT",
+      csrf: true,
+      body: JSON.stringify(input),
+    }),
+  deleteBankAccount: (password: string) =>
+    apiRequest<void>("/auth/bank-account", {
+      method: "DELETE",
+      csrf: true,
+      body: JSON.stringify({ password }),
+    }),
   exportAccount: () => apiRequest<unknown>("/auth/export"),
   deleteAccount: () =>
     apiRequest<void>("/auth/account", {
@@ -83,6 +96,12 @@ export const authApi = {
       csrf: true,
       body: JSON.stringify({ type, details }),
     }),
+};
+
+export type BankAccountSummary = {
+  beneficiary: string;
+  ibanMasked: string;
+  updatedAt: string;
 };
 
 export type PrivacyRequest = {

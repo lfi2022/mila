@@ -43,7 +43,7 @@ Migration deployment must run once before replacing application containers. Appl
 
 ## Contribution funds invariants
 
-`202608130007_contribution_funds` keeps contribution intent, bank receipt, transfer instruction and third-party-funds accounting in separate tables. Contribution idempotency keys and transfer references are globally unique. Only masked IBAN data is persisted in `transfer_instructions`; the configured full IBAN remains an application secret and is returned only with a freshly requested instruction.
+`202608130007_contribution_funds` keeps contribution intent, bank receipt and transfer instruction separate. `202608200002_parent_direct_bank_transfers` adds the parent's encrypted destination account and the parent actor who confirms receipt. Contribution idempotency keys and transfer references are globally unique. The IBAN uses authenticated encryption, a keyed fingerprint and a masked display value; each instruction snapshots the encrypted destination used at creation.
 
 `funds_ledger_entries` is distinct from Mila's `financial_ledger_entries`: confirmed parent funds are derived from signed, settled entries, never from `holding_balances.cached_minor`. Pending reservations do not count as held funds. Confirmation expires the pending marker and appends a confirmed entry; a refund appends a negative compensating entry. `payouts` is modeled for the regulated-provider target architecture but remains disabled and has no creation route.
 

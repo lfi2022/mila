@@ -52,7 +52,7 @@ const envSchema = z
     LEGAL_PRIVACY_VERSION: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .default("2026-08-13"),
+      .default("2026-08-20"),
     LEGAL_COOKIE_POLICY_VERSION: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -69,6 +69,7 @@ const envSchema = z
     DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
     AUTH_SECRET: z.string().min(32),
     SESSION_SECRET: z.string().min(32),
+    BANK_ACCOUNT_ENCRYPTION_KEY: z.string().optional().default(""),
     SESSION_TTL_SECONDS: z.coerce.number().int().min(300).default(2_592_000),
     EMAIL_VERIFICATION_TTL_SECONDS: z.coerce.number().int().min(300).default(86_400),
     PASSWORD_RESET_TTL_SECONDS: z.coerce.number().int().min(300).default(3_600),
@@ -127,9 +128,6 @@ const envSchema = z
     CONTRIBUTION_FEE_RATE_BPS: z.coerce.number().int().min(0).max(10_000).default(0),
     CONTRIBUTION_PLATFORM_SHARE_RATE_BPS: z.coerce.number().int().min(0).max(10_000).default(0),
     CONTRIBUTION_MIN_MINOR: z.coerce.number().int().min(1).default(100),
-    BANK_TRANSFER_BENEFICIARY: z.string().trim().optional().default(""),
-    BANK_TRANSFER_IBAN_MASKED: z.string().trim().optional().default(""),
-    BANK_TRANSFER_IBAN: z.string().trim().optional().default(""),
     PRICE_SCHEDULER_INTERVAL_MS: z.coerce.number().int().min(60_000).default(300_000),
     PRICE_REFRESH_BATCH_SIZE: z.coerce.number().int().min(1).max(1_000).default(100),
     PRICE_REFRESH_PER_MERCHANT_BATCH: z.coerce.number().int().min(1).max(100).default(5),
@@ -327,11 +325,24 @@ const envSchema = z
           message: "FEATURE_CONTRIBUTIONS must be enabled with bank transfers",
         });
       }
-      if (!env.BANK_TRANSFER_BENEFICIARY || !env.BANK_TRANSFER_IBAN) {
+      if (!env.BANK_ACCOUNT_ENCRYPTION_KEY) {
         context.addIssue({
           code: "custom",
-          path: ["BANK_TRANSFER_IBAN"],
-          message: "Bank beneficiary and IBAN are required when bank transfers are enabled",
+          path: ["BANK_ACCOUNT_ENCRYPTION_KEY"],
+          message: "A bank account encryption key is required when bank transfers are enabled",
+        });
+      } else if (Buffer.from(env.BANK_ACCOUNT_ENCRYPTION_KEY, "base64").length !== 32) {
+        context.addIssue({
+          code: "custom",
+          path: ["BANK_ACCOUNT_ENCRYPTION_KEY"],
+          message: "Bank account encryption key must be 32 bytes encoded as base64",
+        });
+      }
+      if (env.CONTRIBUTION_FEE_RATE_BPS !== 0 || env.CONTRIBUTION_PLATFORM_SHARE_RATE_BPS !== 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["CONTRIBUTION_FEE_RATE_BPS"],
+          message: "Direct parent bank transfers cannot deduct Mila fees",
         });
       }
     }

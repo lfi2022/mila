@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 
 import { AppError } from "../../common/errors/app-error.js";
+import { decryptIban } from "../../common/security/bank-account.js";
 import type { AppConfig } from "../../config/env.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
 import type { ListsService } from "../lists/service.js";
@@ -26,6 +27,7 @@ export class ContributionsService {
         listId: true,
         contributionTargetMinor: true,
         currency: true,
+        list: { select: { owner: { select: { bankAccount: { select: { id: true } } } } } },
       },
     });
     if (!gift) throw new AppError(404, "GIFT_NOT_FOUND", "Gift not found");
@@ -37,7 +39,8 @@ export class ContributionsService {
     const target = gift.contributionTargetMinor;
     return {
       enabled: this.config.FEATURE_CONTRIBUTIONS,
-      bankTransferEnabled: this.config.FEATURE_BANK_TRANSFERS,
+      bankTransferEnabled:
+        this.config.FEATURE_BANK_TRANSFERS && Boolean(gift.list.owner.bankAccount),
       gift: { id: gift.id, title: gift.title },
       targetCents: target === null ? null : safeNumber(target),
       committedCents: safeNumber(committed),
@@ -46,8 +49,8 @@ export class ContributionsService {
       closed: target !== null && committed >= target,
       currency: gift.currency,
       minimumCents: this.config.CONTRIBUTION_MIN_MINOR,
-      feeRateBps: this.config.CONTRIBUTION_FEE_RATE_BPS,
-      platformShareRateBps: this.config.CONTRIBUTION_PLATFORM_SHARE_RATE_BPS,
+      feeRateBps: 0,
+      platformShareRateBps: 0,
     };
   }
 
@@ -62,7 +65,7 @@ export class ContributionsService {
   }) {
     if (!this.config.FEATURE_CONTRIBUTIONS || !this.config.FEATURE_BANK_TRANSFERS)
       throw new AppError(404, "CONTRIBUTIONS_DISABLED", "Contributions are disabled");
-    if (!this.config.BANK_TRANSFER_BENEFICIARY || !this.config.BANK_TRANSFER_IBAN)
+    if (!this.config.BANK_ACCOUNT_ENCRYPTION_KEY)
       throw new AppError(503, "BANK_TRANSFER_NOT_CONFIGURED", "Bank transfer is not configured");
     const amount = BigInt(input.amountCents);
     if (amount < BigInt(this.config.CONTRIBUTION_MIN_MINOR))
@@ -74,9 +77,32 @@ export class ContributionsService {
         deletedAt: null,
         list: { status: "ACTIVE", deletedAt: null },
       },
-      select: { id: true, listId: true, currency: true, contributionTargetMinor: true },
+      select: {
+        id: true,
+        listId: true,
+        currency: true,
+        contributionTargetMinor: true,
+        list: {
+          select: {
+            owner: {
+              select: {
+                bankAccount: {
+                  select: { beneficiary: true, ibanEncrypted: true, ibanMasked: true },
+                },
+              },
+            },
+          },
+        },
+      },
     });
     if (!gift) throw new AppError(404, "GIFT_NOT_FOUND", "Gift not found");
+    const bankAccount = gift.list.owner.bankAccount;
+    if (!bankAccount)
+      throw new AppError(
+        409,
+        "PARENT_BANK_ACCOUNT_REQUIRED",
+        "The parent has not configured a bank account",
+      );
     const key = `contribution:${input.idempotencyKey}`;
     const existing = await this.prisma.bankTransfer.findFirst({
       where: { contribution: { idempotencyKey: key } },
@@ -112,11 +138,6 @@ export class ContributionsService {
             "CONTRIBUTION_TARGET_EXCEEDED",
             "Contribution exceeds the remaining target",
           );
-        const { fee, share, net } = calculateContributionSplit(
-          amount,
-          this.config.CONTRIBUTION_FEE_RATE_BPS,
-          this.config.CONTRIBUTION_PLATFORM_SHARE_RATE_BPS,
-        );
         const contribution = await tx.contribution.create({
           data: {
             listId: gift.listId,
@@ -127,8 +148,8 @@ export class ContributionsService {
             message: input.message?.trim() || null,
             amountMinor: amount,
             idempotencyKey: key,
-            feeMinor: fee,
-            platformShareMinor: share,
+            feeMinor: 0n,
+            platformShareMinor: 0n,
             currency: gift.currency,
             metadata: { idempotencyKey: key },
           },
@@ -143,35 +164,17 @@ export class ContributionsService {
             currency: gift.currency,
             instruction: {
               create: {
-                beneficiary: this.config.BANK_TRANSFER_BENEFICIARY,
-                ibanMasked:
-                  this.config.BANK_TRANSFER_IBAN_MASKED || maskIban(this.config.BANK_TRANSFER_IBAN),
+                beneficiary: bankAccount.beneficiary,
+                ibanMasked: bankAccount.ibanMasked,
+                ibanEncrypted: bankAccount.ibanEncrypted,
                 reference,
                 amountMinor: amount,
                 currency: gift.currency,
-                expiresAt: new Date(Date.now() + 14 * 86_400_000),
+                expiresAt: new Date(Date.now() + 48 * 3_600_000),
               },
             },
           },
           include: { instruction: true, contribution: true },
-        });
-        await tx.fundsLedgerEntry.create({
-          data: {
-            listId: gift.listId,
-            contributionId: contribution.id,
-            type: "CONTRIBUTION_PENDING",
-            status: "PENDING",
-            amountMinor: net,
-            currency: gift.currency,
-            idempotencyKey: `contribution-pending:${contribution.id}`,
-            sourceType: "bank_transfer",
-            sourceId: transfer.id,
-            metadata: {
-              grossMinor: amount.toString(),
-              feeMinor: fee.toString(),
-              platformShareMinor: share.toString(),
-            },
-          },
         });
         return this.serializeInstruction(transfer, transfer.instruction!);
       },
@@ -180,20 +183,23 @@ export class ContributionsService {
   }
 
   async listForManager(userId: string, listId: string) {
-    await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
-    const [rows, ledger] = await Promise.all([
+    const role = await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER", "EDITOR"]);
+    const [rows, list] = await Promise.all([
       this.prisma.contribution.findMany({
         where: { listId },
         include: { bankTransfer: true },
         orderBy: { createdAt: "desc" },
       }),
-      this.prisma.fundsLedgerEntry.findMany({ where: { listId }, orderBy: { createdAt: "desc" } }),
+      this.prisma.giftList.findUnique({
+        where: { id: listId },
+        select: { owner: { select: { bankAccount: { select: { ibanMasked: true } } } } },
+      }),
     ]);
     return {
       contributions: rows.map((row) => ({
         id: row.id,
         giftId: row.giftId,
-        contributorName: row.anonymous ? null : row.contributorName,
+        contributorName: row.contributorName,
         anonymous: row.anonymous,
         message: row.message,
         amountCents: safeNumber(row.amountMinor),
@@ -203,15 +209,93 @@ export class ContributionsService {
         currency: row.currency,
         status: row.status,
         transferStatus: row.bankTransfer?.status ?? null,
+        reference: row.bankTransfer?.reference ?? null,
         createdAt: row.createdAt.toISOString(),
       })),
-      heldCents: safeNumber(
-        ledger
+      receivedCents: safeNumber(
+        rows
           .filter((row) => row.status === "CONFIRMED")
           .reduce((sum, row) => sum + row.amountMinor, 0n),
       ),
-      payoutEnabled: this.config.FEATURE_PARENT_PAYOUTS && this.config.FEATURE_MOLLIE_CONNECT,
+      destination: list?.owner.bankAccount ?? null,
+      canConfirm: role === "OWNER" || role === "CO_OWNER",
     };
+  }
+
+  async confirmByParent(userId: string, listId: string, contributionId: string) {
+    await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    const contribution = await this.prisma.contribution.findFirst({
+      where: { id: contributionId, listId },
+      include: { bankTransfer: true },
+    });
+    if (!contribution?.bankTransfer)
+      throw new AppError(404, "CONTRIBUTION_NOT_FOUND", "Contribution not found");
+    const now = new Date();
+    const confirmed = await this.prisma.$transaction(
+      async (transaction) => {
+        const changed = await transaction.contribution.updateMany({
+          where: { id: contribution.id, listId, status: "PENDING" },
+          data: { status: "CONFIRMED", confirmedAt: now, confirmedById: userId },
+        });
+        if (changed.count === 0) return false;
+        await transaction.bankTransfer.update({
+          where: { id: contribution.bankTransfer!.id },
+          data: {
+            status: "MATCHED",
+            receivedAmountMinor: contribution.amountMinor,
+            receivedAt: now,
+            matchedAt: now,
+            metadata: { confirmationMode: "parent_manual", confirmedByUserId: userId },
+          },
+        });
+        if (contribution.giftId)
+          await transaction.gift.update({
+            where: { id: contribution.giftId },
+            data: { fundedAmountMinor: { increment: contribution.amountMinor } },
+          });
+        return true;
+      },
+      { isolationLevel: "Serializable" },
+    );
+    if (!confirmed) {
+      const current = await this.prisma.contribution.findUnique({
+        where: { id: contribution.id },
+        select: { status: true },
+      });
+      if (current?.status !== "CONFIRMED")
+        throw new AppError(409, "CONTRIBUTION_NOT_PENDING", "Contribution is not pending");
+    }
+    return { status: "CONFIRMED" as const };
+  }
+
+  async cancelByParent(userId: string, listId: string, contributionId: string) {
+    await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    const contribution = await this.prisma.contribution.findFirst({
+      where: { id: contributionId, listId, status: "PENDING" },
+      include: { bankTransfer: true },
+    });
+    if (!contribution)
+      throw new AppError(404, "CONTRIBUTION_NOT_FOUND", "Pending contribution not found");
+    await this.prisma.$transaction(
+      async (transaction) => {
+        const changed = await transaction.contribution.updateMany({
+          where: { id: contribution.id, listId, status: "PENDING" },
+          data: { status: "CANCELLED" },
+        });
+        if (changed.count === 0)
+          throw new AppError(409, "CONTRIBUTION_NOT_PENDING", "Contribution is not pending");
+        if (contribution.bankTransfer)
+          await transaction.bankTransfer.update({
+            where: { id: contribution.bankTransfer.id },
+            data: {
+              status: "MANUAL_REVIEW",
+              metadata: { cancelledByUserId: userId },
+            },
+          });
+      },
+      { isolationLevel: "Serializable" },
+    );
+    return { status: "CANCELLED" as const };
   }
 
   async reconcileTransfer(
@@ -383,7 +467,12 @@ export class ContributionsService {
 
   private serializeInstruction(
     transfer: { id: string; reference: string; expectedAmountMinor: bigint; currency: string },
-    instruction: { beneficiary: string; ibanMasked: string; expiresAt: Date },
+    instruction: {
+      beneficiary: string;
+      ibanMasked: string;
+      ibanEncrypted: string | null;
+      expiresAt: Date;
+    },
   ) {
     return {
       contributionId:
@@ -394,7 +483,9 @@ export class ContributionsService {
           : undefined,
       transferId: transfer.id,
       beneficiary: instruction.beneficiary,
-      iban: this.config.BANK_TRANSFER_IBAN,
+      iban: instruction.ibanEncrypted
+        ? decryptIban(instruction.ibanEncrypted, this.config.BANK_ACCOUNT_ENCRYPTION_KEY)
+        : "",
       ibanMasked: instruction.ibanMasked,
       reference: transfer.reference,
       amountCents: safeNumber(transfer.expectedAmountMinor),
@@ -421,9 +512,4 @@ export function calculateContributionSplit(
   if (fee + share >= amount)
     throw new AppError(500, "CONTRIBUTION_POLICY_INVALID", "Contribution cost policy is invalid");
   return { fee, share, net: amount - fee - share };
-}
-
-function maskIban(value: string) {
-  const compact = value.replace(/\s/g, "");
-  return compact.length > 8 ? `${compact.slice(0, 4)}••••••${compact.slice(-4)}` : "CONFIGURED";
 }

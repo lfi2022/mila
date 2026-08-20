@@ -93,6 +93,8 @@ function ProfilePage() {
           </Button>
         </section>
 
+        <BankAccountSection />
+
         <section className="surface-card space-y-4 p-6">
           <div>
             <h2 className="text-lg">Vos données</h2>
@@ -153,6 +155,114 @@ function ProfilePage() {
         </section>
       </main>
     </div>
+  );
+}
+
+function BankAccountSection() {
+  const [current, setCurrent] =
+    useState<Awaited<ReturnType<typeof authApi.bankAccount>>["bankAccount"]>(null);
+  const [beneficiary, setBeneficiary] = useState("");
+  const [iban, setIban] = useState("");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const reload = () =>
+    void authApi.bankAccount().then(({ bankAccount }) => {
+      setCurrent(bankAccount);
+      if (bankAccount) setBeneficiary(bankAccount.beneficiary);
+    });
+  useEffect(reload, []);
+  return (
+    <section className="surface-card space-y-4 p-6">
+      <div>
+        <h2 className="text-lg">Compte pour les participations</h2>
+        <p className="text-sm text-muted-foreground">
+          Les invités virent directement sur ce compte. Mila ne reçoit et ne conserve pas l’argent.
+        </p>
+      </div>
+      {current ? (
+        <p className="rounded-lg bg-muted p-3 text-sm">
+          Compte actuel : <strong>{current.beneficiary}</strong> · {current.ibanMasked}
+        </p>
+      ) : null}
+      <div className="space-y-2">
+        <Label htmlFor="bank-beneficiary">Titulaire du compte</Label>
+        <Input
+          id="bank-beneficiary"
+          value={beneficiary}
+          maxLength={180}
+          onChange={(event) => setBeneficiary(event.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="bank-iban">IBAN</Label>
+        <Input
+          id="bank-iban"
+          value={iban}
+          autoComplete="off"
+          placeholder={current ? "Saisir un nouvel IBAN pour le modifier" : "BE…"}
+          onChange={(event) => setIban(event.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="bank-password">Mot de passe actuel</Label>
+        <Input
+          id="bank-password"
+          type="password"
+          value={password}
+          autoComplete="current-password"
+          onChange={(event) => setPassword(event.target.value)}
+        />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          disabled={saving || beneficiary.trim().length < 2 || iban.trim().length < 15 || !password}
+          onClick={async () => {
+            setSaving(true);
+            try {
+              const result = await authApi.saveBankAccount({ beneficiary, iban, password });
+              setCurrent(result.bankAccount);
+              setIban("");
+              setPassword("");
+              toast.success("Compte bancaire enregistré");
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Enregistrement impossible");
+            } finally {
+              setSaving(false);
+            }
+          }}
+        >
+          Enregistrer le compte
+        </Button>
+        {current ? (
+          <Button
+            variant="outline"
+            disabled={saving || !password}
+            onClick={async () => {
+              if (!window.confirm("Supprimer ce compte bancaire de Mila ?")) return;
+              setSaving(true);
+              try {
+                await authApi.deleteBankAccount(password);
+                setCurrent(null);
+                setBeneficiary("");
+                setIban("");
+                setPassword("");
+                toast.success("Compte bancaire supprimé");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Suppression impossible");
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            Supprimer
+          </Button>
+        ) : null}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        L’IBAN est chiffré en base et n’est affiché en entier qu’après la création d’une instruction
+        de virement.
+      </p>
+    </section>
   );
 }
 

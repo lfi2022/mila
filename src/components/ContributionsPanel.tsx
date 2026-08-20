@@ -1,12 +1,24 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { contributionApi } from "@/features/contributions/api";
 import { formatCents } from "@/lib/money";
+import { toast } from "sonner";
 
 export function ContributionsPanel({ listId }: { listId: string }) {
+  const client = useQueryClient();
   const query = useQuery({
     queryKey: ["contributions", listId],
     queryFn: () => contributionApi.list(listId),
+  });
+  const action = useMutation({
+    mutationFn: ({ id, confirm }: { id: string; confirm: boolean }) =>
+      confirm ? contributionApi.confirm(listId, id) : contributionApi.cancel(listId, id),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["contributions", listId] });
+      toast.success("Participation mise à jour");
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
   if (query.isLoading) return <p className="text-sm text-muted-foreground">Chargement…</p>;
   const data = query.data;
@@ -14,11 +26,12 @@ export function ContributionsPanel({ listId }: { listId: string }) {
   return (
     <section className="space-y-4">
       <div className="rounded-xl border p-4">
-        <p className="text-sm text-muted-foreground">Fonds de tiers confirmés et détenus</p>
-        <p className="mt-1 text-2xl font-semibold">{formatCents(data.heldCents)}</p>
+        <p className="text-sm text-muted-foreground">Virements confirmés comme reçus</p>
+        <p className="mt-1 text-2xl font-semibold">{formatCents(data.receivedCents)}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Ce montant est distinct du revenu Mila. Le versement parent reste{" "}
-          {data.payoutEnabled ? "activé" : "désactivé en attente du cadre réglementé"}.
+          Les virements arrivent directement sur votre compte
+          {data.destination ? ` ${data.destination.ibanMasked}` : ""}. Mila ne détient pas ces
+          fonds.
         </p>
       </div>
       {data.contributions.length === 0 ? (
@@ -29,7 +42,8 @@ export function ContributionsPanel({ listId }: { listId: string }) {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="font-medium">
-                  {row.anonymous ? "Participation anonyme" : row.contributorName || "Participant"}
+                  {row.contributorName || "Participant"}
+                  {row.anonymous ? " · affichage public anonyme" : ""}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {new Date(row.createdAt).toLocaleString("fr-BE")}
@@ -38,12 +52,43 @@ export function ContributionsPanel({ listId }: { listId: string }) {
               <Badge variant="outline">{row.status}</Badge>
             </div>
             <p className="mt-2 text-sm">
-              Total {formatCents(row.amountCents, row.currency)} · frais{" "}
-              {formatCents(row.feeCents, row.currency)} · part Mila{" "}
-              {formatCents(row.platformShareCents, row.currency)} · parents{" "}
-              {formatCents(row.netToParentsCents, row.currency)}
+              Montant attendu : {formatCents(row.amountCents, row.currency)}
             </p>
+            {row.reference ? (
+              <p className="mt-1 font-mono text-xs text-muted-foreground">
+                Communication : {row.reference}
+              </p>
+            ) : null}
             {row.message && <p className="mt-2 text-sm text-muted-foreground">{row.message}</p>}
+            {row.status === "PENDING" && data.canConfirm ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  disabled={action.isPending}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Confirmez-vous avoir reçu ce montant sur votre compte bancaire ?",
+                      )
+                    )
+                      action.mutate({ id: row.id, confirm: true });
+                  }}
+                >
+                  Confirmer la réception
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={action.isPending}
+                  onClick={() => {
+                    if (window.confirm("Annuler cette intention de participation ?"))
+                      action.mutate({ id: row.id, confirm: false });
+                  }}
+                >
+                  Annuler l’intention
+                </Button>
+              </div>
+            ) : null}
           </div>
         ))
       )}

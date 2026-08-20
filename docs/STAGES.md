@@ -462,11 +462,11 @@ Implemented:
 
 - target-backed full/partial participation and target-free contribution gifts with anonymous display, message, progress, closure and expiry release;
 - serializable target reservation, global idempotency keys and exact minor-unit fee/Mila/net-parent calculation;
-- bank instructions with configured beneficiary/full IBAN returned on demand, only masked IBAN persisted, unique references and fourteen-day expiry;
+- direct parent bank instructions returned on demand, encrypted IBAN snapshots, unique references and 48-hour expiry;
 - waiting, exact-match, manual-review and refund lifecycle with single and 500-row staff reconciliation APIs plus audit records;
 - separate contribution, bank-transfer, transfer-instruction, parent-funds ledger, holding projection and disabled payout models;
 - ledger-derived held parent balance separated from Mila revenue, append-only confirmed/refund movements and parent dashboard breakdown;
-- public contribution flow, transparent cost display, parent contribution history and staff reconciliation interface;
+- public contribution flow without Mila fees, parent contribution history and manual receipt confirmation by an owner or co-owner;
 - fail-closed contribution/bank/payout flags and startup validation for cost policy, bank details and Mollie Connect dependency.
 
 Migration: `202608130007_contribution_funds`.
@@ -483,8 +483,8 @@ Validation:
 Environment variables:
 
 - `FEATURE_CONTRIBUTIONS`, `FEATURE_BANK_TRANSFERS`, `FEATURE_PARENT_PAYOUTS`;
-- `CONTRIBUTION_FEE_RATE_BPS`, `CONTRIBUTION_PLATFORM_SHARE_RATE_BPS`, `CONTRIBUTION_MIN_MINOR`;
-- `BANK_TRANSFER_BENEFICIARY`, `BANK_TRANSFER_IBAN`, `BANK_TRANSFER_IBAN_MASKED`.
+- `CONTRIBUTION_FEE_RATE_BPS=0`, `CONTRIBUTION_PLATFORM_SHARE_RATE_BPS=0`, `CONTRIBUTION_MIN_MINOR`;
+- `BANK_ACCOUNT_ENCRYPTION_KEY` (32 random bytes encoded as base64).
 
 External blockers:
 

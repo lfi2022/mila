@@ -67,7 +67,8 @@ function ContributionPage() {
                 <dd>{formatCents(transfer.data.amountCents, transfer.data.currency)}</dd>
               </dl>
               <p className="text-xs text-muted-foreground">
-                Votre participation reste en attente jusqu’au rapprochement bancaire. Expire le{" "}
+                Le virement arrive directement chez les parents. Votre participation restera en
+                attente jusqu’à leur confirmation. Instructions valables jusqu’au{" "}
                 {new Date(transfer.data.expiresAt).toLocaleDateString("fr-BE")}.
               </p>
             </div>
@@ -78,7 +79,7 @@ function ContributionPage() {
               <p className="text-sm text-muted-foreground">
                 Déjà engagé : {formatCents(value.committedCents, value.currency)}
                 {value.targetCents ? ` sur ${formatCents(value.targetCents, value.currency)}` : ""}.
-                Les frais et la part Mila sont affichés avant confirmation.
+                Mila ne prélève aucun frais et ne reçoit pas les fonds.
               </p>
               <div>
                 <Label>Montant en euros</Label>
@@ -109,25 +110,14 @@ function ContributionPage() {
                 Afficher ma participation anonymement
               </label>
               <p className="text-sm">
-                Total versé : {formatCents(Math.round(Number(amount || 0) * 100), value.currency)} ·
-                frais estimés :{" "}
-                {formatCents(
-                  Math.floor((Number(amount || 0) * 100 * value.feeRateBps) / 10_000),
-                  value.currency,
-                )}{" "}
-                · part Mila :{" "}
-                {formatCents(
-                  Math.floor((Number(amount || 0) * 100 * value.platformShareRateBps) / 10_000),
-                  value.currency,
-                )}
-                {" · parents : "}
-                {formatCents(
-                  Math.round(Number(amount || 0) * 100) -
-                    Math.floor((Number(amount || 0) * 100 * value.feeRateBps) / 10_000) -
-                    Math.floor((Number(amount || 0) * 100 * value.platformShareRateBps) / 10_000),
-                  value.currency,
-                )}
+                À verser directement aux parents :{" "}
+                {formatCents(Math.round(Number(amount || 0) * 100), value.currency)}
               </p>
+              {!value.bankTransferEnabled ? (
+                <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                  Les parents n’ont pas encore configuré leur compte pour recevoir les virements.
+                </p>
+              ) : null}
               <Button
                 disabled={!value.bankTransferEnabled || !Number(amount) || transfer.isPending}
                 onClick={() => transfer.mutate()}

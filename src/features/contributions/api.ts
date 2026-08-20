@@ -57,26 +57,21 @@ export const contributionApi = {
         currency: string;
         status: string;
         transferStatus: string | null;
+        reference: string | null;
         createdAt: string;
       }>;
-      heldCents: number;
-      payoutEnabled: boolean;
+      receivedCents: number;
+      destination: { ibanMasked: string } | null;
+      canConfirm: boolean;
     }>(`/lists/${listId}/contributions`),
-  reconcile: (input: {
-    reference: string;
-    receivedCents: number;
-    payerName: string;
-    approve: boolean;
-  }) =>
-    apiRequest<{ status: string }>("/admin/bank-transfers/reconcile", {
+  confirm: (listId: string, contributionId: string) =>
+    apiRequest<{ status: string }>(`/lists/${listId}/contributions/${contributionId}/confirm`, {
       method: "POST",
       csrf: true,
-      body: JSON.stringify(input),
     }),
-  refund: (contributionId: string, reason: string) =>
-    apiRequest<{ status: string }>(`/admin/contributions/${contributionId}/refund`, {
+  cancel: (listId: string, contributionId: string) =>
+    apiRequest<{ status: string }>(`/lists/${listId}/contributions/${contributionId}/cancel`, {
       method: "POST",
       csrf: true,
-      body: JSON.stringify({ reason }),
     }),
 };

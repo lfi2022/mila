@@ -311,6 +311,8 @@ model User {
   reviewedRisks            RiskReview[]              @relation("RiskReviewer")
   reports                  Report[]                  @relation("Reporter")
   auditLogs                AdminAuditLog[]           @relation("AuditActor")
+  bankAccount              ParentBankAccount?
+  confirmedContributions   Contribution[]            @relation("ContributionConfirmer")
 
   @@index([createdAt])
   @@map("users")
@@ -805,6 +807,7 @@ model Contribution {
   status             ContributionStatus @default(PENDING)
   createdAt          DateTime           @default(now()) @map("created_at") @db.DateTime(3)
   confirmedAt        DateTime?          @map("confirmed_at") @db.DateTime(3)
+  confirmedById      String?            @map("confirmed_by_id") @db.Char(36)
   updatedAt          DateTime           @updatedAt @map("updated_at") @db.DateTime(3)
   list               GiftList           @relation(fields: [listId], references: [id], onDelete: Restrict)
   gift               Gift?              @relation(fields: [giftId], references: [id], onDelete: Restrict)
@@ -812,10 +815,28 @@ model Contribution {
   payment            Payment?           @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   bankTransfer       BankTransfer?
   fundsEntries       FundsLedgerEntry[]
+  confirmedBy        User?              @relation("ContributionConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
 
   @@index([listId, status])
   @@index([giftId, status])
+  @@index([confirmedById])
   @@map("contributions")
+}
+
+model ParentBankAccount {
+  id              String   @id @default(uuid()) @db.Char(36)
+  userId          String   @unique @map("user_id") @db.Char(36)
+  beneficiary     String   @db.VarChar(180)
+  ibanEncrypted   String   @map("iban_encrypted") @db.VarChar(512)
+  ibanFingerprint String   @map("iban_fingerprint") @db.Char(64)
+  ibanMasked      String   @map("iban_masked") @db.VarChar(64)
+  keyVersion      Int      @default(1) @map("key_version") @db.UnsignedSmallInt
+  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ibanFingerprint])
+  @@map("parent_bank_accounts")
 }
 
 model AffiliateClick {
@@ -1221,6 +1242,7 @@ model TransferInstruction {
   bankTransferId String       @unique @map("bank_transfer_id") @db.Char(36)
   beneficiary    String       @db.VarChar(180)
   ibanMasked     String       @map("iban_masked") @db.VarChar(64)
+  ibanEncrypted  String?      @map("iban_encrypted") @db.VarChar(512)
   reference      String       @db.VarChar(64)
   amountMinor    BigInt       @map("amount_minor")
   currency       String       @default("EUR") @db.Char(3)

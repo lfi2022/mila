@@ -94,22 +94,30 @@ describe("database environment", () => {
     ).toThrow(/official Mollie API origin/);
   });
 
-  it("requires contribution and bank details before enabling bank transfers", () => {
+  it("requires contributions and an encryption key before enabling bank transfers", () => {
     expect(() => loadConfig({ ...valid, FEATURE_BANK_TRANSFERS: "true" })).toThrow(
       /FEATURE_CONTRIBUTIONS/,
     );
     expect(() =>
       loadConfig({ ...valid, FEATURE_BANK_TRANSFERS: "true", FEATURE_CONTRIBUTIONS: "true" }),
-    ).toThrow(/beneficiary and IBAN/);
+    ).toThrow(/encryption key/);
     expect(
       loadConfig({
         ...valid,
         FEATURE_BANK_TRANSFERS: "true",
         FEATURE_CONTRIBUTIONS: "true",
-        BANK_TRANSFER_BENEFICIARY: "Mila Test",
-        BANK_TRANSFER_IBAN: "BE68539007547034",
+        BANK_ACCOUNT_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
       }).FEATURE_BANK_TRANSFERS,
     ).toBe(true);
+    expect(() =>
+      loadConfig({
+        ...valid,
+        FEATURE_BANK_TRANSFERS: "true",
+        FEATURE_CONTRIBUTIONS: "true",
+        BANK_ACCOUNT_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
+        CONTRIBUTION_PLATFORM_SHARE_RATE_BPS: "100",
+      }),
+    ).toThrow(/cannot deduct Mila fees/);
   });
 
   it("keeps parent payouts disabled without Mollie Connect", () => {

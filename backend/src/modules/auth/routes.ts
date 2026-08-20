@@ -19,6 +19,12 @@ const signup = credentials.extend({
 const tokenBody = z.object({ token: z.string().min(32).max(256) });
 const resetBody = tokenBody.extend({ password: z.string().min(12).max(128) });
 const profileBody = z.object({ displayName: z.string().trim().min(1).max(120).nullable() });
+const bankAccountBody = z.object({
+  beneficiary: z.string().trim().min(2).max(180),
+  iban: z.string().trim().min(15).max(64),
+  password: z.string().min(1).max(128),
+});
+const bankAccountDeleteBody = z.object({ password: z.string().min(1).max(128) });
 const deleteBody = z.object({ confirmation: z.literal("DELETE") });
 const consentBody = z.object({ granted: z.boolean() });
 const privacyRequestBody = z.object({
@@ -161,6 +167,26 @@ export function authRoutes(service: AuthService, config: AppConfig): FastifyPlug
       return {
         user: await service.updateProfile(user.id, profileBody.parse(request.body).displayName),
       };
+    });
+
+    app.get("/bank-account", async (request) => {
+      const user = await service.authenticate(sessionToken(request));
+      return { bankAccount: await service.bankAccount(user.id) };
+    });
+
+    app.put("/bank-account", async (request) => {
+      requireCsrf(request);
+      const user = await service.authenticate(sessionToken(request));
+      return {
+        bankAccount: await service.saveBankAccount(user.id, bankAccountBody.parse(request.body)),
+      };
+    });
+
+    app.delete("/bank-account", async (request, reply) => {
+      requireCsrf(request);
+      const user = await service.authenticate(sessionToken(request));
+      await service.deleteBankAccount(user.id, bankAccountDeleteBody.parse(request.body).password);
+      return reply.status(204).send();
     });
 
     app.get("/consents", async (request) => {

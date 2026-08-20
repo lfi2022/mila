@@ -100,13 +100,13 @@ Administrators list and reconcile payments and request partial/full refunds belo
 
 ## Contribution and bank-transfer routes
 
-`GET /api/v1/public/contributions/:giftToken` returns the target, committed and remaining amounts for an active contribution gift. The throttled `POST /api/v1/public/contributions/:giftToken/bank-transfer` accepts an integer-minor-unit amount, optional name/e-mail/message and anonymous display choice. It requires `X-Idempotency-Key`, reserves the amount in a serializable transaction, refuses target oversubscription, and returns the exact beneficiary, IBAN, unique reference, amount and expiry. Reusing a key with different contribution data returns a conflict.
+`GET /api/v1/public/contributions/:giftToken` returns the target, committed and remaining amounts for an active contribution gift. The throttled `POST /api/v1/public/contributions/:giftToken/bank-transfer` accepts an integer-minor-unit amount, optional name/e-mail/message and anonymous display choice. It requires `X-Idempotency-Key`, reserves the amount in a serializable transaction, refuses target oversubscription, and returns the list owner's beneficiary, decrypted IBAN, unique reference, amount and 48-hour expiry. Reusing a key with different contribution data returns a conflict.
 
-Authorized list editors read contribution history and the ledger-derived held balance at `GET /api/v1/lists/:listId/contributions`. The response separates gross amount, costs, Mila share and net parent funds; anonymous contributor identity is not exposed.
+Authorized list editors read contribution history at `GET /api/v1/lists/:listId/contributions`. Owners and co-owners confirm or cancel pending transfers through `/confirm` and `/cancel`. Confirmation records the actor and time; anonymous contributor identity is not exposed.
 
-Staff can reconcile one transfer at `POST /api/v1/admin/bank-transfers/reconcile` or import up to 500 normalized bank rows at `/api/v1/admin/bank-transfers/import`. Exact reference and amount matches confirm the contribution; discrepancies enter manual review, and every decision is audited. `POST /api/v1/admin/contributions/:contributionId/refund` records an already-executed bank refund and appends the compensating funds entry. Expired unpaid instructions are cancelled by cleanup work and release their reserved target amount.
+`GET`, `PUT` and `DELETE /api/v1/auth/bank-account` manage the parent's destination account after password verification. The full IBAN is encrypted with AES-256-GCM; a keyed fingerprint and masked form support comparison and display. Expired unpaid instructions are cancelled by cleanup work and release their reserved target amount.
 
-All public contribution creation stays disabled unless both `FEATURE_CONTRIBUTIONS` and `FEATURE_BANK_TRANSFERS` are enabled with beneficiary/IBAN configuration. Parent payouts require Mollie Connect and have no executable route until the external regulated-funds model is approved.
+Public contribution creation stays disabled unless both `FEATURE_CONTRIBUTIONS` and `FEATURE_BANK_TRANSFERS` are enabled, `BANK_ACCOUNT_ENCRYPTION_KEY` is configured and the list owner has saved an account. Funds move directly from guest to parent: Mila has no holding balance, payout or refund route for this flow.
 
 ## Price tracking and comparison routes
 

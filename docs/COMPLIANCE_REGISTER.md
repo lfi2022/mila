@@ -4,14 +4,14 @@ Status: operational design complete; final legal and financial wording is `BLOCK
 
 ## Data minimization and purposes
 
-| Data                           | Purpose                                                | Minimum retention target                                 | Control                                                        |
-| ------------------------------ | ------------------------------------------------------ | -------------------------------------------------------- | -------------------------------------------------------------- |
-| Account email and display name | authentication and list administration                 | account life plus approved statutory period              | access, correction, JSON export, anonymized deletion           |
-| List/gift content              | provide the shared-list service                        | until deletion/archive policy                            | role checks, visibility, moderation, deletion                  |
-| Guest reservation identity     | manage the reservation and prevent duplicate inventory | management-token expiry plus approved operational buffer | optional email, token hash only, parent visibility             |
-| Contribution/payment records   | reconciliation, fraud, accounting and legal evidence   | `BLOCKED_EXTERNAL` statutory schedule                    | immutable ledgers, staff-only access, no full IBAN persistence |
-| Private media                  | requested message/memory service                       | configured retention deadline                            | private bucket, scan, signed URL, parent consent, deletion     |
-| Security/risk signals          | protect users and service                              | shortest reviewed antifraud window                       | pseudonymized/structured signals, manual review, audit         |
+| Data                           | Purpose                                                          | Minimum retention target                                 | Control                                                                        |
+| ------------------------------ | ---------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Account email and display name | authentication and list administration                           | account life plus approved statutory period              | access, correction, JSON export, anonymized deletion                           |
+| List/gift content              | provide the shared-list service                                  | until deletion/archive policy                            | role checks, visibility, moderation, deletion                                  |
+| Guest reservation identity     | manage the reservation and prevent duplicate inventory           | management-token expiry plus approved operational buffer | optional email, token hash only, parent visibility                             |
+| Contribution/payment records   | direct transfer instructions, receipt evidence and fraud control | `BLOCKED_EXTERNAL` statutory schedule                    | encrypted parent IBAN, keyed fingerprint, parent confirmation, no Mila custody |
+| Private media                  | requested message/memory service                                 | configured retention deadline                            | private bucket, scan, signed URL, parent consent, deletion                     |
+| Security/risk signals          | protect users and service                                        | shortest reviewed antifraud window                       | pseudonymized/structured signals, manual review, audit                         |
 
 Optional child data (name, due date, photos) is never required for account creation. Product copy must explain that parents should avoid health, identity, address or other sensitive child data. Final age/parental-authority and child-media language is `BLOCKED_EXTERNAL`.
 
@@ -38,7 +38,7 @@ Authentication-protected profile APIs provide access/correction, JSON export and
 - terms: governing law, liability, moderation/appeal, consumer withdrawal and service termination;
 - Premium: final price/tax, benefits, access after partial refund, withdrawal/refund language;
 - Rewards/referrals/affiliation: legal nature, expiry, tax/accounting, abuse decisions and disclosure;
-- contributions/payments: regulated third-party funds model, fees, refunds, chargebacks, KYC and accounting;
+- contributions/payments: legal qualification of direct parent transfers, taxation, refunds, fraud and accounting;
 - child data/media: parental authority, age, consent, publication and retention;
 - partner/printing: contracts, intellectual-property permission, fulfilment and returns.
 

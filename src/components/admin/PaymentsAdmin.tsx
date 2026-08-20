@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { paymentApi } from "@/features/payments/api";
-import { contributionApi } from "@/features/contributions/api";
 import { formatCents } from "@/lib/money";
 
 export function PaymentsAdmin() {
@@ -15,9 +14,6 @@ export function PaymentsAdmin() {
   const [selected, setSelected] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
-  const [reference, setReference] = useState("");
-  const [received, setReceived] = useState("");
-  const [payer, setPayer] = useState("");
   const refund = useMutation({
     mutationFn: () =>
       paymentApi.refund(selected!, Math.round(Number(amount) * 100), reason, crypto.randomUUID()),
@@ -38,53 +34,8 @@ export function PaymentsAdmin() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
-  const reconcileTransfer = useMutation({
-    mutationFn: () =>
-      contributionApi.reconcile({
-        reference,
-        receivedCents: Math.round(Number(received) * 100),
-        payerName: payer,
-        approve: true,
-      }),
-    onSuccess: () => {
-      toast.success("Virement rapproché");
-      setReference("");
-      setReceived("");
-      setPayer("");
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border p-4">
-        <h3 className="font-medium">Rapprochement de virement</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Une référence ou un montant divergent passe automatiquement en revue manuelle.
-        </p>
-        <div className="mt-3 grid gap-2 md:grid-cols-[1fr_160px_1fr_auto]">
-          <Input
-            value={reference}
-            onChange={(event) => setReference(event.target.value)}
-            placeholder="Référence MILA-…"
-          />
-          <Input
-            value={received}
-            onChange={(event) => setReceived(event.target.value)}
-            placeholder="Montant EUR"
-          />
-          <Input
-            value={payer}
-            onChange={(event) => setPayer(event.target.value)}
-            placeholder="Nom du payeur"
-          />
-          <Button
-            disabled={!reference || !Number(received) || !payer || reconcileTransfer.isPending}
-            onClick={() => reconcileTransfer.mutate()}
-          >
-            Rapprocher
-          </Button>
-        </div>
-      </section>
       <p className="text-sm text-muted-foreground">
         Mode fournisseur : <strong>{payments.data?.mode ?? "…"}</strong>. Les remboursements
         partiels et complets sont idempotents et rapprochés depuis Mollie.

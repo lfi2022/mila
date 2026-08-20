@@ -131,6 +131,7 @@ async function runWizard() {
       DATABASE_SSL_MODE: database.sslMode,
       AUTH_SECRET: secret(),
       SESSION_SECRET: secret(),
+      BANK_ACCOUNT_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
       REDIS_URL: useDocker
         ? "redis://redis:6379/0"
         : await ask(rl, "URL Redis", "", { required: true }),
@@ -350,14 +351,7 @@ function set(values, entries) {
 }
 
 function clearDisabledPlaceholders(values) {
-  const optional = [
-    "BANK_TRANSFER_BENEFICIARY",
-    "BANK_TRANSFER_IBAN",
-    "BANK_TRANSFER_IBAN_MASKED",
-    "CAPTCHA_SECRET",
-    "CAPTCHA_VERIFY_URL",
-    "AFFILIATE_WEBHOOK_SECRET",
-  ];
+  const optional = ["CAPTCHA_SECRET", "CAPTCHA_VERIFY_URL", "AFFILIATE_WEBHOOK_SECRET"];
   optional.forEach((key) => {
     if ((values.get(key) || "").includes("A_REMPLIR")) values.set(key, "");
   });
@@ -375,6 +369,7 @@ function validate(values) {
     "REDIS_URL",
     "AUTH_SECRET",
     "SESSION_SECRET",
+    "BANK_ACCOUNT_ENCRYPTION_KEY",
     "STORAGE_ENDPOINT",
     "STORAGE_PUBLIC_ENDPOINT",
     "STORAGE_ACCESS_KEY",

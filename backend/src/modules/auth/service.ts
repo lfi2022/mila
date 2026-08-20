@@ -4,6 +4,12 @@ import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import type { PrismaClient } from "../../generated/prisma/client.js";
 import type { AppRole } from "../../generated/prisma/enums.js";
 import { AppError } from "../../common/errors/app-error.js";
+import {
+  encryptIban,
+  fingerprintIban,
+  maskIban,
+  normalizeIban,
+} from "../../common/security/bank-account.js";
 import type { AppConfig } from "../../config/env.js";
 import type { NotificationQueue } from "../notifications/queue.js";
 
@@ -273,6 +279,56 @@ export class AuthService {
     return toAuthUser(user);
   }
 
+  async bankAccount(userId: string) {
+    return this.prisma.parentBankAccount.findUnique({
+      where: { userId },
+      select: { beneficiary: true, ibanMasked: true, updatedAt: true },
+    });
+  }
+
+  async saveBankAccount(
+    userId: string,
+    input: { beneficiary: string; iban: string; password: string },
+  ) {
+    await this.verifyCurrentPassword(userId, input.password);
+    let iban: string;
+    try {
+      iban = normalizeIban(input.iban);
+    } catch {
+      throw new AppError(400, "IBAN_INVALID", "IBAN is invalid");
+    }
+    const key = this.config.BANK_ACCOUNT_ENCRYPTION_KEY;
+    if (!key)
+      throw new AppError(
+        503,
+        "BANK_ACCOUNT_ENCRYPTION_UNAVAILABLE",
+        "Bank account storage is unavailable",
+      );
+    return this.prisma.parentBankAccount.upsert({
+      where: { userId },
+      create: {
+        userId,
+        beneficiary: input.beneficiary.trim(),
+        ibanEncrypted: encryptIban(iban, key),
+        ibanFingerprint: fingerprintIban(iban, key),
+        ibanMasked: maskIban(iban),
+      },
+      update: {
+        beneficiary: input.beneficiary.trim(),
+        ibanEncrypted: encryptIban(iban, key),
+        ibanFingerprint: fingerprintIban(iban, key),
+        ibanMasked: maskIban(iban),
+        keyVersion: 1,
+      },
+      select: { beneficiary: true, ibanMasked: true, updatedAt: true },
+    });
+  }
+
+  async deleteBankAccount(userId: string, password: string): Promise<void> {
+    await this.verifyCurrentPassword(userId, password);
+    await this.prisma.parentBankAccount.deleteMany({ where: { userId } });
+  }
+
   async recordConsent(
     user: AuthUser,
     purpose: string,
@@ -363,6 +419,7 @@ export class AuthService {
         reservations: true,
         notifications: true,
         messages: true,
+        bankAccount: { select: { beneficiary: true, ibanMasked: true, updatedAt: true } },
         privacyConsents: {
           select: {
             purpose: true,
@@ -419,6 +476,15 @@ export class AuthService {
     const session = this.buildSession(user.id, identity);
     await this.prisma.session.create({ data: session.data });
     return { token: session.token, csrfToken: createOpaqueToken(), user: toAuthUser(user) };
+  }
+
+  private async verifyCurrentPassword(userId: string, password: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+    if (!user || !(await argon2.verify(user.passwordHash, password)))
+      throw new AppError(403, "PASSWORD_INVALID", "Current password is invalid");
   }
 
   private buildSession(userId: string, identity: RequestIdentity) {

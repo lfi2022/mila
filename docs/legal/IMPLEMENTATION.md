@@ -66,6 +66,8 @@ L’administration réservée aux rôles `ADMIN` et `SUPER_ADMIN` liste les dema
 
 **VALIDATION JURIDIQUE REQUISE** avant toute mise en production de la cagnotte, des contributions destinées aux parents, de la conservation ou transmission de fonds, des virements aux parents, de Mollie Connect, des commandes automatiques, des remboursements/chargebacks et du partage de revenus. Le code ne doit pas faire de Mila un détenteur de fonds pour compte de tiers. Le modèle doit s’appuyer autant que possible sur un prestataire de paiement réglementé et sur un contrat validé.
 
+Le flux manuel implémenté en août 2026 transmet une instruction de virement du compte de l'invité vers le compte personnel du propriétaire de la liste. Mila ne reçoit pas, ne conserve pas, ne reverse pas et ne rembourse pas ces fonds. Le parent confirme manuellement la réception ; cette confirmation ne constitue pas une vérification bancaire. L'IBAN est chiffré et n'est révélé qu'après création d'une intention limitée dans le temps. **VALIDATION JURIDIQUE REQUISE** reste applicable à la qualification de ce service, aux textes présentés aux utilisateurs et au traitement fiscal des sommes reçues.
+
 Les textes décrivent des possibilités conditionnelles ; ils ne constituent pas une autorisation d’activer les feature flags correspondants. Cette implémentation ne modifie aucun flux financier ni aucune architecture de paiement.
 
 ## Vérifications et maintenance
