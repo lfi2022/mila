@@ -1,4 +1,4 @@
-const CACHE = "mila-public-v3";
+const CACHE = "mila-public-v4";
 const SAFE_SHELL = [
   "/offline.html",
   "/manifest.webmanifest",
@@ -36,8 +36,11 @@ self.addEventListener("fetch", (event) => {
         (cached) =>
           cached ||
           fetch(request).then((response) => {
-            if (response.ok)
-              void caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
+            // Clone before returning the response: its body may be consumed by the browser
+            // before an asynchronous cache callback is executed.
+            const cacheResponse = response.ok ? response.clone() : null;
+            if (cacheResponse)
+              event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, cacheResponse)));
             return response;
           }),
       ),
@@ -48,8 +51,9 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok && response.type === "basic")
-          void caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
+        const cacheResponse = response.ok && response.type === "basic" ? response.clone() : null;
+        if (cacheResponse)
+          event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, cacheResponse)));
         return response;
       })
       .catch(() => caches.match(request).then((cached) => cached || caches.match("/offline.html"))),

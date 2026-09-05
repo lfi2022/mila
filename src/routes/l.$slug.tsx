@@ -461,12 +461,12 @@ function GiftCard({
               })}
             </p>
           ) : null}
-          {gift.kind === "CONTRIBUTION" || gift.contribution_target != null ? (
+          {gift.contribution_target != null ? (
             <div className="space-y-1 pt-1">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Participation collective</span>
                 <span>
-                  {gift.contribution_collected.toLocaleString("fr-FR", { style: "currency", currency: gift.currency })}
+                  {Number(gift.contribution_collected ?? 0).toLocaleString("fr-FR", { style: "currency", currency: gift.currency })}
                   {" / "}
                   {gift.contribution_target.toLocaleString("fr-FR", { style: "currency", currency: gift.currency })}
                 </span>
@@ -474,7 +474,7 @@ function GiftCard({
               <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-accent"
-                  style={{ width: `${Math.min(100, (gift.contribution_collected / gift.contribution_target) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (Number(gift.contribution_collected ?? 0) / gift.contribution_target) * 100)}%` }}
                 />
               </div>
             </div>
