@@ -12,6 +12,7 @@ export type Gift = {
   status: string;
   kind: "LINK" | "PRODUCT" | "SERVICE" | "EXPERIENCE" | "FREE_GIFT" | "CONTRIBUTION";
   contributionTargetMinor: string | null;
+  priority: number;
   secondHandPolicy: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
   merchant: { name: string } | null;
   imageUrl: string;
@@ -34,6 +35,7 @@ export const giftApi = {
       secondHandPolicy?: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
       kind?: Gift["kind"];
       contributionTargetMinor?: string | null;
+      priority?: number;
     },
   ) {
     return (
@@ -66,6 +68,7 @@ export const giftApi = {
       quantity: number;
       unitPriceMinor: string | null;
       contributionTargetMinor: string | null;
+      priority: number;
       secondHandPolicy: Gift["secondHandPolicy"];
     }>,
   ) {

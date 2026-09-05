@@ -205,8 +205,8 @@ function PublicListPage() {
               <p className="mt-6 text-sm text-muted-foreground">
                 {totals.items > 0
                   ? `${totals.taken} cadeau${totals.taken > 1 ? "x" : ""} sur ${totals.items} ${
-                      totals.taken > 1 ? "ont" : "a"
-                    } déjà trouvé quelqu'un ❤️`
+                      totals.taken !== 1 ? "ont" : "a"
+                    } déjà trouvé quelqu’un ❤️`
                   : "Les cadeaux arrivent très bientôt."}
               </p>
             )}
@@ -416,7 +416,7 @@ function GiftCard({
 
   return (
     <Card
-      className={`${
+      className={`${gift.priority > 0 ? "ring-1 ring-primary/25 " : ""}${
         horizontal
           ? "grid overflow-hidden sm:grid-cols-[200px_1fr]"
           : featured
@@ -461,6 +461,24 @@ function GiftCard({
               })}
             </p>
           ) : null}
+          {gift.kind === "CONTRIBUTION" || gift.contribution_target != null ? (
+            <div className="space-y-1 pt-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Participation collective</span>
+                <span>
+                  {gift.contribution_collected.toLocaleString("fr-FR", { style: "currency", currency: gift.currency })}
+                  {" / "}
+                  {gift.contribution_target.toLocaleString("fr-FR", { style: "currency", currency: gift.currency })}
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{ width: `${Math.min(100, (gift.contribution_collected / gift.contribution_target) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
           {gift.reservation_labels.length > 0 ? (
             <p className="text-xs text-muted-foreground">
               {gift.reservation_labels
@@ -471,7 +489,7 @@ function GiftCard({
           {gift.has_link ? <PriceSuggestion giftToken={gift.public_token} /> : null}
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
-          {gift.kind === "CONTRIBUTION" ? (
+          {gift.contribution_target != null ? (
             <Button asChild size="sm" className="min-h-10">
               <Link to="/contribuer/$giftToken" params={{ giftToken: gift.public_token }}>
                 Participer

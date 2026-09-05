@@ -17,6 +17,7 @@ export type PublicGift = {
   is_reserved: boolean;
   contribution_target: number | null;
   contribution_collected: number;
+  priority: number;
   second_hand_policy: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
   reservation_labels: Array<{ name: string; purchased: boolean }>;
 };
@@ -36,6 +37,7 @@ type PublicListPayload = {
   allowIndexing: boolean;
   showProgress: boolean;
   showReservationNames: boolean;
+  showGiftImages: boolean;
   theme: string;
   accentColor: string | null;
   heroStyle: string;
@@ -54,9 +56,10 @@ type PublicListPayload = {
     reservedQuantity: number;
     fundedAmountMinor: string;
     contributionTargetMinor: string | null;
+    priority: number;
     secondHandPolicy: PublicGift["second_hand_policy"];
     isReserved: boolean;
-    imageUrl: string;
+    imageUrl: string | null;
     reservationLabels: Array<{ name: string; purchased: boolean }>;
   }>;
   totals: {
@@ -129,6 +132,7 @@ export async function getPublicList(slug: string, wrongCode = false): Promise<Pu
         show_progress: list.showProgress,
         reserved_display: "SHOW",
         show_reservation_names: list.showReservationNames,
+        show_gift_images: list.showGiftImages,
       },
       gifts: list.gifts.map((gift) => ({
         id: gift.id,
@@ -147,6 +151,7 @@ export async function getPublicList(slug: string, wrongCode = false): Promise<Pu
         contribution_target:
           gift.contributionTargetMinor == null ? null : Number(gift.contributionTargetMinor) / 100,
         contribution_collected: Number(gift.fundedAmountMinor) / 100,
+        priority: gift.priority,
         second_hand_policy: gift.secondHandPolicy,
         reservation_labels: gift.reservationLabels,
       })),

@@ -28,6 +28,7 @@ const listInput = z.object({
   surpriseMode: z.boolean().default(false),
   hideReservedGifts: z.boolean().default(false),
   showReservationNames: z.boolean().default(false),
+  showGiftImages: z.boolean().default(true),
   allowIndexing: z.boolean().default(false),
   showProgress: z.boolean().default(true),
   theme: z.string().min(1).max(64).default("default"),

@@ -34,6 +34,7 @@ export type GiftInput = {
   secondHandPolicy?: SecondHandPolicy;
   offerPreference?: OfferPreference;
   position?: number;
+  priority?: number;
   image?: { url: string; source: "OFFICIAL_API" | "AFFILIATE_FEED" | "REMOTE_UNVERIFIED" } | null;
   genericImageCategory?: GenericImageCategory;
   identity?: {
@@ -62,7 +63,7 @@ export class GiftsService {
         merchant: true,
         productIdentity: true,
       },
-      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ priority: "desc" }, { position: "asc" }, { createdAt: "asc" }],
     });
     return gifts.map((gift) => ({
       ...gift,
@@ -229,6 +230,7 @@ function giftData(input: Partial<GiftInput>) {
     ...(input.secondHandPolicy !== undefined ? { secondHandPolicy: input.secondHandPolicy } : {}),
     ...(input.offerPreference !== undefined ? { offerPreference: input.offerPreference } : {}),
     ...(input.position !== undefined ? { position: input.position } : {}),
+    ...(input.priority !== undefined ? { priority: input.priority } : {}),
     ...(input.genericImageCategory !== undefined
       ? { genericImageCategory: input.genericImageCategory }
       : {}),

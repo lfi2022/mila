@@ -19,6 +19,7 @@ export type ListPatch = Partial<{
   surpriseMode: boolean;
   hideReservedGifts: boolean;
   showReservationNames: boolean;
+  showGiftImages: boolean;
   allowIndexing: boolean;
   showProgress: boolean;
   theme: string;
@@ -44,6 +45,7 @@ export type MilaList = ListPatch & {
   surpriseMode: boolean;
   hideReservedGifts: boolean;
   showReservationNames: boolean;
+  showGiftImages: boolean;
   allowIndexing: boolean;
   showProgress: boolean;
   theme: string;

@@ -86,6 +86,8 @@ const itemSchema = z.object({
   secondHandPolicy: z.enum(["NEW_ONLY", "SECOND_HAND_ALLOWED", "SECOND_HAND_PREFERRED"]),
   kind: z.enum(["GIFT", "CONTRIBUTION"]),
   contributionTarget: z.string().max(12),
+  contributionEnabled: z.boolean(),
+  priority: z.number().int().min(0).max(3),
 });
 
 type ItemForm = {
@@ -99,6 +101,8 @@ type ItemForm = {
   secondHandPolicy: "NEW_ONLY" | "SECOND_HAND_ALLOWED" | "SECOND_HAND_PREFERRED";
   kind: "GIFT" | "CONTRIBUTION";
   contributionTarget: string;
+  contributionEnabled: boolean;
+  priority: number;
 };
 
 const emptyItem: ItemForm = {
@@ -112,6 +116,8 @@ const emptyItem: ItemForm = {
   secondHandPolicy: "NEW_ONLY",
   kind: "GIFT",
   contributionTarget: "",
+  contributionEnabled: true,
+  priority: 0,
 };
 
 type LegacyListPatch = Partial<{
@@ -126,6 +132,7 @@ type LegacyListPatch = Partial<{
   allow_indexing: boolean;
   reserved_display: "SHOW" | "HIDE";
   show_reservation_names: boolean;
+  show_gift_images: boolean;
   theme: string;
   accent_color: string | null;
   hero_style: "soft" | "cover" | "minimal";
@@ -297,9 +304,16 @@ function RegistryDetail() {
         secondHandPolicy: parsed.data.secondHandPolicy,
         ...(parsed.data.kind === "CONTRIBUTION" ? { kind: "CONTRIBUTION" as const } : {}),
         contributionTargetMinor:
-          parsed.data.kind === "CONTRIBUTION" && parsed.data.contributionTarget
-            ? String(Math.round(Number(parsed.data.contributionTarget.replace(",", ".")) * 100))
+          parsed.data.contributionEnabled && (parsed.data.contributionTarget || parsed.data.price)
+            ? String(
+                Math.round(
+                  Number(
+                    (parsed.data.contributionTarget || parsed.data.price).replace(",", "."),
+                  ) * 100,
+                ),
+              )
             : null,
+        priority: parsed.data.priority,
       });
       if (productImage) {
         if (!productImageRights) {
@@ -343,10 +357,17 @@ function RegistryDetail() {
           ? String(Math.round(Number(parsed.data.price.replace(",", ".")) * 100))
           : null,
         contributionTargetMinor:
-          parsed.data.kind === "CONTRIBUTION" && parsed.data.contributionTarget
-            ? String(Math.round(Number(parsed.data.contributionTarget.replace(",", ".")) * 100))
+          parsed.data.contributionEnabled && (parsed.data.contributionTarget || parsed.data.price)
+            ? String(
+                Math.round(
+                  Number(
+                    (parsed.data.contributionTarget || parsed.data.price).replace(",", "."),
+                  ) * 100,
+                ),
+              )
             : null,
         secondHandPolicy: parsed.data.secondHandPolicy,
+        priority: parsed.data.priority,
       });
     },
     onSuccess: () => {
@@ -675,6 +696,51 @@ function RegistryDetail() {
                   />
                 </div>
               </div>
+              <div className="grid gap-4 rounded-lg border bg-secondary/20 p-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Priorité discrète</Label>
+                  <Select
+                    value={String(item.priority)}
+                    onValueChange={(value) => setItem({ ...item, priority: Number(value) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Normale</SelectItem>
+                      <SelectItem value="1">À mettre en avant</SelectItem>
+                      <SelectItem value="2">Très souhaité</SelectItem>
+                      <SelectItem value="3">Prioritaire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">L’article remonte dans la liste, sans mention explicite pour vos proches.</p>
+                </div>
+                {item.kind === "GIFT" ? (
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <Checkbox
+                        checked={item.contributionEnabled}
+                        onCheckedChange={(checked) =>
+                          setItem({
+                            ...item,
+                            contributionEnabled: checked === true,
+                            contributionTarget:
+                              checked === true ? item.contributionTarget || item.price || "" : "",
+                          })
+                        }
+                      />
+                      Autoriser une cagnotte pour cet article
+                    </label>
+                    {item.contributionEnabled ? (
+                      <Input
+                        aria-label="Objectif de la cagnotte"
+                        placeholder="Objectif (€)"
+                        value={item.contributionTarget}
+                        onChange={(event) => setItem({ ...item, contributionTarget: event.target.value })}
+                      />
+                    ) : null}
+                    <p className="text-xs text-muted-foreground">Chaque proche peut contribuer au montant de son choix, jusqu’à l’objectif.</p>
+                  </div>
+                ) : null}
+              </div>
               {item.kind === "GIFT" ? (
                 <div className="space-y-2">
                   <Label>Préférence seconde main</Label>
@@ -736,6 +802,7 @@ function RegistryDetail() {
                           {gift.price ? ` · ${gift.price} €` : ""} · {gift.reserved_qty}/
                           {gift.quantity} réservé
                         </p>
+                        {gift.priority > 0 ? <p className="mt-1 text-xs text-primary">Mis en avant</p> : null}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -762,6 +829,8 @@ function RegistryDetail() {
                               contributionTarget: gift.contributionTargetMinor
                                 ? String(Number(gift.contributionTargetMinor) / 100)
                                 : "",
+                              contributionEnabled: gift.contributionTargetMinor !== null,
+                              priority: gift.priority,
                             });
                           }}
                         >
@@ -830,6 +899,45 @@ function RegistryDetail() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {editItem.kind !== "CONTRIBUTION" ? (
+                            <div className="space-y-2">
+                              <label className="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                  checked={editItem.contributionEnabled}
+                                  onCheckedChange={(checked) => setEditItem({
+                                    ...editItem,
+                                    contributionEnabled: checked === true,
+                                    contributionTarget:
+                                      checked === true
+                                        ? editItem.contributionTarget || editItem.price || ""
+                                        : "",
+                                  })}
+                                />
+                                Cagnotte sur cet article
+                              </label>
+                              {editItem.contributionEnabled ? (
+                                <Input
+                                  aria-label="Objectif de la cagnotte"
+                                  value={editItem.contributionTarget}
+                                  onChange={(event) => setEditItem({ ...editItem, contributionTarget: event.target.value })}
+                                />
+                              ) : null}
+                            </div>
+                          ) : null}
+                          <div className="space-y-2">
+                            <Label>Priorité</Label>
+                            <Select value={String(editItem.priority)} onValueChange={(value) => setEditItem({ ...editItem, priority: Number(value) })}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="0">Normale</SelectItem>
+                                <SelectItem value="1">À mettre en avant</SelectItem>
+                                <SelectItem value="2">Très souhaité</SelectItem>
+                                <SelectItem value="3">Prioritaire</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                         {editItem.kind !== "CONTRIBUTION" ? (
                           <Input
@@ -1300,6 +1408,19 @@ function RegistryDetail() {
 
             <div className="flex items-center justify-between gap-4 border-t pt-4">
               <div>
+                <p className="text-sm font-medium">Afficher les images des articles</p>
+                <p className="text-xs text-muted-foreground">
+                  Masquez-les sur la liste publique pour une présentation plus sobre.
+                </p>
+              </div>
+              <Switch
+                checked={list.show_gift_images}
+                onCheckedChange={(checked) => updateRegistry.mutate({ show_gift_images: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 border-t pt-4">
+              <div>
                 <p className="text-sm font-medium">Mode surprise</p>
                 <p className="text-xs text-muted-foreground">
                   Vous ne verrez plus qui réserve quoi jusqu'à la révélation.
@@ -1341,6 +1462,7 @@ function toLegacyList(value: Awaited<ReturnType<typeof listApi.get>>) {
     allow_indexing: value.allowIndexing,
     reserved_display: value.hideReservedGifts ? ("HIDE" as const) : ("SHOW" as const),
     show_reservation_names: value.showReservationNames,
+    show_gift_images: value.showGiftImages,
     accent_color: value.accentColor,
     hero_style: value.heroStyle,
     font_pair: value.fontPair,
@@ -1369,6 +1491,7 @@ function fromLegacyPatch(patch: LegacyListPatch): ListPatch {
     ...(patch.show_reservation_names !== undefined
       ? { showReservationNames: patch.show_reservation_names }
       : {}),
+    ...(patch.show_gift_images !== undefined ? { showGiftImages: patch.show_gift_images } : {}),
     ...(patch.theme !== undefined ? { theme: patch.theme } : {}),
     ...(patch.accent_color !== undefined ? { accentColor: patch.accent_color } : {}),
     ...(patch.hero_style !== undefined ? { heroStyle: patch.hero_style } : {}),

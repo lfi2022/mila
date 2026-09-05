@@ -393,6 +393,7 @@ model GiftList {
   surpriseMode             Boolean                @default(false) @map("surprise_mode")
   hideReservedGifts        Boolean                @default(false) @map("hide_reserved_gifts")
   showReservationNames     Boolean                @default(false) @map("show_reservation_names")
+  showGiftImages           Boolean                @default(true) @map("show_gift_images")
   allowIndexing            Boolean                @default(false) @map("allow_indexing")
   showProgress             Boolean                @default(true) @map("show_progress")
   theme                    String                 @default("default") @db.VarChar(64)
@@ -573,6 +574,7 @@ model Gift {
   reservedQuantity          Int                  @default(0) @map("reserved_quantity") @db.UnsignedSmallInt
   fundedAmountMinor         BigInt               @default(0) @map("funded_amount_minor")
   contributionTargetMinor   BigInt?              @map("contribution_target_minor")
+  priority                  Int                  @default(0) @db.UnsignedSmallInt
   secondHandPolicy          SecondHandPolicy     @default(NEW_ONLY) @map("second_hand_policy")
   offerPreference           OfferPreference      @default(FIXED_MERCHANT) @map("offer_preference")
   position                  Int                  @default(0)

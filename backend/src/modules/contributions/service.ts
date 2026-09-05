@@ -17,7 +17,7 @@ export class ContributionsService {
     const gift = await this.prisma.gift.findFirst({
       where: {
         publicToken: giftToken,
-        kind: "CONTRIBUTION",
+        OR: [{ kind: "CONTRIBUTION" }, { contributionTargetMinor: { not: null } }],
         deletedAt: null,
         list: { status: "ACTIVE", deletedAt: null },
       },
@@ -79,7 +79,7 @@ export class ContributionsService {
     const gift = await this.prisma.gift.findFirst({
       where: {
         publicToken: input.giftToken,
-        kind: "CONTRIBUTION",
+        OR: [{ kind: "CONTRIBUTION" }, { contributionTargetMinor: { not: null } }],
         deletedAt: null,
         list: { status: "ACTIVE", deletedAt: null },
       },

@@ -41,6 +41,7 @@ const giftInput = z.object({
     .enum(["FIXED_MERCHANT", "SUGGEST_BEST", "AUTO_BEST"])
     .default("FIXED_MERCHANT"),
   position: z.number().int().min(0).default(0),
+  priority: z.number().int().min(0).max(3).default(0),
   image: z
     .object({
       url: z.string().max(2048),

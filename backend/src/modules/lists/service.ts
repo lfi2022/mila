@@ -27,6 +27,7 @@ type ListInput = {
   surpriseMode: boolean;
   hideReservedGifts: boolean;
   showReservationNames?: boolean;
+  showGiftImages?: boolean;
   allowIndexing: boolean;
   showProgress: boolean;
   theme: string;
@@ -299,6 +300,7 @@ export class ListsService {
         surpriseMode: true,
         hideReservedGifts: true,
         showReservationNames: true,
+        showGiftImages: true,
         allowIndexing: true,
         showProgress: true,
         closedAt: true,
@@ -307,7 +309,7 @@ export class ListsService {
         accessCodeHash: true,
         gifts: {
           where: { deletedAt: null, hiddenByModerator: false },
-          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+          orderBy: [{ priority: "desc" }, { position: "asc" }, { createdAt: "asc" }],
           select: {
             id: true,
             publicToken: true,
@@ -322,6 +324,7 @@ export class ListsService {
             reservedQuantity: true,
             fundedAmountMinor: true,
             contributionTargetMinor: true,
+            priority: true,
             secondHandPolicy: true,
             genericImageCategory: true,
             images: {
@@ -363,8 +366,11 @@ export class ListsService {
       reservedQuantity: gift.reservedQuantity,
       fundedAmountMinor: gift.fundedAmountMinor.toString(),
       contributionTargetMinor: gift.contributionTargetMinor?.toString() ?? null,
+      priority: gift.priority,
       secondHandPolicy: gift.secondHandPolicy,
-      imageUrl: selectProductImage(gift.images, gift.genericImageCategory),
+      imageUrl: list.showGiftImages
+        ? selectProductImage(gift.images, gift.genericImageCategory)
+        : null,
       isReserved:
         gift.reservedQuantity >= gift.quantity ||
         ["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status),
@@ -543,6 +549,7 @@ function listData(input: Partial<ListInput>) {
     ...(input.showReservationNames !== undefined
       ? { showReservationNames: input.showReservationNames }
       : {}),
+    ...(input.showGiftImages !== undefined ? { showGiftImages: input.showGiftImages } : {}),
     ...(input.allowIndexing !== undefined ? { allowIndexing: input.allowIndexing } : {}),
     ...(input.showProgress !== undefined ? { showProgress: input.showProgress } : {}),
     ...(input.theme !== undefined ? { theme: input.theme } : {}),
