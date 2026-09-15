@@ -21,6 +21,51 @@ describe("contribution split", () => {
   });
 });
 
+describe("reserved gift contributions", () => {
+  it("closes the public cagnotte and rejects a new transfer after reservation", async () => {
+    const gift = {
+      id: "gift-id",
+      title: "Poussette",
+      listId: "list-id",
+      status: "RESERVED",
+      quantity: 1,
+      reservedQuantity: 1,
+      contributionTargetMinor: 10000n,
+      currency: "EUR",
+      list: { contributionRecipient: { bankAccount: { id: "account-id" } } },
+    };
+    const prisma = {
+      gift: { findFirst: vi.fn().mockResolvedValue(gift) },
+      contribution: { aggregate: vi.fn().mockResolvedValue({ _sum: { amountMinor: 0n } }) },
+      $transaction: vi.fn(),
+    };
+    const service = new ContributionsService(
+      prisma as never,
+      {
+        FEATURE_CONTRIBUTIONS: true,
+        FEATURE_BANK_TRANSFERS: true,
+        BANK_ACCOUNT_ENCRYPTION_KEY: "key",
+        CONTRIBUTION_MIN_MINOR: 100,
+      } as never,
+      {} as never,
+    );
+
+    await expect(service.publicStatus("token")).resolves.toMatchObject({
+      closed: true,
+      reserved: true,
+    });
+    await expect(
+      service.createBankTransfer({
+        giftToken: "token",
+        amountCents: 1000,
+        anonymous: false,
+        idempotencyKey: "key",
+      }),
+    ).rejects.toMatchObject({ code: "GIFT_RESERVED", statusCode: 409 });
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+});
+
 describe("list contribution recipient", () => {
   it("allows an owner or co-owner with a configured account", async () => {
     const assertRole = vi.fn().mockResolvedValue("CO_OWNER");

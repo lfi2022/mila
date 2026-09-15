@@ -466,30 +466,43 @@ function GiftCard({
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Participation collective</span>
                 <span>
-                  {Number(gift.contribution_collected ?? 0).toLocaleString("fr-FR", { style: "currency", currency: gift.currency })}
+                  {Number(gift.contribution_collected ?? 0).toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: gift.currency,
+                  })}
                   {" / "}
-                  {gift.contribution_target.toLocaleString("fr-FR", { style: "currency", currency: gift.currency })}
+                  {gift.contribution_target.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: gift.currency,
+                  })}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-accent"
-                  style={{ width: `${Math.min(100, (Number(gift.contribution_collected ?? 0) / gift.contribution_target) * 100)}%` }}
+                  style={{
+                    width: `${Math.min(100, (Number(gift.contribution_collected ?? 0) / gift.contribution_target) * 100)}%`,
+                  }}
                 />
               </div>
             </div>
           ) : null}
           {gift.reservation_labels.length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              {gift.reservation_labels
-                .map(({ name, purchased }) => `${purchased ? "Acheté" : "Réservé"} par ${name}`)
-                .join(" · ")}
-            </p>
+            <div className="flex flex-wrap gap-1.5" aria-label="Personnes ayant réservé ce cadeau">
+              {gift.reservation_labels.map(({ name, purchased }, index) => (
+                <span
+                  key={`${name}-${index}`}
+                  className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
+                >
+                  {purchased ? "Acheté" : "Réservé"} par {name}
+                </span>
+              ))}
+            </div>
           ) : null}
           {gift.has_link ? <PriceSuggestion giftToken={gift.public_token} /> : null}
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
-          {gift.contribution_target != null ? (
+          {gift.contribution_target != null && !gift.is_reserved ? (
             <Button asChild size="sm" className="min-h-10">
               <Link to="/contribuer/$giftToken" params={{ giftToken: gift.public_token }}>
                 Participer

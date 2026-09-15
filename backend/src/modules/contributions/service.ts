@@ -25,6 +25,9 @@ export class ContributionsService {
         id: true,
         title: true,
         listId: true,
+        status: true,
+        quantity: true,
+        reservedQuantity: true,
         contributionTargetMinor: true,
         currency: true,
         list: {
@@ -52,7 +55,8 @@ export class ContributionsService {
       committedCents: safeNumber(committed),
       remainingCents:
         target === null ? null : safeNumber(target > committed ? target - committed : 0n),
-      closed: target !== null && committed >= target,
+      closed: isGiftReserved(gift) || (target !== null && committed >= target),
+      reserved: isGiftReserved(gift),
       currency: gift.currency,
       minimumCents: this.config.CONTRIBUTION_MIN_MINOR,
       feeRateBps: 0,
@@ -86,6 +90,9 @@ export class ContributionsService {
       select: {
         id: true,
         listId: true,
+        status: true,
+        quantity: true,
+        reservedQuantity: true,
         currency: true,
         contributionTargetMinor: true,
         list: {
@@ -103,6 +110,8 @@ export class ContributionsService {
       },
     });
     if (!gift) throw new AppError(404, "GIFT_NOT_FOUND", "Gift not found");
+    if (isGiftReserved(gift))
+      throw new AppError(409, "GIFT_RESERVED", "Ce cadeau est déjà réservé");
     const recipient = gift.list.contributionRecipient;
     const bankAccount = recipient.bankAccount;
     if (!bankAccount)
@@ -132,6 +141,18 @@ export class ContributionsService {
 
     return this.prisma.$transaction(
       async (tx) => {
+        const current = await tx.$queryRawUnsafe<
+          Array<{ status: string; quantity: number; reserved_quantity: number }>
+        >("SELECT status, quantity, reserved_quantity FROM gifts WHERE id = ? FOR UPDATE", gift.id);
+        if (
+          !current[0] ||
+          isGiftReserved({
+            status: current[0].status,
+            quantity: current[0].quantity,
+            reservedQuantity: current[0].reserved_quantity,
+          })
+        )
+          throw new AppError(409, "GIFT_RESERVED", "Ce cadeau est déjà réservé");
         const total = await tx.contribution.aggregate({
           where: { giftId: gift.id, status: { in: ["PENDING", "CONFIRMED"] } },
           _sum: { amountMinor: true },
@@ -605,6 +626,13 @@ export class ContributionsService {
       expiresAt: instruction.expiresAt.toISOString(),
     };
   }
+}
+
+function isGiftReserved(gift: { status: string; quantity: number; reservedQuantity: number }) {
+  return (
+    gift.reservedQuantity >= gift.quantity ||
+    ["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status)
+  );
 }
 
 function safeNumber(value: bigint) {

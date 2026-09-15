@@ -72,6 +72,8 @@ function ContributionPage() {
                 {new Date(transfer.data.expiresAt).toLocaleDateString("fr-BE")}.
               </p>
             </div>
+          ) : value.reserved ? (
+            <p className="mt-4">Ce cadeau est déjà réservé. Sa cagnotte est fermée.</p>
           ) : value.closed ? (
             <p className="mt-4">L’objectif est atteint.</p>
           ) : (

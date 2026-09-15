@@ -8,6 +8,7 @@ export type ContributionStatus = {
   committedCents: number;
   remainingCents: number | null;
   closed: boolean;
+  reserved: boolean;
   currency: string;
   minimumCents: number;
   feeRateBps: number;

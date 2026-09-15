@@ -96,6 +96,7 @@ export type PublicListResult =
         show_progress: boolean;
         reserved_display: "SHOW" | "HIDE";
         show_reservation_names: boolean;
+        show_gift_images: boolean;
       };
       gifts: PublicGift[];
       totals: PublicListPayload["totals"];
