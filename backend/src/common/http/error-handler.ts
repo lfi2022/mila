@@ -15,6 +15,17 @@ export function installErrorHandler(app: FastifyInstance, metrics?: MetricsRegis
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {
       metrics?.recordError(error.code);
+      if (error.statusCode >= 500)
+        request.log.error(
+          {
+            event: "upstream_request_error",
+            requestId: request.id,
+            route: request.routeOptions.url || "unmatched",
+            errorCode: error.code,
+            details: error.details,
+          },
+          "Upstream request failed",
+        );
       return reply.status(error.statusCode).send({
         error: { code: error.code, message: error.message, details: error.details },
         requestId: request.id,
