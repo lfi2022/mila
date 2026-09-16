@@ -44,9 +44,6 @@ export function NotificationsBell() {
               {unread.length > 9 ? "9+" : unread.length}
             </span>
           ) : null}
-          <Button variant="ghost" size="sm" onClick={() => setShowHistory((value) => !value)}>
-            {showHistory ? "Nouvelles" : "Historique"}
-          </Button>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
@@ -57,6 +54,16 @@ export function NotificationsBell() {
               Tout marquer lu
             </Button>
           ) : null}
+        </div>
+        <div className="border-b border-border/70 px-3 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start"
+            onClick={() => setShowHistory((value) => !value)}
+          >
+            {showHistory ? "Afficher les nouvelles" : "Afficher l’historique"}
+          </Button>
         </div>
         <ScrollArea className="max-h-80">
           {visible.length === 0 ? (
