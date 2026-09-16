@@ -9,7 +9,7 @@ import type { ListsService } from "../lists/service.js";
 export type ReservationInput = {
   giftToken: string;
   guestName: string;
-  guestEmail?: string | null;
+  guestEmail: string;
   message?: string | null;
   quantity: number;
 };
@@ -49,7 +49,7 @@ export class ReservationsService {
         });
         if (!gift) throw new AppError(404, "GIFT_NOT_AVAILABLE", "Gift is not available");
         const changed = await transaction.$executeRawUnsafe(
-          "UPDATE gifts SET reserved_quantity = reserved_quantity + ? WHERE id = ? AND deleted_at IS NULL AND reserved_quantity + ? <= quantity",
+          "UPDATE gifts SET reserved_quantity = reserved_quantity + ? WHERE id = ? AND deleted_at IS NULL AND reserved_quantity = 0 AND reserved_quantity + ? <= quantity",
           input.quantity,
           gift.id,
           input.quantity,
@@ -69,7 +69,7 @@ export class ReservationsService {
             listId: gift.listId,
             giftId: gift.id,
             guestName: input.guestName.trim(),
-            guestEmail: input.guestEmail?.trim().toLowerCase() || null,
+            guestEmail: input.guestEmail.trim().toLowerCase(),
             message: input.message?.trim() || null,
             quantity: input.quantity,
             managementTokenHash: this.hashToken(token),
@@ -176,6 +176,15 @@ export class ReservationsService {
 
   async cancel(token: string) {
     const record = await this.requireToken(token);
+    const funded = await this.prisma.contribution.count({
+      where: { reservationId: record.id, status: "CONFIRMED" },
+    });
+    if (funded > 0)
+      throw new AppError(
+        409,
+        "FUNDED_RESERVATION",
+        "Un cadeau payé doit être remboursé avant annulation",
+      );
     await this.prisma.$transaction(
       async (transaction) => {
         const changed = await transaction.reservation.updateMany({
@@ -229,6 +238,15 @@ export class ReservationsService {
       select: { id: true, giftId: true, quantity: true },
     });
     if (!record) throw new AppError(404, "RESERVATION_NOT_FOUND", "Reservation not found");
+    const funded = await this.prisma.contribution.count({
+      where: { reservationId: record.id, status: "CONFIRMED" },
+    });
+    if (funded > 0)
+      throw new AppError(
+        409,
+        "FUNDED_RESERVATION",
+        "Un cadeau payé doit être remboursé avant annulation",
+      );
     await this.prisma.$transaction(async (transaction) => {
       const changed = await transaction.reservation.updateMany({
         where: { id: record.id, status: { in: ["RESERVED", "PURCHASED"] } },
@@ -243,6 +261,59 @@ export class ReservationsService {
         record.giftId,
       );
     });
+  }
+
+  async remindForManager(userId: string, listId: string, reservationId: string) {
+    if (!this.lists || !this.notifications)
+      throw new AppError(503, "REMINDER_UNAVAILABLE", "Le service de rappel est indisponible");
+    await this.lists.assertRole(userId, listId, ["OWNER", "CO_OWNER"]);
+    const record = await this.prisma.reservation.findFirst({
+      where: { id: reservationId, listId, status: "RESERVED" },
+      include: {
+        gift: { select: { title: true, unitPriceMinor: true, currency: true } },
+        list: { select: { title: true } },
+      },
+    });
+    if (!record) throw new AppError(404, "RESERVATION_NOT_FOUND", "Réservation active introuvable");
+    if (!record.guestEmail)
+      throw new AppError(
+        409,
+        "RESERVATION_EMAIL_REQUIRED",
+        "Aucune adresse e-mail n'est associée à cette réservation",
+      );
+    const token = randomBytes(32).toString("base64url");
+    await this.prisma.reservation.update({
+      where: { id: record.id },
+      data: {
+        managementTokenHash: this.hashToken(token),
+        tokenExpiresAt: new Date(Date.now() + 90 * 86_400_000),
+      },
+    });
+    await this.notifications.enqueue({
+      type: "RESERVATION_PAYMENT_REMINDER",
+      userId,
+      listId,
+      reservationId: record.id,
+      email: record.guestEmail,
+      payload: {
+        token,
+        guestName: record.guestName,
+        giftTitle: record.gift.title,
+        listTitle: record.list.title,
+        quantity: record.quantity,
+        amount:
+          record.gift.unitPriceMinor === null
+            ? null
+            : `${((Number(record.gift.unitPriceMinor) * record.quantity) / 100).toLocaleString(
+                "fr-BE",
+                {
+                  style: "currency",
+                  currency: record.gift.currency,
+                },
+              )}`,
+      },
+    });
+    return { sent: true };
   }
 
   private async requireToken(token: string) {

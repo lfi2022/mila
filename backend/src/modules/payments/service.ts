@@ -5,6 +5,7 @@ import type { PaymentStatus } from "../../generated/prisma/enums.js";
 import type { ListsService } from "../lists/service.js";
 import { deriveBalance } from "../rewards/service.js";
 import { decimalToMinor, type MolliePayment, type PaymentProviderClient } from "./mollie.js";
+import type { NotificationQueue } from "../notifications/queue.js";
 
 const terminalPaymentStatuses = new Set<PaymentStatus>([
   "FAILED",
@@ -20,6 +21,7 @@ export class PaymentsService {
     private readonly config: AppConfig,
     private readonly lists: ListsService,
     private readonly provider: PaymentProviderClient,
+    private readonly notifications?: NotificationQueue,
   ) {}
 
   async methods(_userId: string) {
@@ -188,6 +190,22 @@ export class PaymentsService {
           },
           update: { status, processedAt: status === "SUCCEEDED" ? new Date() : null },
         });
+        if (status === "SUCCEEDED" && payment.purpose === "GIFT_CART" && payment.listId)
+          await tx.fundsLedgerEntry.upsert({
+            where: { idempotencyKey: `mollie-gift-refund:${refund.id}` },
+            create: {
+              listId: payment.listId,
+              type: "MOLLIE_GIFT_REFUND",
+              status: "CONFIRMED",
+              amountMinor: -decimalToMinor(refund.amount.value),
+              currency: refund.amount.currency,
+              idempotencyKey: `mollie-gift-refund:${refund.id}`,
+              sourceType: "mollie_gift_refund",
+              sourceId: refund.id,
+              settledAt: new Date(),
+            },
+            update: {},
+          });
         if (status === "SUCCEEDED")
           await tx.financialLedgerEntry.upsert({
             where: { idempotencyKey: `refund:${refund.id}` },
@@ -236,6 +254,22 @@ export class PaymentsService {
           },
           update: {},
         });
+        if (payment.purpose === "GIFT_CART" && payment.listId)
+          await tx.fundsLedgerEntry.upsert({
+            where: { idempotencyKey: `mollie-gift-chargeback:${chargeback.id}` },
+            create: {
+              listId: payment.listId,
+              type: "MOLLIE_GIFT_REFUND",
+              status: "CONFIRMED",
+              amountMinor: -decimalToMinor(chargeback.amount.value),
+              currency: chargeback.amount.currency,
+              idempotencyKey: `mollie-gift-chargeback:${chargeback.id}`,
+              sourceType: "mollie_gift_chargeback",
+              sourceId: chargeback.id,
+              settledAt: new Date(chargeback.createdAt),
+            },
+            update: {},
+          });
       }
       const succeededRefunds = refunds
         .filter((refund) => mapRefundStatus(refund.status) === "SUCCEEDED")
@@ -258,22 +292,90 @@ export class PaymentsService {
         },
       });
       if (safeStatus === "PAID") {
-        await tx.financialLedgerEntry.upsert({
-          where: { idempotencyKey: `payment:${payment.id}` },
-          create: {
-            listId: payment.listId,
-            paymentId: payment.id,
-            type: "PREMIUM_REVENUE",
-            status: "CONFIRMED",
-            amountMinor: payment.amountMinor,
-            currency: payment.currency,
-            idempotencyKey: `payment:${payment.id}`,
-            sourceType: "mollie_payment",
-            sourceId: remote.id,
-            settledAt: remote.paidAt ? new Date(remote.paidAt) : new Date(),
-          },
-          update: {},
-        });
+        if (payment.purpose === "GIFT_CART") {
+          const contributions = await tx.contribution.findMany({
+            where: { paymentId: payment.id },
+          });
+          const allPending =
+            contributions.length > 0 && contributions.every((row) => row.status === "PENDING");
+          const valid =
+            allPending &&
+            (
+              await Promise.all(
+                contributions.map(async (row) => {
+                  const gift = row.giftId
+                    ? await tx.gift.findUnique({ where: { id: row.giftId } })
+                    : null;
+                  const reservation = row.reservationId
+                    ? await tx.reservation.findUnique({ where: { id: row.reservationId } })
+                    : null;
+                  return Boolean(
+                    gift &&
+                    (row.reservationId
+                      ? reservation?.status === "RESERVED"
+                      : gift.reservedQuantity === 0 &&
+                        ![
+                          "RESERVED",
+                          "FUNDED",
+                          "READY_TO_ORDER",
+                          "ORDERED",
+                          "SHIPPED",
+                          "RECEIVED",
+                        ].includes(gift.status)),
+                  );
+                }),
+              )
+            ).every(Boolean);
+          if (valid)
+            for (const row of contributions) {
+              await tx.contribution.update({
+                where: { id: row.id },
+                data: {
+                  status: "CONFIRMED",
+                  confirmedAt: new Date(),
+                },
+              });
+              await tx.gift.update({
+                where: { id: row.giftId! },
+                data: {
+                  fundedAmountMinor: { increment: row.amountMinor },
+                  ...(row.reservationId ? { status: "FUNDED" as const } : {}),
+                },
+              });
+              await tx.fundsLedgerEntry.upsert({
+                where: { idempotencyKey: `mollie-gift:${row.id}` },
+                create: {
+                  listId: row.listId,
+                  contributionId: row.id,
+                  type: "MOLLIE_GIFT_PAID",
+                  status: "CONFIRMED",
+                  amountMinor: row.amountMinor,
+                  currency: row.currency,
+                  idempotencyKey: `mollie-gift:${row.id}`,
+                  sourceType: "mollie_gift_payment",
+                  sourceId: remote.id,
+                  settledAt: remote.paidAt ? new Date(remote.paidAt) : new Date(),
+                },
+                update: {},
+              });
+            }
+        } else
+          await tx.financialLedgerEntry.upsert({
+            where: { idempotencyKey: `payment:${payment.id}` },
+            create: {
+              listId: payment.listId,
+              paymentId: payment.id,
+              type: "PREMIUM_REVENUE",
+              status: "CONFIRMED",
+              amountMinor: payment.amountMinor,
+              currency: payment.currency,
+              idempotencyKey: `payment:${payment.id}`,
+              sourceType: "mollie_payment",
+              sourceId: remote.id,
+              settledAt: remote.paidAt ? new Date(remote.paidAt) : new Date(),
+            },
+            update: {},
+          });
         if (payment.purpose === "PREMIUM" && payment.listId)
           await tx.listEntitlement.upsert({
             where: { listId: payment.listId },
@@ -291,6 +393,59 @@ export class PaymentsService {
               metadata: { source: "MOLLIE" },
             },
           });
+      }
+      if (
+        payment.purpose === "GIFT_CART" &&
+        ["FAILED", "EXPIRED", "CANCELLED"].includes(safeStatus)
+      ) {
+        const contributions = await tx.contribution.findMany({ where: { paymentId: payment.id } });
+        for (const contribution of contributions.filter((row) => row.status === "PENDING")) {
+          await tx.contribution.update({
+            where: { id: contribution.id },
+            data: { status: "CANCELLED" },
+          });
+          if (contribution.reservationId) {
+            const reservation = await tx.reservation.updateMany({
+              where: { id: contribution.reservationId, status: "RESERVED" },
+              data: { status: "CANCELLED", cancelledAt: new Date() },
+            });
+            if (reservation.count === 1)
+              await tx.$executeRawUnsafe(
+                "UPDATE gifts SET reserved_quantity = GREATEST(reserved_quantity - ?, 0), status = CASE WHEN status = 'RESERVED' THEN 'AVAILABLE' ELSE status END WHERE id = ?",
+                1,
+                contribution.giftId,
+              );
+          }
+        }
+      }
+      if (payment.purpose === "GIFT_CART" && ["REFUNDED", "CHARGEDBACK"].includes(safeStatus)) {
+        const contributions = await tx.contribution.findMany({ where: { paymentId: payment.id } });
+        for (const row of contributions.filter((entry) => entry.status === "CONFIRMED")) {
+          await tx.contribution.update({
+            where: { id: row.id },
+            data: {
+              status: safeStatus === "REFUNDED" ? "REFUNDED" : "CHARGEDBACK",
+            },
+          });
+          if (row.giftId)
+            await tx.gift.update({
+              where: { id: row.giftId },
+              data: {
+                fundedAmountMinor: { decrement: row.amountMinor },
+              },
+            });
+          if (row.reservationId) {
+            const released = await tx.reservation.updateMany({
+              where: { id: row.reservationId, status: "RESERVED" },
+              data: { status: "CANCELLED", cancelledAt: new Date() },
+            });
+            if (released.count === 1)
+              await tx.$executeRawUnsafe(
+                "UPDATE gifts SET reserved_quantity = GREATEST(reserved_quantity - 1, 0), status = CASE WHEN status = 'FUNDED' THEN 'AVAILABLE' ELSE status END WHERE id = ?",
+                row.giftId,
+              );
+          }
+        }
       }
       if (
         ["REFUNDED", "CHARGEDBACK"].includes(safeStatus) &&
@@ -323,6 +478,51 @@ export class PaymentsService {
           },
         });
     });
+    if (payment.purpose === "GIFT_CART" && remote.status === "paid" && this.notifications) {
+      const receipt = await this.prisma.payment.findUnique({
+        where: { id: payment.id },
+        include: {
+          contributions: { include: { gift: { select: { title: true } } } },
+          list: { select: { ownerId: true } },
+        },
+      });
+      const metadata =
+        receipt?.metadata &&
+        typeof receipt.metadata === "object" &&
+        !Array.isArray(receipt.metadata)
+          ? receipt.metadata
+          : {};
+      const email = metadata["guestEmail"];
+      if (
+        receipt &&
+        !metadata["receiptQueuedAt"] &&
+        typeof email === "string" &&
+        receipt.contributions.length > 0 &&
+        receipt.contributions.every((row) => row.status === "CONFIRMED") &&
+        receipt.list
+      ) {
+        await this.notifications.enqueue({
+          type: "GIFT_PAYMENT_RECEIPT",
+          userId: receipt.list.ownerId,
+          listId: receipt.listId ?? undefined,
+          email,
+          payload: {
+            name: metadata["guestName"],
+            reference: remote.id,
+            items: receipt.contributions.map((row) => ({
+              title: row.gift?.title ?? "Cadeau",
+              amount: `${Number(row.amountMinor) / 100} ${row.currency}`,
+            })),
+          },
+        });
+        await this.prisma.payment.update({
+          where: { id: receipt.id },
+          data: {
+            metadata: { ...metadata, receiptQueuedAt: new Date().toISOString() },
+          },
+        });
+      }
+    }
     return { known: true };
   }
 
@@ -346,6 +546,15 @@ export class PaymentsService {
     });
     if (amountMinor <= 0n || (already._sum.amountMinor ?? 0n) + amountMinor > payment.amountMinor)
       throw new AppError(409, "REFUND_AMOUNT_INVALID", "Refund amount exceeds refundable balance");
+    if (
+      payment.purpose === "GIFT_CART" &&
+      amountMinor !== payment.amountMinor - (already._sum.amountMinor ?? 0n)
+    )
+      throw new AppError(
+        409,
+        "CART_REFUND_FULL_ONLY",
+        "Un panier de cadeaux doit être remboursé entièrement",
+      );
     const key = `refund:${payment.id}:${idempotencyKey}`;
     const refund = await this.prisma.refund.upsert({
       where: { idempotencyKey: key },

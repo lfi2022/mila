@@ -630,8 +630,8 @@ export class ContributionsService {
 
 function isGiftReserved(gift: { status: string; quantity: number; reservedQuantity: number }) {
   return (
-    gift.reservedQuantity >= gift.quantity ||
-    ["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status)
+    gift.reservedQuantity > 0 ||
+    ["RESERVED", "FUNDED", "READY_TO_ORDER", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status)
   );
 }
 

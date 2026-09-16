@@ -38,6 +38,7 @@ type PublicListPayload = {
   showProgress: boolean;
   showReservationNames: boolean;
   showGiftImages: boolean;
+  giftPaymentsEnabled: boolean;
   theme: string;
   accentColor: string | null;
   heroStyle: string;
@@ -97,6 +98,7 @@ export type PublicListResult =
         reserved_display: "SHOW" | "HIDE";
         show_reservation_names: boolean;
         show_gift_images: boolean;
+        gift_payments_enabled: boolean;
       };
       gifts: PublicGift[];
       totals: PublicListPayload["totals"];
@@ -134,6 +136,7 @@ export async function getPublicList(slug: string, wrongCode = false): Promise<Pu
         reserved_display: "SHOW",
         show_reservation_names: list.showReservationNames,
         show_gift_images: list.showGiftImages,
+        gift_payments_enabled: list.giftPaymentsEnabled,
       },
       gifts: list.gifts.map((gift) => ({
         id: gift.id,
@@ -177,7 +180,7 @@ export async function unlockPublicList(slug: string, accessCode: string): Promis
 export async function reserveGift(input: {
   giftToken: string;
   guestName: string;
-  guestEmail?: string;
+  guestEmail: string;
   message?: string;
   quantity: number;
 }): Promise<{ managementToken: string }> {
@@ -185,7 +188,7 @@ export async function reserveGift(input: {
     method: "POST",
     body: JSON.stringify({
       ...input,
-      guestEmail: input.guestEmail || null,
+      guestEmail: input.guestEmail,
       message: input.message || null,
     }),
   });

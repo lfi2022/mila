@@ -98,6 +98,7 @@ const envSchema = z
     FEATURE_REWARD_MARKETPLACE: booleanString,
     FEATURE_BANK_PAYOUT: booleanString,
     FEATURE_MOLLIE_PAYMENTS: booleanString,
+    FEATURE_GIFT_MOLLIE_CHECKOUT: booleanString,
     FEATURE_MOLLIE_CONNECT: booleanString,
     FEATURE_CONTRIBUTIONS: booleanString,
     FEATURE_BANK_TRANSFERS: booleanString,

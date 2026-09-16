@@ -55,7 +55,12 @@ describe("ReservationsService", () => {
     } as unknown as PrismaClient;
     const service = new ReservationsService(prisma, config);
     await expect(
-      service.create({ giftToken: "a".repeat(64), guestName: "Proche", quantity: 1 }),
+      service.create({
+        giftToken: "a".repeat(64),
+        guestName: "Proche",
+        guestEmail: "proche@example.com",
+        quantity: 1,
+      }),
     ).rejects.toMatchObject({ code: "GIFT_QUANTITY_UNAVAILABLE" });
     expect(transaction.reservation.create).not.toHaveBeenCalled();
   });
@@ -87,6 +92,7 @@ describe("ReservationsService", () => {
     const result = await service.create({
       giftToken: "a".repeat(64),
       guestName: "Proche",
+      guestEmail: "proche@example.com",
       quantity: 1,
     });
     const saved = create.mock.calls[0]?.[0].data;
@@ -110,6 +116,7 @@ describe("ReservationsService", () => {
     };
     const prisma = {
       reservation: { findUnique: vi.fn().mockResolvedValue(record) },
+      contribution: { count: vi.fn().mockResolvedValue(0) },
       notificationPreference: { findMany: vi.fn().mockResolvedValue([]) },
       notification: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
       $transaction: vi
@@ -135,6 +142,7 @@ describe("ReservationsService", () => {
           quantity: 1,
         }),
       },
+      contribution: { count: vi.fn().mockResolvedValue(0) },
       $transaction: vi
         .fn()
         .mockImplementation((callback) =>
@@ -146,5 +154,46 @@ describe("ReservationsService", () => {
     expect(assertRole).toHaveBeenCalledWith("owner-1", "list-1", ["OWNER", "CO_OWNER"]);
     expect(updateMany).toHaveBeenCalledOnce();
     expect(execute).toHaveBeenCalledOnce();
+  });
+
+  it("renews the private link and queues a manual payment reminder", async () => {
+    const assertRole = vi.fn().mockResolvedValue("OWNER");
+    const update = vi.fn().mockResolvedValue({});
+    const queue = { enqueue: vi.fn().mockResolvedValue("job") };
+    const prisma = {
+      reservation: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "reservation-1",
+          listId: "list-1",
+          guestName: "Alex",
+          guestEmail: "alex@example.com",
+          quantity: 1,
+          status: "RESERVED",
+          gift: { title: "Poussette", unitPriceMinor: 12_000n, currency: "EUR" },
+          list: { title: "Liste bébé" },
+        }),
+        update,
+      },
+    } as unknown as PrismaClient;
+    const service = new ReservationsService(
+      prisma,
+      config,
+      queue as never,
+      { assertRole } as never,
+    );
+    await expect(service.remindForManager("owner-1", "list-1", "reservation-1")).resolves.toEqual({
+      sent: true,
+    });
+    expect(assertRole).toHaveBeenCalledWith("owner-1", "list-1", ["OWNER", "CO_OWNER"]);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "reservation-1" } }),
+    );
+    expect(queue.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "RESERVATION_PAYMENT_REMINDER",
+        email: "alex@example.com",
+        payload: expect.objectContaining({ giftTitle: "Poussette", token: expect.any(String) }),
+      }),
+    );
   });
 });

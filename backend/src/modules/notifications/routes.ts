@@ -45,6 +45,15 @@ export function notificationRoutes(
       });
       return reply.status(204).send();
     });
+    app.post("/notifications/read-all", async (request, reply) => {
+      csrf(request);
+      const current = await user(request);
+      await prisma.notification.updateMany({
+        where: { userId: current.id, readAt: null },
+        data: { readAt: new Date() },
+      });
+      return reply.status(204).send();
+    });
     app.get("/notification-preferences", async (request) => {
       const current = await user(request);
       return {

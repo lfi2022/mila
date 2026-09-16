@@ -800,7 +800,7 @@ model Contribution {
   listId             String             @map("list_id") @db.Char(36)
   giftId             String?            @map("gift_id") @db.Char(36)
   reservationId      String?            @map("reservation_id") @db.Char(36)
-  paymentId          String?            @unique @map("payment_id") @db.Char(36)
+  paymentId          String?            @map("payment_id") @db.Char(36)
   idempotencyKey     String             @unique @map("idempotency_key") @db.VarChar(255)
   contributorName    String?            @map("contributor_name") @db.VarChar(120)
   contributorEmail   String?            @map("contributor_email") @db.VarChar(255)
@@ -826,6 +826,7 @@ model Contribution {
 
   @@index([listId, status])
   @@index([giftId, status])
+  @@index([paymentId])
   @@index([confirmedById])
   @@map("contributions")
 }
@@ -1119,7 +1120,7 @@ model Payment {
   createdAt         DateTime               @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt         DateTime               @updatedAt @map("updated_at") @db.DateTime(3)
   list              GiftList?              @relation(fields: [listId], references: [id], onDelete: SetNull)
-  contribution      Contribution?
+  contributions     Contribution[]
   routes            PaymentRoute[]
   refunds           Refund[]
   chargebacks       Chargeback[]

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { ListAppearanceEditor, type AppearancePatch } from "@/components/ListAppearanceEditor";
 import { ShareCard } from "@/components/ShareCard";
 import { ContributionsPanel } from "@/components/ContributionsPanel";
+import { GiftFundsPanel } from "@/components/GiftFundsPanel";
 import { PriceTrackingPanel } from "@/components/PriceTrackingPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -307,9 +308,8 @@ function RegistryDetail() {
           parsed.data.contributionEnabled && (parsed.data.contributionTarget || parsed.data.price)
             ? String(
                 Math.round(
-                  Number(
-                    (parsed.data.contributionTarget || parsed.data.price).replace(",", "."),
-                  ) * 100,
+                  Number((parsed.data.contributionTarget || parsed.data.price).replace(",", ".")) *
+                    100,
                 ),
               )
             : null,
@@ -360,9 +360,8 @@ function RegistryDetail() {
           parsed.data.contributionEnabled && (parsed.data.contributionTarget || parsed.data.price)
             ? String(
                 Math.round(
-                  Number(
-                    (parsed.data.contributionTarget || parsed.data.price).replace(",", "."),
-                  ) * 100,
+                  Number((parsed.data.contributionTarget || parsed.data.price).replace(",", ".")) *
+                    100,
                 ),
               )
             : null,
@@ -385,6 +384,11 @@ function RegistryDetail() {
       toast.success("Réservation annulée, le cadeau redevient visible.");
       refresh();
     },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const remindReservation = useMutation({
+    mutationFn: (id: string) => reservationApi.remind(registryId, id),
+    onSuccess: () => toast.success("E-mail de rappel envoyé."),
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -703,7 +707,9 @@ function RegistryDetail() {
                     value={String(item.priority)}
                     onValueChange={(value) => setItem({ ...item, priority: Number(value) })}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="0">Normale</SelectItem>
                       <SelectItem value="1">À mettre en avant</SelectItem>
@@ -711,7 +717,9 @@ function RegistryDetail() {
                       <SelectItem value="3">Prioritaire</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">L’article remonte dans la liste, sans mention explicite pour vos proches.</p>
+                  <p className="text-xs text-muted-foreground">
+                    L’article remonte dans la liste, sans mention explicite pour vos proches.
+                  </p>
                 </div>
                 {item.kind === "GIFT" ? (
                   <div className="space-y-2">
@@ -734,10 +742,14 @@ function RegistryDetail() {
                         aria-label="Objectif de la cagnotte"
                         placeholder="Objectif (€)"
                         value={item.contributionTarget}
-                        onChange={(event) => setItem({ ...item, contributionTarget: event.target.value })}
+                        onChange={(event) =>
+                          setItem({ ...item, contributionTarget: event.target.value })
+                        }
                       />
                     ) : null}
-                    <p className="text-xs text-muted-foreground">Chaque proche peut contribuer au montant de son choix, jusqu’à l’objectif.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Chaque proche peut contribuer au montant de son choix, jusqu’à l’objectif.
+                    </p>
                   </div>
                 ) : null}
               </div>
@@ -802,7 +814,9 @@ function RegistryDetail() {
                           {gift.price ? ` · ${gift.price} €` : ""} · {gift.reserved_qty}/
                           {gift.quantity} réservé
                         </p>
-                        {gift.priority > 0 ? <p className="mt-1 text-xs text-primary">Mis en avant</p> : null}
+                        {gift.priority > 0 ? (
+                          <p className="mt-1 text-xs text-primary">Mis en avant</p>
+                        ) : null}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -906,14 +920,16 @@ function RegistryDetail() {
                               <label className="flex items-center gap-2 text-sm">
                                 <Checkbox
                                   checked={editItem.contributionEnabled}
-                                  onCheckedChange={(checked) => setEditItem({
-                                    ...editItem,
-                                    contributionEnabled: checked === true,
-                                    contributionTarget:
-                                      checked === true
-                                        ? editItem.contributionTarget || editItem.price || ""
-                                        : "",
-                                  })}
+                                  onCheckedChange={(checked) =>
+                                    setEditItem({
+                                      ...editItem,
+                                      contributionEnabled: checked === true,
+                                      contributionTarget:
+                                        checked === true
+                                          ? editItem.contributionTarget || editItem.price || ""
+                                          : "",
+                                    })
+                                  }
                                 />
                                 Cagnotte sur cet article
                               </label>
@@ -921,15 +937,27 @@ function RegistryDetail() {
                                 <Input
                                   aria-label="Objectif de la cagnotte"
                                   value={editItem.contributionTarget}
-                                  onChange={(event) => setEditItem({ ...editItem, contributionTarget: event.target.value })}
+                                  onChange={(event) =>
+                                    setEditItem({
+                                      ...editItem,
+                                      contributionTarget: event.target.value,
+                                    })
+                                  }
                                 />
                               ) : null}
                             </div>
                           ) : null}
                           <div className="space-y-2">
                             <Label>Priorité</Label>
-                            <Select value={String(editItem.priority)} onValueChange={(value) => setEditItem({ ...editItem, priority: Number(value) })}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                            <Select
+                              value={String(editItem.priority)}
+                              onValueChange={(value) =>
+                                setEditItem({ ...editItem, priority: Number(value) })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="0">Normale</SelectItem>
                                 <SelectItem value="1">À mettre en avant</SelectItem>
@@ -1036,14 +1064,29 @@ function RegistryDetail() {
                       « {reservation.message} »
                     </p>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => releaseReservation.mutate(reservation.id)}
-                  >
-                    Annuler cette réservation
-                  </Button>
+                  {reservation.status === "RESERVED" ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={!reservation.guest_email || remindReservation.isPending}
+                        title={
+                          reservation.guest_email ? undefined : "Aucune adresse e-mail disponible"
+                        }
+                        onClick={() => remindReservation.mutate(reservation.id)}
+                      >
+                        Envoyer un rappel de paiement
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={releaseReservation.isPending}
+                        onClick={() => releaseReservation.mutate(reservation.id)}
+                      >
+                        Libérer la réservation
+                      </Button>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -1149,6 +1192,7 @@ function RegistryDetail() {
 
         <TabsContent value="contributions" className="mt-6">
           <ContributionsPanel listId={registryId} />
+          <GiftFundsPanel listId={registryId} />
         </TabsContent>
 
         <TabsContent value="prices" className="mt-6">

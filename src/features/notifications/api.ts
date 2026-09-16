@@ -15,4 +15,5 @@ export const notificationApi = {
   },
   markRead: (id: string) =>
     apiRequest<void>(`/notifications/${id}/read`, { method: "POST", csrf: true }),
+  markAllRead: () => apiRequest<void>("/notifications/read-all", { method: "POST", csrf: true }),
 };

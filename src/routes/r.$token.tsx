@@ -7,10 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/services/api/client";
 import { createReservationMemoryMessage } from "@/features/memories/api";
+import { paymentApi } from "@/features/payments/api";
 
 type Reservation = {
   id: string;
   guestName: string;
+  guestEmail: string | null;
   message: string | null;
   quantity: number;
   status: string;
@@ -36,6 +38,7 @@ function ReservationPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [paymentBusy, setPaymentBusy] = useState(false);
   const [memoryMessage, setMemoryMessage] = useState("");
   const [media, setMedia] = useState<File | undefined>();
 
@@ -150,6 +153,30 @@ function ReservationPage() {
             </Button>
           </div>
           <div className="flex flex-wrap gap-3 border-t pt-5">
+            {reservation.status === "RESERVED" && reservation.guestEmail ? (
+              <Button
+                variant="secondary"
+                disabled={paymentBusy}
+                onClick={async () => {
+                  setPaymentBusy(true);
+                  try {
+                    const result = await paymentApi.payReservation(token, crypto.randomUUID());
+                    const url = new URL(result.redirectUrl);
+                    if (
+                      url.protocol !== "https:" ||
+                      (url.hostname !== "mollie.com" && !url.hostname.endsWith(".mollie.com"))
+                    )
+                      throw new Error("Lien de paiement Mollie invalide");
+                    window.location.assign(url.href);
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Paiement impossible");
+                    setPaymentBusy(false);
+                  }
+                }}
+              >
+                Payer maintenant
+              </Button>
+            ) : null}
             {!purchased && reservation.status !== "CANCELLED" && (
               <Button
                 disabled={busy}

@@ -6,6 +6,8 @@ import { AppError } from "../../common/errors/app-error.js";
 import type { AppConfig } from "../../config/env.js";
 import type { AuthService, AuthUser } from "../auth/service.js";
 import type { PaymentsService } from "./service.js";
+import type { GiftCheckoutService } from "./gift-checkout.js";
+import type { GiftFundsService } from "./gift-funds.js";
 
 const idempotency = z
   .string()
@@ -18,6 +20,8 @@ export function paymentRoutes(
   service: PaymentsService,
   auth: AuthService,
   config: AppConfig,
+  giftCheckout?: GiftCheckoutService,
+  giftFunds?: GiftFundsService,
 ): FastifyPluginAsync {
   const current = (request: FastifyRequest) =>
     auth.authenticate(request.cookies[config.COOKIE_NAME]);
@@ -36,6 +40,88 @@ export function paymentRoutes(
       throw new AppError(403, "ADMIN_REQUIRED", "Administrator access required");
   };
   return async (app) => {
+    if (giftCheckout) {
+      app.post(
+        "/public/gift-checkout",
+        { config: { rateLimit: { max: 12, timeWindow: 60_000 } } },
+        async (request, reply) => {
+          const body = z
+            .object({
+              items: z
+                .array(
+                  z.object({
+                    giftToken: z.string().length(64),
+                    mode: z.enum(["PURCHASE", "CONTRIBUTION"]),
+                    amountCents: z.number().int().positive().optional(),
+                  }),
+                )
+                .min(1)
+                .max(20),
+              guestName: z.string().trim().min(1).max(80),
+              guestEmail: z.string().email().max(255),
+            })
+            .parse(request.body);
+          return reply
+            .status(201)
+            .send(await giftCheckout.create({ ...body, idempotencyKey: key(request) }));
+        },
+      );
+      app.get("/public/gift-checkout/:paymentId", async (request) => {
+        const { paymentId } = z.object({ paymentId: z.string().uuid() }).parse(request.params);
+        return giftCheckout.status(paymentId);
+      });
+      app.post(
+        "/public/gift-checkout/reservation",
+        {
+          config: { rateLimit: { max: 12, timeWindow: 60_000 } },
+        },
+        async (request, reply) => {
+          const { token } = z.object({ token: z.string().min(32).max(256) }).parse(request.body);
+          return reply.status(201).send(
+            await giftCheckout.createForReservation({
+              token,
+              idempotencyKey: key(request),
+            }),
+          );
+        },
+      );
+    }
+    if (giftFunds) {
+      app.get("/lists/:listId/gift-funds", async (request) => {
+        const user = await current(request);
+        const { listId } = z.object({ listId: z.string().uuid() }).parse(request.params);
+        return giftFunds.summary(user.id, listId);
+      });
+      app.post("/lists/:listId/gift-funds/payouts", async (request, reply) => {
+        csrf(request);
+        const user = await current(request);
+        const { listId } = z.object({ listId: z.string().uuid() }).parse(request.params);
+        const { amountCents } = z
+          .object({ amountCents: z.number().int().positive() })
+          .parse(request.body);
+        return reply.status(201).send(await giftFunds.request(user.id, listId, amountCents));
+      });
+      app.get("/admin/gift-funds/payouts", async (request) => {
+        staff(await current(request));
+        return giftFunds.adminList();
+      });
+      app.post("/admin/gift-funds/payouts/:payoutId/decision", async (request) => {
+        csrf(request);
+        staff(await current(request));
+        const { payoutId } = z.object({ payoutId: z.string().uuid() }).parse(request.params);
+        const { approve } = z.object({ approve: z.boolean() }).parse(request.body);
+        return giftFunds.decide(payoutId, approve);
+      });
+      app.post("/admin/gift-funds/payouts/:payoutId/complete", async (request) => {
+        csrf(request);
+        staff(await current(request));
+        const { payoutId } = z.object({ payoutId: z.string().uuid() }).parse(request.params);
+        const { reference } = z
+          .object({ reference: z.string().trim().min(3).max(255) })
+          .parse(request.body);
+        return giftFunds.complete(payoutId, reference);
+      });
+    }
     app.get("/payments/methods", async (request) => service.methods((await current(request)).id));
     app.get("/payments/premium/:listId", async (request) => {
       const user = await current(request);

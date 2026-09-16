@@ -372,8 +372,8 @@ export class ListsService {
         ? selectProductImage(gift.images, gift.genericImageCategory)
         : null,
       isReserved:
-        gift.reservedQuantity >= gift.quantity ||
-        ["RESERVED", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status),
+        gift.reservedQuantity > 0 ||
+        ["RESERVED", "FUNDED", "READY_TO_ORDER", "ORDERED", "SHIPPED", "RECEIVED"].includes(gift.status),
       reservationLabels: list.showReservationNames
         ? gift.reservations.map((reservation) => ({
             name: reservation.guestName,
@@ -381,8 +381,10 @@ export class ListsService {
           }))
         : [],
     }));
-    return {
-      ...safe,
+      return {
+        ...safe,
+        giftPaymentsEnabled:
+          this.config.FEATURE_MOLLIE_PAYMENTS && this.config.FEATURE_GIFT_MOLLIE_CHECKOUT,
       // A due date can reveal pregnancy information and is never required by visitors.
       // A child's first name is withheld from indexable public lists by default.
       dueDate: null,

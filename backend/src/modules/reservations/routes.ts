@@ -23,7 +23,7 @@ export function reservationRoutes(
           .object({
             giftToken: z.string().length(64),
             guestName: z.string().trim().min(1).max(80),
-            guestEmail: z.string().email().max(255).nullable().optional(),
+            guestEmail: z.string().trim().email().max(255),
             message: z.string().max(800).nullable().optional(),
             quantity: z.number().int().min(1).max(100),
           })
@@ -79,6 +79,20 @@ export function reservationRoutes(
         await service.cancelForManager(user.id, params.listId, params.reservationId);
         return reply.status(204).send();
       });
+      app.post(
+        "/lists/:listId/reservations/:reservationId/remind",
+        {
+          config: { rateLimit: { max: 20, timeWindow: 3_600_000 } },
+        },
+        async (request) => {
+          csrf(request);
+          const user = await current(request);
+          const params = z
+            .object({ listId: z.string().uuid(), reservationId: z.string().uuid() })
+            .parse(request.params);
+          return service.remindForManager(user.id, params.listId, params.reservationId);
+        },
+      );
     }
   };
 }

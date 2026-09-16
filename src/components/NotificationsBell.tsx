@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Bell } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import { queryKeys } from "@/app/query";
 export function NotificationsBell() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [showHistory, setShowHistory] = useState(false);
 
   const notificationsQuery = useQuery({
     queryKey: queryKeys.notifications(user?.id),
@@ -27,9 +29,10 @@ export function NotificationsBell() {
 
   const markAllRead = async () => {
     if (unread.length === 0) return;
-    await Promise.all(unread.map((item) => notificationApi.markRead(item.id)));
+    await notificationApi.markAllRead();
     void queryClient.invalidateQueries({ queryKey: queryKeys.notifications(user.id) });
   };
+  const visible = showHistory ? items : unread;
 
   return (
     <Popover>
@@ -41,6 +44,9 @@ export function NotificationsBell() {
               {unread.length > 9 ? "9+" : unread.length}
             </span>
           ) : null}
+          <Button variant="ghost" size="sm" onClick={() => setShowHistory((value) => !value)}>
+            {showHistory ? "Nouvelles" : "Historique"}
+          </Button>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
@@ -53,13 +59,15 @@ export function NotificationsBell() {
           ) : null}
         </div>
         <ScrollArea className="max-h-80">
-          {items.length === 0 ? (
+          {visible.length === 0 ? (
             <p className="px-4 py-6 text-sm text-muted-foreground">
-              Aucune notification pour l'instant. Vous serez averti dès qu'un cadeau est réservé.
+              {showHistory
+                ? "Aucune notification pour l'instant."
+                : "Toutes les notifications sont lues."}
             </p>
           ) : (
             <ul className="divide-y divide-border/70">
-              {items.map((item) => (
+              {visible.map((item) => (
                 <li key={item.id} className="px-4 py-3">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-medium leading-snug">{item.title}</p>
@@ -74,6 +82,21 @@ export function NotificationsBell() {
                       timeStyle: "short",
                     })}
                   </p>
+                  {!item.readAt ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-1"
+                      onClick={async () => {
+                        await notificationApi.markRead(item.id);
+                        void queryClient.invalidateQueries({
+                          queryKey: queryKeys.notifications(user.id),
+                        });
+                      }}
+                    >
+                      Marquer comme lu
+                    </Button>
+                  ) : null}
                 </li>
               ))}
             </ul>

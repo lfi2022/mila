@@ -37,6 +37,8 @@ import { rewardRoutes } from "./modules/rewards/routes.js";
 import { MollieClient } from "./modules/payments/mollie.js";
 import { PaymentsService } from "./modules/payments/service.js";
 import { paymentRoutes } from "./modules/payments/routes.js";
+import { GiftCheckoutService } from "./modules/payments/gift-checkout.js";
+import { GiftFundsService } from "./modules/payments/gift-funds.js";
 import { ContributionsService } from "./modules/contributions/service.js";
 import { contributionRoutes } from "./modules/contributions/routes.js";
 import { PricesService } from "./modules/prices/service.js";
@@ -227,21 +229,24 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
           ),
         );
         await api.register(rewardRoutes(rewards, auth, config));
+        const reservations = new ReservationsService(
+          options.database.client,
+          config,
+          notifications,
+          lists,
+        );
+        const mollie = new MollieClient(config);
         await api.register(
           paymentRoutes(
-            new PaymentsService(options.database.client, config, lists, new MollieClient(config)),
+            new PaymentsService(options.database.client, config, lists, mollie, notifications),
             auth,
             config,
+            new GiftCheckoutService(options.database.client, config, mollie),
+            new GiftFundsService(options.database.client, config, lists),
           ),
         );
         await api.register(merchantRoutes(options.database.client, auth, config));
-        await api.register(
-          reservationRoutes(
-            new ReservationsService(options.database.client, config, notifications, lists),
-            auth,
-            config,
-          ),
-        );
+        await api.register(reservationRoutes(reservations, auth, config));
       }
     },
     { prefix: "/api/v1" },

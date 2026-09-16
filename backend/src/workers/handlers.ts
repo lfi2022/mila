@@ -494,11 +494,19 @@ export function cleanupProcessor(database: DatabaseService): StreamProcessor {
     const now = new Date();
     await database.client.$transaction(async (transaction) => {
       const expired = await transaction.reservation.findMany({
-        where: { status: "RESERVED", tokenExpiresAt: { lte: now } },
+        where: {
+          status: "RESERVED",
+          tokenExpiresAt: { lte: now },
+          contributions: { none: { status: "CONFIRMED" } },
+        },
         select: { id: true, giftId: true, quantity: true },
         take: 500,
       });
       for (const reservation of expired) {
+        await transaction.contribution.updateMany({
+          where: { reservationId: reservation.id, status: "PENDING" },
+          data: { status: "CANCELLED" },
+        });
         await transaction.reservation.update({
           where: { id: reservation.id },
           data: { status: "EXPIRED" },

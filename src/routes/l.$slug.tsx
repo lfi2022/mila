@@ -36,6 +36,15 @@ import { priceApi } from "@/features/prices/api";
 import { createSecondHandOffer } from "@/features/memories/api";
 import { apiRequest } from "@/services/api/client";
 import { track } from "@/lib/analytics";
+import { paymentApi } from "@/features/payments/api";
+
+type CartItem = {
+  giftToken: string;
+  title: string;
+  mode: "PURCHASE" | "CONTRIBUTION";
+  amountCents: number;
+  currency: string;
+};
 
 export const Route = createFileRoute("/l/$slug")({
   loader: ({ params }) => getPublicList(params.slug),
@@ -108,6 +117,10 @@ function PublicListPage() {
   const [wrongCode, setWrongCode] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [giftSearch, setGiftSearch] = useState("");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [buyer, setBuyer] = useState({ name: "", email: "" });
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [cartKey, setCartKey] = useState(() => crypto.randomUUID());
 
   if (data.state === "not_found") return <Unavailable />;
 
@@ -164,6 +177,36 @@ function PublicListPage() {
       .toLocaleLowerCase("fr")
       .includes(giftSearch.trim().toLocaleLowerCase("fr")),
   );
+  const addToCart = (item: CartItem) => {
+    setCart((current) => [...current.filter((entry) => entry.giftToken !== item.giftToken), item]);
+    setCartKey(crypto.randomUUID());
+    toast.success("Ajouté au panier");
+  };
+  const checkout = async () => {
+    setCheckoutBusy(true);
+    try {
+      const result = await paymentApi.giftCartCheckout(
+        cart.map(({ giftToken, mode, amountCents }) => ({
+          giftToken,
+          mode,
+          ...(mode === "CONTRIBUTION" ? { amountCents } : {}),
+        })),
+        buyer.name.trim(),
+        buyer.email.trim(),
+        cartKey,
+      );
+      const url = new URL(result.redirectUrl);
+      if (
+        url.protocol !== "https:" ||
+        (url.hostname !== "mollie.com" && !url.hostname.endsWith(".mollie.com"))
+      )
+        throw new Error("Lien de paiement Mollie invalide");
+      window.location.assign(url.href);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Paiement impossible");
+      setCheckoutBusy(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground" style={appearanceStyle(list)}>
@@ -268,6 +311,8 @@ function PublicListPage() {
                   layout={layout}
                   featured={layout === "magazine" && index % 3 === 0}
                   isDemo={list.is_demo}
+                  paymentsEnabled={list.gift_payments_enabled && !list.is_demo}
+                  onAddToCart={addToCart}
                 />
               </li>
             ))}
@@ -277,6 +322,90 @@ function PublicListPage() {
           <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
             Aucun cadeau ne correspond à cette recherche.
           </p>
+        ) : null}
+        {list.gift_payments_enabled && !list.is_demo && cart.length > 0 ? (
+          <section className="mt-8 rounded-xl border bg-card p-5" aria-label="Panier de cadeaux">
+            <h2 className="font-display text-xl">
+              Votre panier · {cart.length} article{cart.length > 1 ? "s" : ""}
+            </h2>
+            <ul className="mt-3 space-y-2">
+              {cart.map((item) => (
+                <li
+                  key={item.giftToken}
+                  className="flex items-center justify-between gap-3 text-sm"
+                >
+                  <span>
+                    {item.title} · {item.mode === "PURCHASE" ? "Achat" : "Participation"}
+                  </span>
+                  <span>
+                    {(item.amountCents / 100).toLocaleString("fr-BE", {
+                      style: "currency",
+                      currency: item.currency,
+                    })}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setCart((current) =>
+                        current.filter((entry) => entry.giftToken !== item.giftToken),
+                      );
+                      setCartKey(crypto.randomUUID());
+                    }}
+                  >
+                    Retirer
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 font-medium">
+              Total :{" "}
+              {(cart.reduce((sum, item) => sum + item.amountCents, 0) / 100).toLocaleString(
+                "fr-BE",
+                { style: "currency", currency: cart[0]!.currency },
+              )}
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="buyer-name">Votre nom *</Label>
+                <Input
+                  id="buyer-name"
+                  autoComplete="name"
+                  value={buyer.name}
+                  onChange={(event) =>
+                    setBuyer((value) => ({ ...value, name: event.target.value }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="buyer-email">Votre e-mail *</Label>
+                <Input
+                  id="buyer-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={buyer.email}
+                  onChange={(event) =>
+                    setBuyer((value) => ({ ...value, email: event.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Un récapitulatif vous sera envoyé après confirmation du paiement.
+            </p>
+            <Button
+              className="mt-4"
+              disabled={
+                checkoutBusy ||
+                !buyer.name.trim() ||
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyer.email)
+              }
+              onClick={() => void checkout()}
+            >
+              Payer avec Mollie
+            </Button>
+          </section>
         ) : null}
         <ReportList listId={list.id} />
       </main>
@@ -372,11 +501,15 @@ function GiftCard({
   layout,
   featured = false,
   isDemo = false,
+  paymentsEnabled = false,
+  onAddToCart,
 }: {
   gift: PublicGift;
   layout: ListLayout;
   featured?: boolean;
   isDemo?: boolean;
+  paymentsEnabled?: boolean;
+  onAddToCart: (item: CartItem) => void;
 }) {
   const horizontal = layout === "list";
   const router = useRouter();
@@ -384,6 +517,8 @@ function GiftCard({
   const [busy, setBusy] = useState(false);
   const [manageLink, setManageLink] = useState<string | null>(null);
   const [form, setForm] = useState({ guestName: "", guestEmail: "", message: "" });
+  const [participationOpen, setParticipationOpen] = useState(false);
+  const [participationAmount, setParticipationAmount] = useState("");
   const [offerOpen, setOfferOpen] = useState(false);
   const [offerFile, setOfferFile] = useState<File | undefined>();
   const [offer, setOffer] = useState({
@@ -461,7 +596,7 @@ function GiftCard({
               })}
             </p>
           ) : null}
-          {gift.contribution_target != null ? (
+          {gift.contribution_target != null && !gift.is_reserved ? (
             <div className="space-y-1 pt-1">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Participation collective</span>
@@ -499,202 +634,296 @@ function GiftCard({
               ))}
             </div>
           ) : null}
-          {gift.has_link ? <PriceSuggestion giftToken={gift.public_token} /> : null}
+          {gift.has_link && !gift.is_reserved ? (
+            <PriceSuggestion giftToken={gift.public_token} />
+          ) : null}
         </CardContent>
-        <CardFooter className="flex flex-wrap gap-2">
-          {gift.contribution_target != null && !gift.is_reserved ? (
-            <Button asChild size="sm" className="min-h-10">
-              <Link to="/contribuer/$giftToken" params={{ giftToken: gift.public_token }}>
-                Participer
-              </Link>
-            </Button>
-          ) : null}
-          {gift.has_link ? (
-            <Button asChild variant="outline" size="sm" className="min-h-10">
-              <a
-                href={`/go/${gift.public_token}`}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-              >
-                Voir en boutique
-              </a>
-            </Button>
-          ) : null}
-          {!gift.is_reserved && !isDemo && gift.second_hand_policy !== "NEW_ONLY" ? (
-            <Dialog open={offerOpen} onOpenChange={setOfferOpen}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-10"
-                onClick={() => setOfferOpen(true)}
-              >
-                Proposer d’occasion
-              </Button>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Proposer « {gift.title} » d’occasion</DialogTitle>
-                  <DialogDescription>
-                    Les parents vérifieront l’état, la photo et votre commentaire avant toute
-                    acceptation.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-3">
-                  <Label>Votre prénom</Label>
+        {!gift.is_reserved ? (
+          <CardFooter className="flex flex-wrap gap-2">
+            {gift.contribution_target != null && paymentsEnabled ? (
+              <Dialog open={participationOpen} onOpenChange={setParticipationOpen}>
+                <Button size="sm" className="min-h-10" onClick={() => setParticipationOpen(true)}>
+                  Participer
+                </Button>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Participer à « {gift.title} »</DialogTitle>
+                    <DialogDescription>
+                      Choisissez le montant de votre participation.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Label htmlFor={`participation-${gift.id}`}>Montant en euros</Label>
                   <Input
-                    value={offer.proposerName}
-                    onChange={(event) => setOffer({ ...offer, proposerName: event.target.value })}
+                    id={`participation-${gift.id}`}
+                    inputMode="decimal"
+                    value={participationAmount}
+                    onChange={(event) => setParticipationAmount(event.target.value)}
                   />
-                  <Label>Email (optionnel)</Label>
-                  <Input
-                    type="email"
-                    value={offer.proposerEmail}
-                    onChange={(event) => setOffer({ ...offer, proposerEmail: event.target.value })}
-                  />
-                  <Label>État</Label>
-                  <select
-                    className="h-10 w-full rounded-md border bg-background px-3"
-                    value={offer.condition}
-                    onChange={(event) =>
-                      setOffer({
-                        ...offer,
-                        condition: event.target.value as typeof offer.condition,
-                      })
-                    }
-                  >
-                    <option value="LIKE_NEW">Comme neuf</option>
-                    <option value="VERY_GOOD">Très bon état</option>
-                    <option value="GOOD">Bon état</option>
-                    <option value="FAIR">État correct</option>
-                  </select>
-                  <Label>Commentaire</Label>
-                  <Textarea
-                    value={offer.comment}
-                    onChange={(event) => setOffer({ ...offer, comment: event.target.value })}
-                  />
-                  <Label>Photo privée (8 Mo max)</Label>
-                  <Input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) => setOfferFile(event.target.files?.[0])}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button
-                    disabled={busy || !offer.proposerName.trim()}
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        await createSecondHandOffer({
-                          giftToken: gift.public_token,
-                          ...offer,
-                          ...(offerFile ? { file: offerFile } : {}),
-                        });
-                        toast.success("Proposition transmise aux parents");
-                        setOfferOpen(false);
-                      } catch (error) {
-                        toast.error(
-                          error instanceof Error ? error.message : "Proposition impossible",
-                        );
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                  >
-                    Transmettre la proposition
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          ) : null}
-          {gift.kind === "CONTRIBUTION" ? null : gift.is_reserved ? (
-            <Button size="sm" className="min-h-10" disabled>
-              Déjà réservé
-            </Button>
-          ) : (
-            <Dialog open={open} onOpenChange={setOpen}>
-              <Button size="sm" className="min-h-10" onClick={() => setOpen(true)}>
-                Réserver
-              </Button>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {manageLink ? "C'est réservé !" : `Réserver « ${gift.title} »`}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {manageLink
-                      ? "Conservez ce lien pour modifier ou annuler votre réservation."
-                      : isDemo
-                        ? "Liste de démonstration : le formulaire fonctionne, mais rien ne sera enregistré."
-                        : "Le cadeau restera visible sur la liste, marqué comme déjà réservé."}
-                  </DialogDescription>
-                </DialogHeader>
-
-                {manageLink ? (
-                  <div className="space-y-3">
-                    <Input readOnly value={manageLink} onFocus={(event) => event.target.select()} />
+                  <DialogFooter>
                     <Button
-                      variant="secondary"
+                      disabled={
+                        !Number(participationAmount) ||
+                        Number(participationAmount) <= 0 ||
+                        Number(participationAmount) >
+                          Number(gift.contribution_target) - gift.contribution_collected
+                      }
                       onClick={() => {
-                        void navigator.clipboard.writeText(manageLink);
-                        toast.success("Lien copié");
+                        onAddToCart({
+                          giftToken: gift.public_token,
+                          title: gift.title,
+                          mode: "CONTRIBUTION",
+                          amountCents: Math.round(Number(participationAmount) * 100),
+                          currency: gift.currency,
+                        });
+                        setParticipationOpen(false);
                       }}
                     >
-                      Copier le lien
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`name-${gift.id}`}>Votre prénom *</Label>
-                      <Input
-                        id={`name-${gift.id}`}
-                        value={form.guestName}
-                        onChange={(event) =>
-                          setForm((f) => ({ ...f, guestName: event.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`email-${gift.id}`}>
-                        Email (pour retrouver votre réservation)
-                      </Label>
-                      <Input
-                        id={`email-${gift.id}`}
-                        type="email"
-                        value={form.guestEmail}
-                        onChange={(event) =>
-                          setForm((f) => ({ ...f, guestEmail: event.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`msg-${gift.id}`}>Un mot pour les parents</Label>
-                      <Textarea
-                        id={`msg-${gift.id}`}
-                        rows={3}
-                        value={form.message}
-                        onChange={(event) =>
-                          setForm((f) => ({ ...f, message: event.target.value }))
-                        }
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {!manageLink ? (
-                  <DialogFooter className="gap-2">
-                    <Button variant="outline" disabled={busy} onClick={() => void submit()}>
-                      Je réserve
-                    </Button>
-                    <Button disabled={busy} onClick={() => void submit()}>
-                      Je réserve et je commande
+                      Ajouter au panier
                     </Button>
                   </DialogFooter>
-                ) : null}
-              </DialogContent>
-            </Dialog>
-          )}
-        </CardFooter>
+                </DialogContent>
+              </Dialog>
+            ) : gift.contribution_target != null ? (
+              <Button asChild size="sm" className="min-h-10">
+                <Link to="/contribuer/$giftToken" params={{ giftToken: gift.public_token }}>
+                  Participer
+                </Link>
+              </Button>
+            ) : null}
+            {paymentsEnabled && gift.price != null && gift.kind !== "CONTRIBUTION" ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="min-h-10"
+                onClick={() =>
+                  onAddToCart({
+                    giftToken: gift.public_token,
+                    title: gift.title,
+                    mode: "PURCHASE",
+                    amountCents: Math.round(gift.price! * 100),
+                    currency: gift.currency,
+                  })
+                }
+              >
+                Acheter · ajouter au panier
+              </Button>
+            ) : null}
+            {gift.has_link ? (
+              <Button asChild variant="outline" size="sm" className="min-h-10">
+                <a
+                  href={`/go/${gift.public_token}`}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                >
+                  Voir en boutique
+                </a>
+              </Button>
+            ) : null}
+            {!gift.is_reserved && !isDemo && gift.second_hand_policy !== "NEW_ONLY" ? (
+              <Dialog open={offerOpen} onOpenChange={setOfferOpen}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-10"
+                  onClick={() => setOfferOpen(true)}
+                >
+                  Proposer d’occasion
+                </Button>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Proposer « {gift.title} » d’occasion</DialogTitle>
+                    <DialogDescription>
+                      Les parents vérifieront l’état, la photo et votre commentaire avant toute
+                      acceptation.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <Label>Votre prénom</Label>
+                    <Input
+                      value={offer.proposerName}
+                      onChange={(event) => setOffer({ ...offer, proposerName: event.target.value })}
+                    />
+                    <Label>Email (optionnel)</Label>
+                    <Input
+                      type="email"
+                      value={offer.proposerEmail}
+                      onChange={(event) =>
+                        setOffer({ ...offer, proposerEmail: event.target.value })
+                      }
+                    />
+                    <Label>État</Label>
+                    <select
+                      className="h-10 w-full rounded-md border bg-background px-3"
+                      value={offer.condition}
+                      onChange={(event) =>
+                        setOffer({
+                          ...offer,
+                          condition: event.target.value as typeof offer.condition,
+                        })
+                      }
+                    >
+                      <option value="LIKE_NEW">Comme neuf</option>
+                      <option value="VERY_GOOD">Très bon état</option>
+                      <option value="GOOD">Bon état</option>
+                      <option value="FAIR">État correct</option>
+                    </select>
+                    <Label>Commentaire</Label>
+                    <Textarea
+                      value={offer.comment}
+                      onChange={(event) => setOffer({ ...offer, comment: event.target.value })}
+                    />
+                    <Label>Photo privée (8 Mo max)</Label>
+                    <Input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(event) => setOfferFile(event.target.files?.[0])}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      disabled={busy || !offer.proposerName.trim()}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          await createSecondHandOffer({
+                            giftToken: gift.public_token,
+                            ...offer,
+                            ...(offerFile ? { file: offerFile } : {}),
+                          });
+                          toast.success("Proposition transmise aux parents");
+                          setOfferOpen(false);
+                        } catch (error) {
+                          toast.error(
+                            error instanceof Error ? error.message : "Proposition impossible",
+                          );
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      Transmettre la proposition
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            ) : null}
+            {gift.kind === "CONTRIBUTION" ? null : (
+              <Dialog open={open} onOpenChange={setOpen}>
+                <Button size="sm" className="min-h-10" onClick={() => setOpen(true)}>
+                  Réserver
+                </Button>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {manageLink ? "C'est réservé !" : `Réserver « ${gift.title} »`}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {manageLink
+                        ? "Conservez ce lien pour modifier ou annuler votre réservation."
+                        : isDemo
+                          ? "Liste de démonstration : le formulaire fonctionne, mais rien ne sera enregistré."
+                          : "Le cadeau restera visible sur la liste, marqué comme déjà réservé."}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {manageLink ? (
+                    <div className="space-y-3">
+                      <Input
+                        readOnly
+                        value={manageLink}
+                        onFocus={(event) => event.target.select()}
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(manageLink);
+                          toast.success("Lien copié");
+                        }}
+                      >
+                        Copier le lien
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`name-${gift.id}`}>Votre prénom *</Label>
+                        <Input
+                          id={`name-${gift.id}`}
+                          autoComplete="name"
+                          value={form.guestName}
+                          onChange={(event) =>
+                            setForm((f) => ({ ...f, guestName: event.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`email-${gift.id}`}>Votre e-mail *</Label>
+                        <Input
+                          id={`email-${gift.id}`}
+                          type="email"
+                          required
+                          autoComplete="email"
+                          value={form.guestEmail}
+                          onChange={(event) =>
+                            setForm((f) => ({ ...f, guestEmail: event.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`msg-${gift.id}`}>Un mot pour les parents</Label>
+                        <Textarea
+                          id={`msg-${gift.id}`}
+                          rows={3}
+                          value={form.message}
+                          onChange={(event) =>
+                            setForm((f) => ({ ...f, message: event.target.value }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {!manageLink ? (
+                    <DialogFooter className="gap-2">
+                      <Button
+                        variant="outline"
+                        disabled={
+                          busy ||
+                          !form.guestName.trim() ||
+                          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.guestEmail)
+                        }
+                        onClick={() => void submit()}
+                      >
+                        Je réserve
+                      </Button>
+                      {paymentsEnabled && gift.price != null ? (
+                        <Button
+                          disabled={
+                            busy ||
+                            !form.guestName.trim() ||
+                            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.guestEmail)
+                          }
+                          onClick={() => {
+                            onAddToCart({
+                              giftToken: gift.public_token,
+                              title: gift.title,
+                              mode: "PURCHASE",
+                              amountCents: Math.round(gift.price! * 100),
+                              currency: gift.currency,
+                            });
+                            setOpen(false);
+                          }}
+                        >
+                          Ajouter au panier pour payer
+                        </Button>
+                      ) : null}
+                    </DialogFooter>
+                  ) : null}
+                </DialogContent>
+              </Dialog>
+            )}
+          </CardFooter>
+        ) : null}
       </div>
     </Card>
   );

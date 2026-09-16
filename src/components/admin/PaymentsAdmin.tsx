@@ -6,11 +6,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { paymentApi } from "@/features/payments/api";
+import { giftFundsApi } from "@/features/payments/gift-funds";
 import { formatCents } from "@/lib/money";
 
 export function PaymentsAdmin() {
   const queryClient = useQueryClient();
   const payments = useQuery({ queryKey: ["admin", "payments"], queryFn: paymentApi.adminList });
+  const payouts = useQuery({
+    queryKey: ["admin", "gift-payouts"],
+    queryFn: giftFundsApi.adminList,
+  });
+  const [transferReference, setTransferReference] = useState<Record<string, string>>({});
+  const payoutAction = useMutation({
+    mutationFn: async (input: { id: string; action: "approve" | "reject" | "complete" }) => {
+      if (input.action === "complete")
+        return giftFundsApi.complete(input.id, transferReference[input.id] ?? "");
+      return giftFundsApi.decide(input.id, input.action === "approve");
+    },
+    onSuccess: async () => {
+      toast.success("Demande mise à jour");
+      await queryClient.invalidateQueries({ queryKey: ["admin", "gift-payouts"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const [selected, setSelected] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
@@ -36,6 +54,65 @@ export function PaymentsAdmin() {
   });
   return (
     <div className="space-y-4">
+      <h2 className="text-lg font-medium">Virements manuels demandés par les parents</h2>
+      {payouts.data?.payouts.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Aucune demande.</p>
+      ) : null}
+      {payouts.data?.payouts.map((payout) => (
+        <section key={payout.id} className="rounded-xl border p-4">
+          <p className="font-medium">
+            {payout.listTitle} · {formatCents(payout.amountCents, payout.currency)} ·{" "}
+            {payout.status}
+          </p>
+          <p className="text-sm">
+            {payout.beneficiary ?? "Bénéficiaire absent"} · {payout.ibanMasked ?? "IBAN absent"}
+          </p>
+          {payout.status === "REQUESTED" ? (
+            <div className="mt-2 flex gap-2">
+              <Button
+                size="sm"
+                disabled={payoutAction.isPending}
+                onClick={() => payoutAction.mutate({ id: payout.id, action: "approve" })}
+              >
+                Valider
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={payoutAction.isPending}
+                onClick={() => payoutAction.mutate({ id: payout.id, action: "reject" })}
+              >
+                Refuser
+              </Button>
+            </div>
+          ) : null}
+          {payout.status === "APPROVED" ? (
+            <div className="mt-2 space-y-2">
+              <p className="font-mono text-sm">IBAN : {payout.iban ?? "Indisponible"}</p>
+              <Input
+                placeholder="Référence du virement effectué"
+                value={transferReference[payout.id] ?? ""}
+                onChange={(event) =>
+                  setTransferReference((current) => ({
+                    ...current,
+                    [payout.id]: event.target.value,
+                  }))
+                }
+              />
+              <Button
+                size="sm"
+                disabled={
+                  payoutAction.isPending || (transferReference[payout.id] ?? "").trim().length < 3
+                }
+                onClick={() => payoutAction.mutate({ id: payout.id, action: "complete" })}
+              >
+                Marquer le virement effectué
+              </Button>
+            </div>
+          ) : null}
+          {payout.reference ? <p className="text-xs">Référence : {payout.reference}</p> : null}
+        </section>
+      ))}
       <p className="text-sm text-muted-foreground">
         Mode fournisseur : <strong>{payments.data?.mode ?? "…"}</strong>. Les remboursements
         partiels et complets sont idempotents et rapprochés depuis Mollie.

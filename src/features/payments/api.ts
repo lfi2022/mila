@@ -22,6 +22,31 @@ export type MilaPayment = {
 };
 
 export const paymentApi = {
+  giftCartCheckout: (
+    items: Array<{ giftToken: string; mode: "PURCHASE" | "CONTRIBUTION"; amountCents?: number }>,
+    guestName: string,
+    guestEmail: string,
+    idempotencyKey: string,
+  ) =>
+    apiRequest<{ paymentId: string; redirectUrl: string }>("/public/gift-checkout", {
+      method: "POST",
+      headers: { "x-idempotency-key": idempotencyKey },
+      body: JSON.stringify({ items, guestName, guestEmail }),
+    }),
+  giftCartStatus: (paymentId: string) =>
+    apiRequest<{
+      id: string;
+      status: PaymentStatus;
+      amountCents: number;
+      currency: string;
+      items: Array<{ giftTitle: string; amountCents: number; allocationStatus: string }>;
+    }>(`/public/gift-checkout/${paymentId}`),
+  payReservation: (token: string, idempotencyKey: string) =>
+    apiRequest<{ paymentId: string; redirectUrl: string }>("/public/gift-checkout/reservation", {
+      method: "POST",
+      headers: { "x-idempotency-key": idempotencyKey },
+      body: JSON.stringify({ token }),
+    }),
   methods: () =>
     apiRequest<{
       enabled: boolean;

@@ -22,4 +22,9 @@ export const reservationApi = {
       method: "DELETE",
       csrf: true,
     }),
+  remind: (listId: string, reservationId: string) =>
+    apiRequest<{ sent: boolean }>(`/lists/${listId}/reservations/${reservationId}/remind`, {
+      method: "POST",
+      csrf: true,
+    }),
 };

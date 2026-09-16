@@ -40,9 +40,102 @@ export function renderNotificationEmail(appUrl: string, job: NotificationJob): E
     case "DEAD_LINK":
       return deadLinkEmail(appUrl, body);
 
+    case "GIFT_PAYMENT_RECEIPT":
+      return giftPaymentReceiptEmail(appUrl, job);
+
+    case "RESERVATION_PAYMENT_REMINDER":
+      return reservationPaymentReminderEmail(appUrl, job);
+
     default:
       return genericEmail(appUrl, body);
   }
+}
+
+function reservationPaymentReminderEmail(appUrl: string, job: NotificationJob): EmailMessage {
+  const value = (key: string) =>
+    typeof job.payload?.[key] === "string" ? (job.payload[key] as string) : "";
+  const token = value("token");
+  const guestName = value("guestName");
+  const giftTitle = value("giftTitle");
+  const listTitle = value("listTitle");
+  const amount = value("amount");
+  const link = buildUrl(appUrl, `/r/${encodeURIComponent(token)}`);
+  const subject = `Rappel pour votre réservation « ${giftTitle} »`;
+  const detail = amount ? `${giftTitle} — ${amount}` : giftTitle;
+  const text = [
+    `Bonjour ${guestName},`,
+    "",
+    `Vous avez réservé ${giftTitle} sur ${listTitle}.`,
+    amount ? `Montant : ${amount}` : "",
+    "Vous pouvez maintenant payer ou gérer votre réservation :",
+    link,
+    "",
+    "Si vous ne souhaitez plus offrir ce cadeau, vous pouvez aussi libérer la réservation.",
+    "",
+    "Mila",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const content = `${emailHeading("Votre réservation vous attend 🎁")}
+    ${emailLead(`Bonjour ${escapeHtml(guestName)}, les parents vous envoient un petit rappel.`)}
+    ${emailHighlight("Cadeau réservé", detail, "🎁")}
+    ${emailParagraph(`Cette réservation fait partie de « ${escapeHtml(listTitle)} ».`)}
+    ${emailButton("Payer ou gérer ma réservation", link)}
+    ${emailFallbackLink(link)}
+    ${emailNotice("Si vous avez changé d'avis, le même lien permet de libérer la réservation.")}`;
+  return {
+    subject,
+    text,
+    html: renderEmailLayout({
+      title: subject,
+      preheader: `Votre réservation de ${giftTitle} est toujours active.`,
+      content,
+      appUrl,
+    }),
+  };
+}
+
+function giftPaymentReceiptEmail(appUrl: string, job: NotificationJob): EmailMessage {
+  const items = Array.isArray(job.payload?.["items"])
+    ? job.payload["items"].filter(
+        (item): item is { title: string; amount: string } =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof item.title === "string" &&
+          typeof item.amount === "string",
+      )
+    : [];
+  const name = typeof job.payload?.["name"] === "string" ? job.payload["name"] : "";
+  const reference = typeof job.payload?.["reference"] === "string" ? job.payload["reference"] : "";
+  const subject = "Merci pour vos cadeaux et participations · Mila";
+  const lines = items.map((item) => `- ${item.title} : ${item.amount}`);
+  const text = [
+    `Merci ${name} !`,
+    "",
+    "Votre paiement a été confirmé.",
+    "Articles réservés et participations :",
+    ...lines,
+    "",
+    `Référence : ${reference}`,
+    "Les parents pourront commander ou récupérer les articles.",
+    appUrl,
+  ].join("\n");
+  const content = `${emailHeading("Merci pour votre générosité 🎁")}
+    ${emailLead("Votre paiement a été confirmé.")}
+    ${emailParagraph(`Merci ${name}. Voici le récapitulatif de vos cadeaux et participations :`)}
+    <ul>${items.map((item) => `<li>${escapeHtml(item.title)} : ${escapeHtml(item.amount)}</li>`).join("")}</ul>
+    ${emailParagraph(`Référence : ${reference}`)}
+    ${emailNotice("Les parents pourront commander ou récupérer les articles avec les fonds reçus.")}`;
+  return {
+    subject,
+    text,
+    html: renderEmailLayout({
+      title: subject,
+      preheader: "Votre paiement est confirmé.",
+      content,
+      appUrl,
+    }),
+  };
 }
 
 /**

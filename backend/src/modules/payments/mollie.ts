@@ -39,6 +39,7 @@ export interface PaymentProviderClient {
     redirectUrl: string;
     webhookUrl: string;
     internalPaymentId: string;
+    metadata?: Record<string, string>;
     idempotencyKey: string;
   }): Promise<MolliePayment>;
   getPayment(id: string): Promise<MolliePayment>;
@@ -70,7 +71,7 @@ export class MollieClient implements PaymentProviderClient {
         description: input.description,
         redirectUrl: input.redirectUrl,
         webhookUrl: input.webhookUrl,
-        metadata: { internalPaymentId: input.internalPaymentId },
+        metadata: { internalPaymentId: input.internalPaymentId, ...input.metadata },
       },
     });
   }
