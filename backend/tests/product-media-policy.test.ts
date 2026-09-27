@@ -52,6 +52,12 @@ describe("product media deny-by-default policy", () => {
     ).toBe("/generic-images/stroller.webp");
   });
 
+  it("selects a richer Mila-owned fallback from the gift title", () => {
+    expect(selectProductImage([], "OTHER", undefined, "Siege auto bebe")).toBe(
+      "/generic-images/baby-car-seat.jpg",
+    );
+  });
+
   it.each([
     ["Poussette compacte", "STROLLER"],
     ["Doudou lapin", "PLUSH_RABBIT"],

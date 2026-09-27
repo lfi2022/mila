@@ -369,7 +369,13 @@ export class ListsService {
       priority: gift.priority,
       secondHandPolicy: gift.secondHandPolicy,
       imageUrl: list.showGiftImages
-        ? selectProductImage(gift.images, gift.genericImageCategory)
+        ? selectProductImage(
+            gift.images,
+            gift.genericImageCategory,
+            undefined,
+            gift.title,
+            gift.description,
+          )
         : null,
       isReserved:
         gift.reservedQuantity > 0 ||

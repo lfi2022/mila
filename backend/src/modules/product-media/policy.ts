@@ -86,6 +86,19 @@ export const genericImageUrls: Record<GenericImageCategory, string> = {
   OTHER: "/generic-images/plush-rabbit.webp",
 };
 
+const keywordGenericImageUrls: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(?:siège auto|siege auto|coque bébé|coque bebe|cosy)/i, "/generic-images/baby-car-seat.jpg"],
+  [
+    /(?:porte[- ]bébé|porte[- ]bebe|écharpe de portage|echarpe de portage)/i,
+    "/generic-images/baby-carrier.jpg",
+  ],
+  [/(?:livre|album|histoire|lecture)/i, "/generic-images/baby-books.jpg"],
+  [
+    /(?:lange|matelas à langer|matelas a langer|table à langer|soin bébé|soin bebe|hygiène|hygiene)/i,
+    "/generic-images/changing-essentials.jpg",
+  ],
+];
+
 export function detectGenericImageCategory(...values: Array<string | null | undefined>) {
   const text = values.filter(Boolean).join(" ").toLocaleLowerCase("fr-BE");
   if (/poussette|stroller|buggy/.test(text)) return "STROLLER" as const;
@@ -111,6 +124,7 @@ export function selectProductImage(
   media: readonly DisplayableMedia[] | null | undefined,
   category: GenericImageCategory | null | undefined,
   assetBase = "/assets/product-image/",
+  ...hints: Array<string | null | undefined>
 ): string {
   for (const item of media ?? []) {
     if (item.status !== "ACTIVE") continue;
@@ -122,5 +136,9 @@ export function selectProductImage(
       return item.originalUrl;
     }
   }
+  const matchingImage = keywordGenericImageUrls.find(([pattern]) =>
+    pattern.test(hints.filter(Boolean).join(" ")),
+  );
+  if (matchingImage) return matchingImage[1];
   return genericImageUrls[category ?? "OTHER"];
 }

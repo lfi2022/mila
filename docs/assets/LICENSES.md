@@ -14,6 +14,8 @@ marque, texte, logo marchand ni produit identifiable. Elles ont été revues vis
 960 × 960 et converties en WebP. Elles sont enregistrées fonctionnellement sous la provenance
 `GENERATED`/bibliothèque Mila et peuvent être utilisées comme repli commercial dans l’application.
 
+Les quatre images JPG ajoutées le 27 septembre 2026 (siège auto, porte-bébé, livres et essentiels de change) sont des visuels génériques créés pour Mila avec le générateur d’images OpenAI. Elles ne reprennent ni marque, ni logo, ni produit identifiable.
+
 ## Actifs existants audités
 
 - logos, icônes et carte sociale Mila : identité visuelle du projet ; fichiers locaux uniquement ;
