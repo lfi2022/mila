@@ -40,7 +40,9 @@ self.addEventListener("fetch", (event) => {
             // before an asynchronous cache callback is executed.
             const cacheResponse = response.ok ? response.clone() : null;
             if (cacheResponse)
-              event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, cacheResponse)));
+              event.waitUntil(
+                caches.open(CACHE).then((cache) => cache.put(request, cacheResponse)),
+              );
             return response;
           }),
       ),

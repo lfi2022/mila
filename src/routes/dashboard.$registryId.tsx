@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -63,6 +64,16 @@ const LIST_TYPES = [
   { value: "BIRTH", label: "Naissance" },
   { value: "BIRTHDAY", label: "Anniversaire" },
 ] as const;
+
+function merchantUrl(value: string | null | undefined) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 function slugify(value: string) {
   return (
@@ -796,6 +807,7 @@ function RegistryDetail() {
             <ul className="mt-4 space-y-3">
               {filteredGifts.map((gift) => {
                 const fullyReserved = gift.reserved_qty >= gift.quantity;
+                const shopUrl = merchantUrl(gift.url);
                 return (
                   <li
                     key={gift.id}
@@ -824,6 +836,19 @@ function RegistryDetail() {
                         {fullyReserved ? "Masqué (réservé)" : "Visible"}
                       </Badge>
                       <div className="flex gap-1">
+                        {shopUrl ? (
+                          <Button asChild variant="outline" size="sm">
+                            <a
+                              href={shopUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={`Voir ${gift.title} sur le site de la boutique`}
+                            >
+                              Voir la boutique
+                              <ExternalLink className="ml-2 h-3.5 w-3.5" aria-hidden="true" />
+                            </a>
+                          </Button>
+                        ) : null}
                         <Button
                           variant="ghost"
                           size="sm"
