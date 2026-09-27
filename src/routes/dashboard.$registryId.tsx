@@ -32,6 +32,14 @@ import { reservationApi } from "@/features/reservations/api";
 import { previewProduct } from "@/features/products/api";
 import { uploadProductImage } from "@/features/storage/api";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { queryKeys } from "@/app/query";
 import {
   createAppearanceSaveQueue,
@@ -160,6 +168,7 @@ function RegistryDetail() {
   const queryClient = useQueryClient();
   const [item, setItem] = useState(emptyItem);
   const [accessCode, setAccessCode] = useState("");
+  const [lockDialogOpen, setLockDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [futureTitle, setFutureTitle] = useState("");
   const [futureDate, setFutureDate] = useState("");
@@ -451,10 +460,14 @@ function RegistryDetail() {
   const submitCode = useMutation({
     mutationFn: () => {
       if (accessCode.length < 6) throw new Error("Le code doit contenir au moins 6 caractères.");
-      return listApi.update(registryId, { accessCode });
+      return listApi.update(registryId, {
+        accessCode,
+        ...(lockDialogOpen ? { visibility: "PROTECTED" as const } : {}),
+      });
     },
     onSuccess: () => {
       setAccessCode("");
+      setLockDialogOpen(false);
       toast.success("Code d'accès enregistré");
       refresh();
     },
@@ -1393,11 +1406,16 @@ function RegistryDetail() {
               <Label>Visibilité</Label>
               <Select
                 value={list.visibility}
-                onValueChange={(value) =>
+                onValueChange={(value) => {
+                  if (value === "PROTECTED" && list.visibility !== "PROTECTED") {
+                    setAccessCode("");
+                    setLockDialogOpen(true);
+                    return;
+                  }
                   updateRegistry.mutate({
                     visibility: value as NonNullable<ListPatch["visibility"]>,
-                  })
-                }
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -1431,10 +1449,49 @@ function RegistryDetail() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Laissez vide et enregistrez pour retirer le code.
+                  Saisissez un nouveau code puis enregistrez pour le remplacer.
                 </p>
               </div>
             ) : null}
+
+            <Dialog
+              open={lockDialogOpen}
+              onOpenChange={(open) => {
+                setLockDialogOpen(open);
+                if (!open) setAccessCode("");
+              }}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Protéger cette liste par un code</DialogTitle>
+                  <DialogDescription>
+                    Les proches devront saisir ce code avant de pouvoir consulter la liste.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="new-access-code">Code d'accès</Label>
+                  <Input
+                    id="new-access-code"
+                    value={accessCode}
+                    minLength={6}
+                    autoComplete="off"
+                    placeholder="Au moins 6 caractères"
+                    onChange={(event) => setAccessCode(event.target.value)}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setLockDialogOpen(false)}>
+                    Annuler
+                  </Button>
+                  <Button
+                    disabled={accessCode.length < 6 || submitCode.isPending}
+                    onClick={() => submitCode.mutate()}
+                  >
+                    Activer la protection
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <div className="space-y-2 border-t pt-4">
               <Label>Lorsqu'un cadeau est réservé</Label>
