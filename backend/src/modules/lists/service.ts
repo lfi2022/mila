@@ -308,7 +308,7 @@ export class ListsService {
         accentColor: true,
         accessCodeHash: true,
         gifts: {
-          where: { deletedAt: null, hiddenByModerator: false },
+          where: { deletedAt: null, hiddenByModerator: false, hiddenByParent: false },
           orderBy: [{ position: "asc" }, { createdAt: "asc" }],
           select: {
             id: true,

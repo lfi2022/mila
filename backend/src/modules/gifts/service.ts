@@ -35,6 +35,7 @@ export type GiftInput = {
   offerPreference?: OfferPreference;
   position?: number;
   priority?: number;
+  hiddenByParent?: boolean;
   image?: { url: string; source: "OFFICIAL_API" | "AFFILIATE_FEED" | "REMOTE_UNVERIFIED" } | null;
   genericImageCategory?: GenericImageCategory;
   identity?: {
@@ -231,6 +232,7 @@ function giftData(input: Partial<GiftInput>) {
     ...(input.offerPreference !== undefined ? { offerPreference: input.offerPreference } : {}),
     ...(input.position !== undefined ? { position: input.position } : {}),
     ...(input.priority !== undefined ? { priority: input.priority } : {}),
+    ...(input.hiddenByParent !== undefined ? { hiddenByParent: input.hiddenByParent } : {}),
     ...(input.genericImageCategory !== undefined
       ? { genericImageCategory: input.genericImageCategory }
       : {}),

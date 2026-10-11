@@ -65,6 +65,7 @@ export class GiftCheckoutService {
       where: {
         publicToken: { in: input.items.map((item) => item.giftToken) },
         deletedAt: null,
+        hiddenByParent: false,
         list: { status: "ACTIVE", deletedAt: null, closedAt: null },
       },
       select: {

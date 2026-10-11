@@ -19,6 +19,7 @@ export class ContributionsService {
         publicToken: giftToken,
         OR: [{ kind: "CONTRIBUTION" }, { contributionTargetMinor: { not: null } }],
         deletedAt: null,
+        hiddenByParent: false,
         list: { status: "ACTIVE", deletedAt: null },
       },
       select: {
@@ -85,6 +86,7 @@ export class ContributionsService {
         publicToken: input.giftToken,
         OR: [{ kind: "CONTRIBUTION" }, { contributionTargetMinor: { not: null } }],
         deletedAt: null,
+        hiddenByParent: false,
         list: { status: "ACTIVE", deletedAt: null },
       },
       select: {

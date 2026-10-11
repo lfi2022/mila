@@ -412,6 +412,18 @@ function RegistryDetail() {
     },
   });
 
+  const toggleGiftVisibility = useMutation({
+    mutationFn: ({ id, hiddenByParent }: { id: string; hiddenByParent: boolean }) =>
+      giftApi.update(registryId, id, { hiddenByParent }),
+    onSuccess: (_gift, variables) => {
+      toast.success(
+        variables.hiddenByParent ? "Cadeau masqué de la liste" : "Cadeau affiché dans la liste",
+      );
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gifts(registryId) });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const releaseReservation = useMutation({
     mutationFn: (id: string) => reservationApi.cancel(registryId, id),
     onSuccess: () => {
@@ -905,9 +917,26 @@ function RegistryDetail() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <Badge variant={fullyReserved ? "default" : "secondary"}>
-                        {fullyReserved ? "Masqué (réservé)" : "Visible"}
+                      <Badge
+                        variant={gift.hiddenByParent || fullyReserved ? "default" : "secondary"}
+                      >
+                        {gift.hiddenByParent
+                          ? "Masqué par vous"
+                          : fullyReserved
+                            ? "Masqué (réservé)"
+                            : "Visible"}
                       </Badge>
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        Afficher dans la liste
+                        <Switch
+                          checked={!gift.hiddenByParent}
+                          disabled={toggleGiftVisibility.isPending}
+                          onCheckedChange={(checked) =>
+                            toggleGiftVisibility.mutate({ id: gift.id, hiddenByParent: !checked })
+                          }
+                          aria-label={`${gift.hiddenByParent ? "Afficher" : "Masquer"} ${gift.title} dans la liste`}
+                        />
+                      </label>
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"

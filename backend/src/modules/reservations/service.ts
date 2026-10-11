@@ -30,6 +30,7 @@ export class ReservationsService {
           where: {
             publicToken: input.giftToken,
             deletedAt: null,
+            hiddenByParent: false,
             status: { in: ["AVAILABLE", "RESERVED"] },
             list: { deletedAt: null, status: "ACTIVE", closedAt: null },
           },

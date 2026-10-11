@@ -42,6 +42,7 @@ const giftInput = z.object({
     .default("FIXED_MERCHANT"),
   position: z.number().int().min(0).default(0),
   priority: z.number().int().min(0).max(3).default(0),
+  hiddenByParent: z.boolean().default(false),
   image: z
     .object({
       url: z.string().max(2048),

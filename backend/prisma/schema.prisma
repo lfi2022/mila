@@ -579,6 +579,7 @@ model Gift {
   offerPreference           OfferPreference      @default(FIXED_MERCHANT) @map("offer_preference")
   position                  Int                  @default(0)
   hiddenByModerator         Boolean              @default(false) @map("hidden_by_moderator")
+  hiddenByParent            Boolean              @default(false) @map("hidden_by_parent")
   priceAlertsEnabled        Boolean              @default(false) @map("price_alerts_enabled")
   availabilityAlertsEnabled Boolean              @default(false) @map("availability_alerts_enabled")
   deadLinkAlertsEnabled     Boolean              @default(false) @map("dead_link_alerts_enabled")
