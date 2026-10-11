@@ -1682,6 +1682,8 @@ model ProductAnalyticsEvent {
   path        String?  @db.VarChar(255)
   device      String?  @db.VarChar(180)
   ipHash      String?  @map("ip_hash") @db.Char(64)
+  ipEncrypted String?  @map("ip_encrypted") @db.VarChar(256)
+  ipExpiresAt DateTime? @map("ip_expires_at") @db.DateTime(3)
   properties  Json?
   occurredAt  DateTime @map("occurred_at") @db.DateTime(3)
   createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
@@ -1697,6 +1699,8 @@ model AnalyticsVisitor {
   id          String   @id @default(uuid()) @db.Char(36)
   visitorHash String   @unique @map("visitor_hash") @db.Char(64)
   ipHash      String?  @map("ip_hash") @db.Char(64)
+  ipEncrypted String?  @map("ip_encrypted") @db.VarChar(256)
+  ipExpiresAt DateTime? @map("ip_expires_at") @db.DateTime(3)
   firstSeenAt DateTime @default(now()) @map("first_seen_at") @db.DateTime(3)
   lastSeenAt  DateTime @default(now()) @map("last_seen_at") @db.DateTime(3)
   visitCount  Int      @default(0) @map("visit_count")

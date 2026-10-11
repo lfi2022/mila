@@ -77,6 +77,8 @@ export type SiteVisit = {
   visitCount: number;
   pageViews: number;
   eventCount: number;
+  ipAddress: string | null;
+  ipExpiresAt: string | null;
   networkPeers: number;
 };
 export type Merchant = {

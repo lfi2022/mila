@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { createHmac } from "node:crypto";
 import { z } from "zod";
+import { encryptAnalyticsIp } from "../../common/security/analytics-ip.js";
 import type { AppConfig } from "../../config/env.js";
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js";
 
@@ -49,9 +50,13 @@ export function analyticsRoutes(prisma: PrismaClient, config: AppConfig): Fastif
           return reply.status(202).send({ accepted: false });
         const visitorHash = pseudonym(config.AUTH_SECRET, input.visitorId);
         const device = describeDevice(request.headers["user-agent"]);
-        // An IP address is never retained: this keyed pseudonym only identifies a possible
-        // shared network and must not be used to merge distinct visitors.
+        // An IP address is encrypted at rest and removed after 30 days. Its hash only identifies
+        // a possible shared network and must not be used to merge distinct visitors.
         const ipHash = request.ip ? pseudonym(config.AUTH_SECRET, `ip:${request.ip}`) : undefined;
+        const ipEncrypted = request.ip
+          ? encryptAnalyticsIp(request.ip, config.AUTH_SECRET)
+          : undefined;
+        const ipExpiresAt = request.ip ? new Date(Date.now() + 30 * 86_400_000) : undefined;
         const visitIncrement = input.event === "site_visit" ? 1 : 0;
         const pageViewIncrement = input.event === "page_view" ? 1 : 0;
         await prisma.$transaction([
@@ -63,6 +68,8 @@ export function analyticsRoutes(prisma: PrismaClient, config: AppConfig): Fastif
               path: input.path,
               device,
               ipHash,
+              ipEncrypted,
+              ipExpiresAt,
               properties: input.properties as Prisma.InputJsonValue | undefined,
               occurredAt,
             },
@@ -72,6 +79,8 @@ export function analyticsRoutes(prisma: PrismaClient, config: AppConfig): Fastif
             create: {
               visitorHash,
               ipHash,
+              ipEncrypted,
+              ipExpiresAt,
               firstSeenAt: occurredAt,
               lastSeenAt: occurredAt,
               visitCount: visitIncrement,

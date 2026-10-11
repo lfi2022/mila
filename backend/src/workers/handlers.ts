@@ -558,6 +558,15 @@ export function cleanupProcessor(database: DatabaseService): StreamProcessor {
       await transaction.session.deleteMany({ where: { expiresAt: { lte: now } } });
       await transaction.emailVerificationToken.deleteMany({ where: { expiresAt: { lte: now } } });
       await transaction.passwordResetToken.deleteMany({ where: { expiresAt: { lte: now } } });
+      const ipRetentionCutoff = new Date(now.getTime() - 30 * 86_400_000);
+      await transaction.productAnalyticsEvent.updateMany({
+        where: { ipHash: { not: null }, occurredAt: { lt: ipRetentionCutoff } },
+        data: { ipHash: null, ipEncrypted: null, ipExpiresAt: null },
+      });
+      await transaction.analyticsVisitor.updateMany({
+        where: { ipExpiresAt: { lte: now } },
+        data: { ipHash: null, ipEncrypted: null, ipExpiresAt: null },
+      });
     });
   };
 }

@@ -161,7 +161,7 @@ function cookieInventory() {
     "| `sidebar_state` | Mila | Préférence d'affichage demandée | 7 jours | Fonctionnel |",
     "| `mila_partner_attribution` | Mila | Attribution partenaire explicitement acceptée | 30 jours | Marketing |",
     "| `mila.cookie-consent` (stockage local) | Mila | Conserver et prouver vos choix | Jusqu'au retrait ou changement de politique | Nécessaire |",
-    "| `mila.analytics-visitor` (stockage local) | Mila | Mesure d'audience interne pseudonyme, visites et pages vues ; l'adresse IP est hachée côté serveur et n'est jamais conservée en clair | Jusqu'au retrait du consentement | Statistiques |",
+    "| `mila.analytics-visitor` (stockage local) | Mila | Mesure d'audience interne pseudonyme, visites et pages vues ; l'adresse IP publique est chiffrée côté serveur, réservée au super-administrateur et supprimée après 30 jours | Jusqu'au retrait du consentement ; IP : 30 jours | Statistiques |",
     "| Cache du service worker | Mila | Fonctionnement hors ligne et performance | Selon version de l'application | Nécessaire |",
   ].join("\n");
 }

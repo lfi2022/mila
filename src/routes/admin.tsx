@@ -533,6 +533,7 @@ function AdminContent({ isAdmin, isSuperAdmin }: { isAdmin: boolean; isSuperAdmi
                       <TableHead>Pages vues</TableHead>
                       <TableHead>Première / dernière visite</TableHead>
                       <TableHead>Appareil</TableHead>
+                      <TableHead>IP publique</TableHead>
                       <TableHead>Réseau</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -560,15 +561,24 @@ function AdminContent({ isAdmin, isSuperAdmin }: { isAdmin: boolean; isSuperAdmi
                         </TableCell>
                         <TableCell>{visit.device}</TableCell>
                         <TableCell>
+                          {visit.ipAddress ?? "Expirée ou non disponible"}
+                          {visit.ipExpiresAt ? (
+                            <div className="text-xs text-muted-foreground">
+                              Jusqu’au {new Date(visit.ipExpiresAt).toLocaleDateString("fr-BE")}
+                            </div>
+                          ) : null}
+                        </TableCell>
+                        <TableCell>
                           {visit.networkPeers > 0
                             ? `${visit.networkPeers} autre(s) visiteur(s) sur ce réseau`
                             : "Réseau non partagé détecté"}
                         </TableCell>
                       </TableRow>
                     ))}
-                    {!siteVisitsQuery.isLoading && siteVisitsQuery.data?.visitors.length === 0 ? (
+                    {!siteVisitsQuery.isLoading &&
+                    (siteVisitsQuery.data?.visitors?.length ?? 0) === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-muted-foreground">
+                        <TableCell colSpan={7} className="text-muted-foreground">
                           Aucune visite mesurée pour l’instant.
                         </TableCell>
                       </TableRow>

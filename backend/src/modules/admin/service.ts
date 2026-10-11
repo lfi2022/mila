@@ -1,8 +1,13 @@
 import { AppError } from "../../common/errors/app-error.js";
+import { decryptAnalyticsIp } from "../../common/security/analytics-ip.js";
+import type { AppConfig } from "../../config/env.js";
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js";
 
 export class AdminService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly config: Pick<AppConfig, "AUTH_SECRET">,
+  ) {}
 
   async overview() {
     const since30 = new Date(Date.now() - 30 * 86_400_000);
@@ -267,6 +272,8 @@ export class AdminService {
         select: {
           visitorHash: true,
           ipHash: true,
+          ipEncrypted: true,
+          ipExpiresAt: true,
           firstSeenAt: true,
           lastSeenAt: true,
           visitCount: true,
@@ -300,6 +307,11 @@ export class AdminService {
         visitCount: visitor.visitCount,
         pageViews: visitor.pageViews,
         eventCount: visitor.eventCount,
+        ipAddress:
+          visitor.ipEncrypted && visitor.ipExpiresAt && visitor.ipExpiresAt > new Date()
+            ? decryptSafely(visitor.ipEncrypted, this.config.AUTH_SECRET)
+            : null,
+        ipExpiresAt: visitor.ipExpiresAt,
         networkPeers: visitor.ipHash
           ? Math.max(0, (peersByNetwork.get(visitor.ipHash) ?? 1) - 1)
           : 0,
@@ -551,6 +563,14 @@ export class AdminService {
       });
       return { ok: true };
     });
+  }
+}
+
+function decryptSafely(value: string, authSecret: string): string | null {
+  try {
+    return decryptAnalyticsIp(value, authSecret);
+  } catch {
+    return null;
   }
 }
 

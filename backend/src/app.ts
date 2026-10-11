@@ -204,7 +204,9 @@ export async function createApp(options: AppOptions = {}): Promise<FastifyInstan
             config,
           ),
         );
-        await api.register(adminRoutes(new AdminService(options.database.client), auth, config));
+        await api.register(
+          adminRoutes(new AdminService(options.database.client, config), auth, config),
+        );
         await api.register(reportRoutes(options.database.client, config));
         await api.register(analyticsRoutes(options.database.client, config));
         await api.register(
