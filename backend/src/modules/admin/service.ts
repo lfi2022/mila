@@ -258,6 +258,31 @@ export class AdminService {
       })),
     };
   }
+  async siteVisits(take: number) {
+    const activeSince = new Date(Date.now() - 2 * 60_000);
+    const [active, events] = await Promise.all([
+      this.prisma.productAnalyticsEvent.findMany({
+        where: { event: "site_visit", occurredAt: { gte: activeSince } },
+        distinct: ["sessionHash"],
+        select: { sessionHash: true },
+      }),
+      this.prisma.productAnalyticsEvent.findMany({
+        where: { event: "site_visit" },
+        take,
+        select: { sessionHash: true, path: true, device: true, occurredAt: true },
+        orderBy: { occurredAt: "desc" },
+      }),
+    ]);
+    return {
+      activeCount: active.length,
+      visits: events.map((event) => ({
+        id: event.sessionHash.slice(-10),
+        path: event.path ?? "/",
+        device: event.device ?? "Appareil non disponible",
+        occurredAt: event.occurredAt,
+      })),
+    };
+  }
   async reports(skip: number, take: number) {
     return this.prisma.report.findMany({ skip, take, orderBy: { createdAt: "desc" } });
   }

@@ -7,7 +7,7 @@ import {
   saveCookieConsent,
   type CookieChoices,
 } from "@/features/privacy/cookie-consent";
-import { startWebVitals } from "@/lib/analytics";
+import { startWebVitals, track } from "@/lib/analytics";
 
 export function ConsentBanner() {
   const [version, setVersion] = useState<string>();
@@ -23,7 +23,10 @@ export function ConsentBanner() {
       setVisible(!stored);
       if (stored) {
         setChoices(stored.choices);
-        if (stored.choices.analytics) stopVitals = startWebVitals();
+        if (stored.choices.analytics) {
+          stopVitals = startWebVitals();
+          track("site_visit");
+        }
       }
     });
     const open = () => {
@@ -52,6 +55,7 @@ export function ConsentBanner() {
     setVisible(false);
     setCustomizing(false);
     await saveCookieConsent(version, next);
+    if (next.analytics) track("site_visit");
   };
   if (!visible || !version) return null;
 

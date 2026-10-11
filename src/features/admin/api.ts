@@ -67,6 +67,12 @@ export type AdminConnection = {
   endedAt: string | null;
   status: "ONLINE" | "IDLE" | "ENDED";
 };
+export type SiteVisit = {
+  id: string;
+  path: string;
+  device: string;
+  occurredAt: string;
+};
 export type Merchant = {
   id: string;
   name: string;
@@ -122,6 +128,8 @@ export const adminListConnections = () =>
   apiRequest<{ activeCount: number; connections: AdminConnection[] }>(
     "/admin/connections?limit=200",
   );
+export const adminListSiteVisits = () =>
+  apiRequest<{ activeCount: number; visits: SiteVisit[] }>("/admin/site-visits?limit=200");
 export const adminListReports = async () => {
   const { reports } = await apiRequest<{ reports: AdminReport[] }>("/admin/reports?limit=200");
   return reports.map((report) => ({

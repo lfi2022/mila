@@ -1,6 +1,7 @@
 import { runtimeConfig } from "@/config/runtime";
 
 export type MilaAnalyticsEvent =
+  | "site_visit"
   | "homepage_view"
   | "signup_cta_clicked"
   | "demo_clicked"

@@ -5,6 +5,7 @@ import type { AppConfig } from "../../config/env.js";
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js";
 
 export const ANALYTICS_EVENTS = [
+  "site_visit",
   "homepage_view",
   "signup_cta_clicked",
   "demo_clicked",
@@ -51,6 +52,7 @@ export function analyticsRoutes(prisma: PrismaClient, config: AppConfig): Fastif
             subjectHash: pseudonym(config.AUTH_SECRET, input.visitorId),
             sessionHash: pseudonym(config.AUTH_SECRET, input.sessionId),
             path: input.path,
+            device: describeDevice(request.headers["user-agent"]),
             properties: input.properties as Prisma.InputJsonValue | undefined,
             occurredAt,
           },
@@ -59,6 +61,31 @@ export function analyticsRoutes(prisma: PrismaClient, config: AppConfig): Fastif
       },
     );
   };
+}
+
+function describeDevice(userAgent: string | undefined): string | undefined {
+  if (!userAgent) return undefined;
+  const browser = /Edg\//.test(userAgent)
+    ? "Microsoft Edge"
+    : /Firefox\//.test(userAgent)
+      ? "Firefox"
+      : /CriOS\//.test(userAgent) || /Chrome\//.test(userAgent)
+        ? "Chrome"
+        : /Safari\//.test(userAgent)
+          ? "Safari"
+          : "Navigateur inconnu";
+  const platform = /iPhone|iPad|iPod/.test(userAgent)
+    ? "iPhone/iPad"
+    : /Android/.test(userAgent)
+      ? "Android"
+      : /Windows/.test(userAgent)
+        ? "Windows"
+        : /Mac OS X/.test(userAgent)
+          ? "macOS"
+          : /Linux/.test(userAgent)
+            ? "Linux"
+            : "Système inconnu";
+  return `${browser} · ${/Mobi|Android|iPhone|iPad|iPod/.test(userAgent) ? "Mobile" : "Ordinateur"} · ${platform}`;
 }
 export function pseudonym(secret: string, value: string) {
   return createHmac("sha256", secret).update(value).digest("hex");
