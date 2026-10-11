@@ -165,6 +165,7 @@ export class StorageService {
       );
     if (!detected && !["application/json", "text/csv"].includes(mimeType))
       throw new AppError(415, "UPLOAD_SIGNATURE_UNKNOWN", "File signature could not be validated");
+    await this.markUploadVerified(policy.bucket, key);
     const complete = await this.client.send(
       new GetObjectCommand({ Bucket: policy.bucket, Key: key }),
     );
@@ -200,6 +201,10 @@ export class StorageService {
     );
   }
 
+  bucketFor(purpose: UploadPurpose): string {
+    return this.policies[purpose].bucket;
+  }
+
   async storeRemoteProductImage(key: string, body: Buffer, contentType: string) {
     if (!key.startsWith("remote/") || key.includes("..")) {
       throw new AppError(400, "STORAGE_KEY_INVALID", "Remote media key is invalid");
@@ -232,6 +237,13 @@ export class StorageService {
     return head.Metadata?.["scan"] ?? "pending";
   }
 
+  async isUploadVerified(purpose: UploadPurpose, key: string) {
+    const head = await this.client.send(
+      new HeadObjectCommand({ Bucket: this.policies[purpose].bucket, Key: key }),
+    );
+    return head.Metadata?.["verified"] === "true";
+  }
+
   async markScanStatus(bucket: string, key: string, status: "clean" | "infected") {
     const allowed = new Set(Object.values(this.policies).map((policy) => policy.bucket));
     if (!allowed.has(bucket)) throw new AppError(400, "STORAGE_BUCKET_INVALID", "Unknown bucket");
@@ -244,6 +256,20 @@ export class StorageService {
         ContentType: head.ContentType,
         MetadataDirective: "REPLACE",
         Metadata: { ...head.Metadata, scan: status },
+      }),
+    );
+  }
+
+  private async markUploadVerified(bucket: string, key: string) {
+    const head = await this.client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        CopySource: `${bucket}/${encodeURIComponent(key).replace(/%2F/g, "/")}`,
+        ContentType: head.ContentType,
+        MetadataDirective: "REPLACE",
+        Metadata: { ...head.Metadata, verified: "true" },
       }),
     );
   }

@@ -66,10 +66,20 @@ export class GiftsService {
       },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     });
-    return gifts.map((gift) => ({
-      ...gift,
-      imageUrl: selectProductImage(gift.images, gift.genericImageCategory),
-    }));
+    return Promise.all(
+      gifts.map(async (gift) => {
+        const parentImage = gift.images.find(
+          (image) => image.sourceType === "USER_UPLOADED" && image.storedObjectKey,
+        );
+        return {
+          ...gift,
+          imageUrl:
+            parentImage?.storedObjectKey && this.storage
+              ? await this.storage.signedDownload("product-image", parentImage.storedObjectKey)
+              : selectProductImage(gift.images, gift.genericImageCategory),
+        };
+      }),
+    );
   }
 
   async create(userId: string, listId: string, input: GiftInput) {
@@ -134,7 +144,16 @@ export class GiftsService {
     }
     if (!this.storage) throw new AppError(503, "STORAGE_UNAVAILABLE", "Storage is unavailable");
     this.storage.assertOwnedKey(userId, storedObjectKey);
-    const scanStatus = await this.storage.uploadScanStatus("product-image", storedObjectKey);
+    if (!(await this.storage.isUploadVerified("product-image", storedObjectKey))) {
+      throw new AppError(409, "UPLOAD_UNVERIFIED", "Image upload must be verified before use");
+    }
+    // Parent-declared images are made available immediately. Upload verification has already
+    // checked ownership, MIME type and file signature before this association is created.
+    await this.storage.markScanStatus(
+      this.storage.bucketFor("product-image"),
+      storedObjectKey,
+      "clean",
+    );
     return this.prisma.productMedia.create({
       data: {
         giftId,
@@ -149,7 +168,7 @@ export class GiftsService {
         redistributionAllowed: false,
         verifiedAt: new Date(),
         verifiedBy: userId,
-        status: scanStatus === "clean" ? "ACTIVE" : "PENDING",
+        status: "ACTIVE",
       },
     });
   }
