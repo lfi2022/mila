@@ -15,6 +15,8 @@ describe("product analytics", () => {
           return data;
         },
       },
+      analyticsVisitor: { upsert: async () => undefined },
+      $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations),
     } as unknown as PrismaClient;
     const config = { AUTH_SECRET: "analytics-test-secret-at-least-32-characters" } as AppConfig;
     const app = Fastify({ logger: false });

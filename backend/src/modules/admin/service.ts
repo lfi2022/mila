@@ -260,26 +260,49 @@ export class AdminService {
   }
   async siteVisits(take: number) {
     const activeSince = new Date(Date.now() - 2 * 60_000);
-    const [active, events] = await Promise.all([
-      this.prisma.productAnalyticsEvent.findMany({
-        where: { event: "site_visit", occurredAt: { gte: activeSince } },
-        distinct: ["sessionHash"],
-        select: { sessionHash: true },
-      }),
-      this.prisma.productAnalyticsEvent.findMany({
-        where: { event: "site_visit" },
+    const [activeCount, visitors] = await Promise.all([
+      this.prisma.analyticsVisitor.count({ where: { lastSeenAt: { gte: activeSince } } }),
+      this.prisma.analyticsVisitor.findMany({
         take,
-        select: { sessionHash: true, path: true, device: true, occurredAt: true },
-        orderBy: { occurredAt: "desc" },
+        select: {
+          visitorHash: true,
+          ipHash: true,
+          firstSeenAt: true,
+          lastSeenAt: true,
+          visitCount: true,
+          pageViews: true,
+          eventCount: true,
+          firstPath: true,
+          lastPath: true,
+          device: true,
+        },
+        orderBy: { lastSeenAt: "desc" },
       }),
     ]);
+    const ipHashes = visitors.flatMap((visitor) => (visitor.ipHash ? [visitor.ipHash] : []));
+    const networkCounts = ipHashes.length
+      ? await this.prisma.analyticsVisitor.groupBy({
+          by: ["ipHash"],
+          where: { ipHash: { in: ipHashes } },
+          _count: { _all: true },
+        })
+      : [];
+    const peersByNetwork = new Map(networkCounts.map((item) => [item.ipHash, item._count._all]));
     return {
-      activeCount: active.length,
-      visits: events.map((event) => ({
-        id: event.sessionHash.slice(-10),
-        path: event.path ?? "/",
-        device: event.device ?? "Appareil non disponible",
-        occurredAt: event.occurredAt,
+      activeCount,
+      visitors: visitors.map((visitor) => ({
+        id: visitor.visitorHash.slice(-10),
+        firstPath: visitor.firstPath ?? "/",
+        lastPath: visitor.lastPath ?? "/",
+        device: visitor.device ?? "Appareil non disponible",
+        firstSeenAt: visitor.firstSeenAt,
+        lastSeenAt: visitor.lastSeenAt,
+        visitCount: visitor.visitCount,
+        pageViews: visitor.pageViews,
+        eventCount: visitor.eventCount,
+        networkPeers: visitor.ipHash
+          ? Math.max(0, (peersByNetwork.get(visitor.ipHash) ?? 1) - 1)
+          : 0,
       })),
     };
   }

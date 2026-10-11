@@ -3,6 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  useRouterState,
   useRouter,
   HeadContent,
   Scripts,
@@ -16,6 +17,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { buildPublicUrl, runtimeConfig } from "@/config/runtime";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import { registerPwa } from "@/lib/pwa";
+import { track } from "@/lib/analytics";
 
 function NotFoundComponent() {
   return (
@@ -154,8 +156,15 @@ function RootComponent() {
           <Outlet />
         </div>
         <Toaster />
+        <AnalyticsPageTracker />
         <ConsentBanner />
       </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+function AnalyticsPageTracker() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  useEffect(() => track("page_view"), [pathname]);
+  return null;
 }

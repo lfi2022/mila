@@ -55,7 +55,10 @@ export function ConsentBanner() {
     setVisible(false);
     setCustomizing(false);
     await saveCookieConsent(version, next);
-    if (next.analytics) track("site_visit");
+    if (next.analytics) {
+      track("site_visit");
+      track("page_view");
+    }
   };
   if (!visible || !version) return null;
 

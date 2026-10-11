@@ -69,9 +69,15 @@ export type AdminConnection = {
 };
 export type SiteVisit = {
   id: string;
-  path: string;
+  firstPath: string;
+  lastPath: string;
   device: string;
-  occurredAt: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  visitCount: number;
+  pageViews: number;
+  eventCount: number;
+  networkPeers: number;
 };
 export type Merchant = {
   id: string;
@@ -129,7 +135,7 @@ export const adminListConnections = () =>
     "/admin/connections?limit=200",
   );
 export const adminListSiteVisits = () =>
-  apiRequest<{ activeCount: number; visits: SiteVisit[] }>("/admin/site-visits?limit=200");
+  apiRequest<{ activeCount: number; visitors: SiteVisit[] }>("/admin/site-visits?limit=200");
 export const adminListReports = async () => {
   const { reports } = await apiRequest<{ reports: AdminReport[] }>("/admin/reports?limit=200");
   return reports.map((report) => ({

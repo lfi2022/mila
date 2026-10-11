@@ -1681,6 +1681,7 @@ model ProductAnalyticsEvent {
   sessionHash String   @map("session_hash") @db.Char(64)
   path        String?  @db.VarChar(255)
   device      String?  @db.VarChar(180)
+  ipHash      String?  @map("ip_hash") @db.Char(64)
   properties  Json?
   occurredAt  DateTime @map("occurred_at") @db.DateTime(3)
   createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
@@ -1688,7 +1689,26 @@ model ProductAnalyticsEvent {
   @@unique([sessionHash, event, occurredAt])
   @@index([event, occurredAt])
   @@index([subjectHash, occurredAt])
+  @@index([ipHash, occurredAt])
   @@map("product_analytics_events")
+}
+
+model AnalyticsVisitor {
+  id          String   @id @default(uuid()) @db.Char(36)
+  visitorHash String   @unique @map("visitor_hash") @db.Char(64)
+  ipHash      String?  @map("ip_hash") @db.Char(64)
+  firstSeenAt DateTime @default(now()) @map("first_seen_at") @db.DateTime(3)
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at") @db.DateTime(3)
+  visitCount  Int      @default(0) @map("visit_count")
+  pageViews   Int      @default(0) @map("page_views")
+  eventCount  Int      @default(0) @map("event_count")
+  firstPath   String?  @map("first_path") @db.VarChar(255)
+  lastPath    String?  @map("last_path") @db.VarChar(255)
+  device      String?  @db.VarChar(180)
+
+  @@index([lastSeenAt])
+  @@index([ipHash, lastSeenAt])
+  @@map("analytics_visitors")
 }
 
 model AdminAuditLog {

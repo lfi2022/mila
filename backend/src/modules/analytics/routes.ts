@@ -6,6 +6,7 @@ import type { Prisma, PrismaClient } from "../../generated/prisma/client.js";
 
 export const ANALYTICS_EVENTS = [
   "site_visit",
+  "page_view",
   "homepage_view",
   "signup_cta_clicked",
   "demo_clicked",
@@ -46,17 +47,51 @@ export function analyticsRoutes(prisma: PrismaClient, config: AppConfig): Fastif
         const occurredAt = new Date(input.occurredAt);
         if (Math.abs(Date.now() - occurredAt.getTime()) > 86_400_000)
           return reply.status(202).send({ accepted: false });
-        await prisma.productAnalyticsEvent.create({
-          data: {
-            event: input.event,
-            subjectHash: pseudonym(config.AUTH_SECRET, input.visitorId),
-            sessionHash: pseudonym(config.AUTH_SECRET, input.sessionId),
-            path: input.path,
-            device: describeDevice(request.headers["user-agent"]),
-            properties: input.properties as Prisma.InputJsonValue | undefined,
-            occurredAt,
-          },
-        });
+        const visitorHash = pseudonym(config.AUTH_SECRET, input.visitorId);
+        const device = describeDevice(request.headers["user-agent"]);
+        // An IP address is never retained: this keyed pseudonym only identifies a possible
+        // shared network and must not be used to merge distinct visitors.
+        const ipHash = request.ip ? pseudonym(config.AUTH_SECRET, `ip:${request.ip}`) : undefined;
+        const visitIncrement = input.event === "site_visit" ? 1 : 0;
+        const pageViewIncrement = input.event === "page_view" ? 1 : 0;
+        await prisma.$transaction([
+          prisma.productAnalyticsEvent.create({
+            data: {
+              event: input.event,
+              subjectHash: visitorHash,
+              sessionHash: pseudonym(config.AUTH_SECRET, input.sessionId),
+              path: input.path,
+              device,
+              ipHash,
+              properties: input.properties as Prisma.InputJsonValue | undefined,
+              occurredAt,
+            },
+          }),
+          prisma.analyticsVisitor.upsert({
+            where: { visitorHash },
+            create: {
+              visitorHash,
+              ipHash,
+              firstSeenAt: occurredAt,
+              lastSeenAt: occurredAt,
+              visitCount: visitIncrement,
+              pageViews: pageViewIncrement,
+              eventCount: 1,
+              firstPath: input.path,
+              lastPath: input.path,
+              device,
+            },
+            update: {
+              ipHash,
+              lastSeenAt: occurredAt,
+              visitCount: { increment: visitIncrement },
+              pageViews: { increment: pageViewIncrement },
+              eventCount: { increment: 1 },
+              lastPath: input.path,
+              device,
+            },
+          }),
+        ]);
         return reply.status(202).send({ accepted: true });
       },
     );

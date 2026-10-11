@@ -520,7 +520,7 @@ function AdminContent({ isAdmin, isSuperAdmin }: { isAdmin: boolean; isSuperAdmi
                     <h2 className="text-lg">Visites du site</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
                       Activité globale actualisée toutes les 15 secondes, pour les visiteurs ayant
-                      accepté la mesure d’audience.
+                      accepté la mesure d’audience. Les visiteurs sont pseudonymes.
                     </p>
                   </div>
                   <Badge>{siteVisitsQuery.data?.activeCount ?? 0} visiteurs actifs</Badge>
@@ -529,28 +529,46 @@ function AdminContent({ isAdmin, isSuperAdmin }: { isAdmin: boolean; isSuperAdmi
                   <TableHeader>
                     <TableRow>
                       <TableHead>Visiteur</TableHead>
-                      <TableHead>Page d’entrée</TableHead>
+                      <TableHead>Visites</TableHead>
+                      <TableHead>Pages vues</TableHead>
+                      <TableHead>Première / dernière visite</TableHead>
                       <TableHead>Appareil</TableHead>
-                      <TableHead>Dernière visite</TableHead>
+                      <TableHead>Réseau</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(siteVisitsQuery.data?.visits ?? []).map((visit) => (
-                      <TableRow key={`${visit.id}-${visit.occurredAt}`}>
+                    {(siteVisitsQuery.data?.visitors ?? []).map((visit) => (
+                      <TableRow key={visit.id}>
                         <TableCell>Visiteur #{visit.id}</TableCell>
-                        <TableCell>{visit.path}</TableCell>
+                        <TableCell>{visit.visitCount}</TableCell>
+                        <TableCell>{visit.pageViews}</TableCell>
+                        <TableCell>
+                          <div>
+                            {visit.firstPath} → {visit.lastPath}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(visit.firstSeenAt).toLocaleString("fr-BE", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                            {" → "}
+                            {new Date(visit.lastSeenAt).toLocaleString("fr-BE", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </div>
+                        </TableCell>
                         <TableCell>{visit.device}</TableCell>
                         <TableCell>
-                          {new Date(visit.occurredAt).toLocaleString("fr-BE", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
+                          {visit.networkPeers > 0
+                            ? `${visit.networkPeers} autre(s) visiteur(s) sur ce réseau`
+                            : "Réseau non partagé détecté"}
                         </TableCell>
                       </TableRow>
                     ))}
-                    {!siteVisitsQuery.isLoading && siteVisitsQuery.data?.visits.length === 0 ? (
+                    {!siteVisitsQuery.isLoading && siteVisitsQuery.data?.visitors.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-muted-foreground">
+                        <TableCell colSpan={6} className="text-muted-foreground">
                           Aucune visite mesurée pour l’instant.
                         </TableCell>
                       </TableRow>
