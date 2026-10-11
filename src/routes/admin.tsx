@@ -473,9 +473,7 @@ function AdminContent({ isAdmin, isSuperAdmin }: { isAdmin: boolean; isSuperAdmi
                               ? "En ligne"
                               : connection.status === "IDLE"
                                 ? "Inactive"
-                                : connection.status === "EXPIRED"
-                                  ? "Expirée"
-                                  : "Révoquée"}
+                                : "Terminée"}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -490,6 +488,12 @@ function AdminContent({ isAdmin, isSuperAdmin }: { isAdmin: boolean; isSuperAdmi
                     ) : null}
                   </TableBody>
                 </Table>
+                {connectionsQuery.isError ? (
+                  <p className="mt-4 text-sm text-destructive">
+                    Impossible de charger les connexions. Vérifiez que le backend a bien été déployé
+                    avec cette mise à jour et que votre compte possède le rôle SUPER_ADMIN.
+                  </p>
+                ) : null}
               </div>
               <p className="text-xs text-muted-foreground">
                 Le navigateur ne transmet pas le nom personnel ou matériel de l’appareil. Mila

@@ -223,20 +223,19 @@ export class AdminService {
   async connections(skip: number, take: number) {
     const now = new Date();
     const activeSince = new Date(now.valueOf() - 2 * 60_000);
-    const [activeCount, sessions] = await Promise.all([
-      this.prisma.session.count({
-        where: { revokedAt: null, expiresAt: { gt: now }, lastSeenAt: { gte: activeSince } },
+    const [activeCount, connections] = await Promise.all([
+      this.prisma.connectionLog.count({
+        where: { endedAt: null, lastSeenAt: { gte: activeSince } },
       }),
-      this.prisma.session.findMany({
+      this.prisma.connectionLog.findMany({
         skip,
         take,
         select: {
           id: true,
           userAgent: true,
-          createdAt: true,
+          startedAt: true,
           lastSeenAt: true,
-          expiresAt: true,
-          revokedAt: true,
+          endedAt: true,
           user: { select: { id: true, displayName: true, email: true } },
         },
         orderBy: { lastSeenAt: "desc" },
@@ -244,21 +243,18 @@ export class AdminService {
     ]);
     return {
       activeCount,
-      connections: sessions.map((session) => ({
-        id: session.id,
-        user: session.user,
-        device: describeDevice(session.userAgent),
-        createdAt: session.createdAt,
-        lastSeenAt: session.lastSeenAt,
-        expiresAt: session.expiresAt,
-        revokedAt: session.revokedAt,
-        status: session.revokedAt
-          ? "REVOKED"
-          : session.expiresAt <= now
-            ? "EXPIRED"
-            : session.lastSeenAt >= activeSince
-              ? "ONLINE"
-              : "IDLE",
+      connections: connections.map((connection) => ({
+        id: connection.id,
+        user: connection.user,
+        device: describeDevice(connection.userAgent),
+        createdAt: connection.startedAt,
+        lastSeenAt: connection.lastSeenAt,
+        endedAt: connection.endedAt,
+        status: connection.endedAt
+          ? "ENDED"
+          : connection.lastSeenAt >= activeSince
+            ? "ONLINE"
+            : "IDLE",
       })),
     };
   }

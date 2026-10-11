@@ -144,10 +144,14 @@ export class AuthService {
       throw new AppError(401, "SESSION_INVALID", "Session is invalid or expired");
     }
     this.assertActive(session.user);
-    await this.prisma.session.update({
-      where: { id: session.id },
-      data: { lastSeenAt: new Date() },
-    });
+    const lastSeenAt = new Date();
+    await Promise.all([
+      this.prisma.session.update({ where: { id: session.id }, data: { lastSeenAt } }),
+      this.prisma.connectionLog.updateMany({
+        where: { sessionId: session.id, endedAt: null },
+        data: { lastSeenAt },
+      }),
+    ]);
     return toAuthUser(session.user);
   }
 
@@ -165,6 +169,17 @@ export class AuthService {
     await this.prisma.$transaction([
       this.prisma.session.update({ where: { id: session.id }, data: { revokedAt: new Date() } }),
       this.prisma.session.create({ data: replacement.data }),
+      this.prisma.connectionLog.updateMany({
+        where: { sessionId: session.id, endedAt: null },
+        data: { endedAt: new Date() },
+      }),
+      this.prisma.connectionLog.create({
+        data: {
+          userId: session.userId,
+          sessionId: replacement.data.id,
+          userAgent: replacement.data.userAgent,
+        },
+      }),
     ]);
     return {
       token: replacement.token,
@@ -175,10 +190,22 @@ export class AuthService {
 
   async logout(token: string | undefined): Promise<void> {
     if (!token) return;
-    await this.prisma.session.updateMany({
-      where: { tokenHash: this.hashToken(token), revokedAt: null },
-      data: { revokedAt: new Date() },
+    const session = await this.prisma.session.findUnique({
+      where: { tokenHash: this.hashToken(token) },
+      select: { id: true },
     });
+    if (!session) return;
+    const endedAt = new Date();
+    await this.prisma.$transaction([
+      this.prisma.session.updateMany({
+        where: { id: session.id, revokedAt: null },
+        data: { revokedAt: endedAt },
+      }),
+      this.prisma.connectionLog.updateMany({
+        where: { sessionId: session.id, endedAt: null },
+        data: { endedAt },
+      }),
+    ]);
   }
 
   async verifyEmail(token: string): Promise<void> {
@@ -266,6 +293,10 @@ export class AuthService {
       this.prisma.session.updateMany({
         where: { userId: record.userId, revokedAt: null },
         data: { revokedAt: new Date() },
+      }),
+      this.prisma.connectionLog.updateMany({
+        where: { userId: record.userId, endedAt: null },
+        data: { endedAt: new Date() },
       }),
     ]);
   }
@@ -452,6 +483,10 @@ export class AuthService {
         where: { userId, revokedAt: null },
         data: { revokedAt: now },
       }),
+      this.prisma.connectionLog.updateMany({
+        where: { userId, endedAt: null },
+        data: { endedAt: now },
+      }),
       this.prisma.giftList.updateMany({
         where: { ownerId: userId, deletedAt: null },
         data: { status: "DELETED", deletedAt: now },
@@ -474,7 +509,12 @@ export class AuthService {
     identity: RequestIdentity,
   ): Promise<IssuedSession> {
     const session = this.buildSession(user.id, identity);
-    await this.prisma.session.create({ data: session.data });
+    await this.prisma.$transaction([
+      this.prisma.session.create({ data: session.data }),
+      this.prisma.connectionLog.create({
+        data: { userId: user.id, sessionId: session.data.id, userAgent: session.data.userAgent },
+      }),
+    ]);
     return { token: session.token, csrfToken: createOpaqueToken(), user: toAuthUser(user) };
   }
 

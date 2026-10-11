@@ -546,6 +546,15 @@ export function cleanupProcessor(database: DatabaseService): StreamProcessor {
           });
         }
       }
+      const expiredSessions = await transaction.session.findMany({
+        where: { expiresAt: { lte: now } },
+        select: { id: true },
+      });
+      if (expiredSessions.length)
+        await transaction.connectionLog.updateMany({
+          where: { sessionId: { in: expiredSessions.map((session) => session.id) }, endedAt: null },
+          data: { endedAt: now },
+        });
       await transaction.session.deleteMany({ where: { expiresAt: { lte: now } } });
       await transaction.emailVerificationToken.deleteMany({ where: { expiresAt: { lte: now } } });
       await transaction.passwordResetToken.deleteMany({ where: { expiresAt: { lte: now } } });

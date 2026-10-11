@@ -280,6 +280,7 @@ model User {
   updatedAt                DateTime                  @updatedAt @map("updated_at") @db.DateTime(3)
   roles                    UserRole[]
   sessions                 Session[]
+  connectionLogs           ConnectionLog[]
   verificationTokens       EmailVerificationToken[]
   resetTokens              PasswordResetToken[]
   ownedLists               GiftList[]                @relation("ListOwner")
@@ -347,6 +348,21 @@ model Session {
   @@index([userId, expiresAt])
   @@index([expiresAt])
   @@map("sessions")
+}
+
+model ConnectionLog {
+  id        String    @id @default(uuid()) @db.Char(36)
+  userId    String    @map("user_id") @db.Char(36)
+  sessionId String?   @unique @map("session_id") @db.Char(36)
+  userAgent String?   @map("user_agent") @db.VarChar(512)
+  startedAt DateTime  @default(now()) @map("started_at") @db.DateTime(3)
+  lastSeenAt DateTime @default(now()) @map("last_seen_at") @db.DateTime(3)
+  endedAt   DateTime? @map("ended_at") @db.DateTime(3)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lastSeenAt])
+  @@index([lastSeenAt])
+  @@map("connection_logs")
 }
 
 model EmailVerificationToken {

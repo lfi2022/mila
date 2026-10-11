@@ -64,9 +64,8 @@ export type AdminConnection = {
   device: string;
   createdAt: string;
   lastSeenAt: string;
-  expiresAt: string;
-  revokedAt: string | null;
-  status: "ONLINE" | "IDLE" | "EXPIRED" | "REVOKED";
+  endedAt: string | null;
+  status: "ONLINE" | "IDLE" | "ENDED";
 };
 export type Merchant = {
   id: string;
