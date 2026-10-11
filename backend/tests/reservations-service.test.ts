@@ -171,6 +171,7 @@ describe("ReservationsService", () => {
           status: "RESERVED",
           gift: { title: "Poussette", unitPriceMinor: 12_000n, currency: "EUR" },
           list: { title: "Liste bébé" },
+          contributions: [],
         }),
         update,
       },
@@ -195,5 +196,38 @@ describe("ReservationsService", () => {
         payload: expect.objectContaining({ giftTitle: "Poussette", token: expect.any(String) }),
       }),
     );
+  });
+
+  it("does not remind a guest once Mollie has confirmed their payment", async () => {
+    const assertRole = vi.fn().mockResolvedValue("OWNER");
+    const queue = { enqueue: vi.fn().mockResolvedValue("job") };
+    const prisma = {
+      reservation: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "reservation-1",
+          listId: "list-1",
+          guestName: "Alex",
+          guestEmail: "alex@example.com",
+          quantity: 1,
+          status: "RESERVED",
+          gift: { title: "Poussette", unitPriceMinor: 12_000n, currency: "EUR" },
+          list: { title: "Liste bebe" },
+          contributions: [{ status: "CONFIRMED", payment: { status: "PAID" } }],
+        }),
+        update: vi.fn(),
+      },
+    } as unknown as PrismaClient;
+    const service = new ReservationsService(
+      prisma,
+      config,
+      queue as never,
+      { assertRole } as never,
+    );
+
+    await expect(service.remindForManager("owner-1", "list-1", "reservation-1")).rejects.toMatchObject({
+      code: "RESERVATION_ALREADY_PAID",
+      statusCode: 409,
+    });
+    expect(queue.enqueue).not.toHaveBeenCalled();
   });
 });

@@ -4,7 +4,12 @@ import type { PrismaClient } from "../../generated/prisma/client.js";
 import type { PaymentStatus } from "../../generated/prisma/enums.js";
 import type { ListsService } from "../lists/service.js";
 import { deriveBalance } from "../rewards/service.js";
-import { decimalToMinor, type MolliePayment, type PaymentProviderClient } from "./mollie.js";
+import {
+  decimalToMinor,
+  minorToDecimal,
+  type MolliePayment,
+  type PaymentProviderClient,
+} from "./mollie.js";
 import type { NotificationQueue } from "../notifications/queue.js";
 
 const terminalPaymentStatuses = new Set<PaymentStatus>([
@@ -478,12 +483,18 @@ export class PaymentsService {
           },
         });
     });
-    if (payment.purpose === "GIFT_CART" && remote.status === "paid" && this.notifications) {
+    if (payment.purpose === "GIFT_CART" && remote.status === "paid") {
       const receipt = await this.prisma.payment.findUnique({
         where: { id: payment.id },
         include: {
           contributions: { include: { gift: { select: { title: true } } } },
-          list: { select: { ownerId: true } },
+          list: {
+            select: {
+              ownerId: true,
+              title: true,
+              members: { select: { userId: true } },
+            },
+          },
         },
       });
       const metadata =
@@ -493,9 +504,11 @@ export class PaymentsService {
           ? receipt.metadata
           : {};
       const email = metadata["guestEmail"];
+      let metadataChanged = false;
       if (
         receipt &&
         !metadata["receiptQueuedAt"] &&
+        this.notifications &&
         typeof email === "string" &&
         receipt.contributions.length > 0 &&
         receipt.contributions.every((row) => row.status === "CONFIRMED") &&
@@ -515,13 +528,65 @@ export class PaymentsService {
             })),
           },
         });
+        metadata["receiptQueuedAt"] = new Date().toISOString();
+        metadataChanged = true;
+      }
+      if (
+        receipt &&
+        !metadata["parentNotificationCreatedAt"] &&
+        receipt.contributions.length > 0 &&
+        receipt.contributions.every((row) => row.status === "CONFIRMED") &&
+        receipt.list
+      ) {
+        const userIds = [
+          ...new Set([receipt.list.ownerId, ...receipt.list.members.map(({ userId }) => userId)]),
+        ];
+        const preferences = await this.prisma.notificationPreference.findMany({
+          where: { userId: { in: userIds }, type: "GIFT_PAYMENT_CONFIRMED" },
+        });
+        const inAppDisabled = new Set(
+          preferences.filter((item) => !item.inAppEnabled).map((item) => item.userId),
+        );
+        const emailDisabled = new Set(
+          preferences
+            .filter((item) => !item.emailEnabled || item.digest === "NEVER")
+            .map((item) => item.userId),
+        );
+        const body = `Un paiement de ${minorToDecimal(receipt.amountMinor)} ${receipt.currency} a été confirmé pour votre liste « ${receipt.list.title} ».`;
+        await this.prisma.notification.createMany({
+          data: userIds
+            .filter((userId) => !inAppDisabled.has(userId))
+            .map((userId) => ({
+              userId,
+              listId: receipt.listId,
+              type: "GIFT_PAYMENT_CONFIRMED",
+              title: "Paiement reçu",
+              body,
+              data: { paymentId: receipt.id },
+            })),
+        });
+        await Promise.all(
+          userIds
+            .filter((userId) => !emailDisabled.has(userId))
+            .map((userId) =>
+              this.notifications
+                ?.enqueue({
+                  type: "GIFT_PAYMENT_CONFIRMED",
+                  userId,
+                  listId: receipt.listId ?? undefined,
+                  payload: { body },
+                })
+                .catch(() => undefined),
+            ),
+        );
+        metadata["parentNotificationCreatedAt"] = new Date().toISOString();
+        metadataChanged = true;
+      }
+      if (receipt && metadataChanged)
         await this.prisma.payment.update({
           where: { id: receipt.id },
-          data: {
-            metadata: { ...metadata, receiptQueuedAt: new Date().toISOString() },
-          },
+          data: { metadata },
         });
-      }
     }
     return { known: true };
   }

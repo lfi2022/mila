@@ -123,6 +123,95 @@ describe("PaymentsService reconciliation", () => {
     const keys = ledgerUpsert.mock.calls.map((call) => call[0].where.idempotencyKey);
     expect(new Set(keys)).toEqual(new Set(["payment:payment-id"]));
   });
+
+  it("notifies every list manager when a gift-card payment is confirmed", async () => {
+    const payment = {
+      id: "payment-id",
+      listId: "list-id",
+      provider: "MOLLIE",
+      externalId: "tr_remote",
+      purpose: "GIFT_CART",
+      status: "PENDING",
+      amountMinor: 2_999n,
+      currency: "EUR",
+      paidAt: null,
+    };
+    const receipt = {
+      ...payment,
+      status: "PAID",
+      metadata: { guestEmail: "giver@example.test", guestName: "Camille" },
+      contributions: [
+        {
+          id: "contribution-id",
+          giftId: "gift-id",
+          reservationId: "reservation-id",
+          listId: "list-id",
+          amountMinor: 2_999n,
+          currency: "EUR",
+          status: "CONFIRMED",
+          gift: { title: "Poussette" },
+        },
+      ],
+      list: {
+        ownerId: "parent-a",
+        title: "Liste de Mila",
+        members: [{ userId: "parent-b" }],
+      },
+    };
+    const notificationCreateMany = vi.fn().mockResolvedValue({ count: 2 });
+    const enqueue = vi.fn().mockResolvedValue("job-id");
+    const paymentUpdate = vi.fn().mockResolvedValue({});
+    const tx = {
+      refund: { upsert: vi.fn() },
+      chargeback: { upsert: vi.fn() },
+      payment: { findUniqueOrThrow: vi.fn().mockResolvedValue(payment), update: paymentUpdate },
+      contribution: {
+        findMany: vi.fn().mockResolvedValue([{ ...receipt.contributions[0], status: "PENDING" }]),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      gift: {
+        findUnique: vi.fn().mockResolvedValue({ id: "gift-id", reservedQuantity: 1, status: "RESERVED" }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      reservation: { findUnique: vi.fn().mockResolvedValue({ id: "reservation-id", status: "RESERVED" }) },
+      fundsLedgerEntry: { upsert: vi.fn().mockResolvedValue({}) },
+    };
+    const prisma = {
+      payment: {
+        findUnique: vi.fn(async (args: { where: Record<string, unknown> }) =>
+          "provider_externalId" in args.where ? payment : receipt,
+        ),
+        update: paymentUpdate,
+      },
+      notificationPreference: { findMany: vi.fn().mockResolvedValue([]) },
+      notification: { createMany: notificationCreateMany },
+      $transaction: vi.fn(async (callback: (client: typeof tx) => Promise<void>) => callback(tx)),
+    } as unknown as PrismaClient;
+    const service = new PaymentsService(
+      prisma,
+      config,
+      {} as ListsService,
+      providerMock({ ...remote("paid"), paidAt: new Date().toISOString() }),
+      { enqueue } as never,
+    );
+
+    await service.reconcileExternal("tr_remote");
+
+    expect(notificationCreateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({ userId: "parent-a", type: "GIFT_PAYMENT_CONFIRMED" }),
+          expect.objectContaining({ userId: "parent-b", type: "GIFT_PAYMENT_CONFIRMED" }),
+        ]),
+      }),
+    );
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "parent-a", type: "GIFT_PAYMENT_CONFIRMED" }),
+    );
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "parent-b", type: "GIFT_PAYMENT_CONFIRMED" }),
+    );
+  });
 });
 
 function prismaMock(

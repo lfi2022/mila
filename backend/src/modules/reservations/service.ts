@@ -273,9 +273,21 @@ export class ReservationsService {
       include: {
         gift: { select: { title: true, unitPriceMinor: true, currency: true } },
         list: { select: { title: true } },
+        contributions: { select: { status: true, payment: { select: { status: true } } } },
       },
     });
     if (!record) throw new AppError(404, "RESERVATION_NOT_FOUND", "Réservation active introuvable");
+    if (
+      record.contributions.some(
+        (contribution) =>
+          contribution.status === "CONFIRMED" || contribution.payment?.status === "PAID",
+      )
+    )
+      throw new AppError(
+        409,
+        "RESERVATION_ALREADY_PAID",
+        "This reservation has already been paid and cannot be reminded",
+      );
     if (!record.guestEmail)
       throw new AppError(
         409,
