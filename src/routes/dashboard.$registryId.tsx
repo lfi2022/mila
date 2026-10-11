@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { ArrowDown, ArrowUp, ExternalLink, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -178,6 +178,8 @@ function RegistryDetail() {
   const [reservationSearch, setReservationSearch] = useState("");
   const [editingGiftId, setEditingGiftId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState(emptyItem);
+  const [giftOrder, setGiftOrder] = useState<string[] | null>(null);
+  const [draggedGiftId, setDraggedGiftId] = useState<string | null>(null);
   const registry = useQuery({
     queryKey: queryKeys.list(registryId),
     queryFn: async () => {
@@ -398,6 +400,18 @@ function RegistryDetail() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const reorderItems = useMutation({
+    mutationFn: (giftIds: string[]) => giftApi.reorder(registryId, giftIds),
+    onSuccess: () => {
+      toast.success("Ordre des cadeaux enregistré");
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gifts(registryId) });
+    },
+    onError: (error: Error) => {
+      setGiftOrder(null);
+      toast.error(error.message);
+    },
+  });
+
   const releaseReservation = useMutation({
     mutationFn: (id: string) => reservationApi.cancel(registryId, id),
     onSuccess: () => {
@@ -516,6 +530,14 @@ function RegistryDetail() {
   }
 
   const giftRows = items.data ?? [];
+  const orderedGiftRows = giftOrder
+    ? [
+        ...giftOrder
+          .map((id) => giftRows.find((gift) => gift.id === id))
+          .filter((gift): gift is (typeof giftRows)[number] => Boolean(gift)),
+        ...giftRows.filter((gift) => !giftOrder.includes(gift.id)),
+      ]
+    : giftRows;
   const valuesByCurrency = Object.entries(
     giftRows.reduce<Record<string, bigint>>((totals, gift) => {
       const value = gift.unitPriceMinor
@@ -527,7 +549,7 @@ function RegistryDetail() {
       return totals;
     }, {}),
   );
-  const filteredGifts = giftRows.filter((gift) =>
+  const filteredGifts = orderedGiftRows.filter((gift) =>
     `${gift.title} ${gift.description ?? ""}`
       .toLocaleLowerCase("fr")
       .includes(giftSearch.trim().toLocaleLowerCase("fr")),
@@ -537,6 +559,25 @@ function RegistryDetail() {
       .toLocaleLowerCase("fr")
       .includes(reservationSearch.trim().toLocaleLowerCase("fr")),
   );
+  const moveGift = (
+    giftId: string,
+    targetGiftId: string,
+    placement: "before" | "after" = "before",
+  ) => {
+    if (giftId === targetGiftId || reorderItems.isPending) return;
+    const nextOrder = orderedGiftRows.map((gift) => gift.id);
+    const fromIndex = nextOrder.indexOf(giftId);
+    nextOrder.splice(fromIndex, 1);
+    const targetIndex = nextOrder.indexOf(targetGiftId);
+    nextOrder.splice(targetIndex + (placement === "after" ? 1 : 0), 0, giftId);
+    setGiftOrder(nextOrder);
+    reorderItems.mutate(nextOrder);
+  };
+  const handleGiftDrop = (event: DragEvent<HTMLLIElement>, targetGiftId: string) => {
+    event.preventDefault();
+    if (draggedGiftId) moveGift(draggedGiftId, targetGiftId);
+    setDraggedGiftId(null);
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12">
@@ -742,7 +783,7 @@ function RegistryDetail() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    L’article remonte dans la liste, sans mention explicite pour vos proches.
+                    Signale vos cadeaux les plus importants, sans modifier l’ordre choisi.
                   </p>
                 </div>
                 {item.kind === "GIFT" ? (
@@ -817,16 +858,35 @@ function RegistryDetail() {
                 />
               </div>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Glissez un cadeau pour le déplacer, ou utilisez les flèches. L’ordre est enregistré
+              automatiquement.
+            </p>
             <ul className="mt-4 space-y-3">
               {filteredGifts.map((gift) => {
                 const fullyReserved = gift.reserved_qty >= gift.quantity;
                 const shopUrl = merchantUrl(gift.url);
+                const giftIndex = orderedGiftRows.findIndex((row) => row.id === gift.id);
                 return (
                   <li
                     key={gift.id}
-                    className="surface-card flex flex-wrap items-start justify-between gap-4 p-4"
+                    draggable={!reorderItems.isPending}
+                    onDragStart={() => setDraggedGiftId(gift.id)}
+                    onDragEnd={() => setDraggedGiftId(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => handleGiftDrop(event, gift.id)}
+                    className={`surface-card flex flex-wrap items-start justify-between gap-4 p-4 transition-opacity ${
+                      draggedGiftId === gift.id ? "opacity-50" : ""
+                    }`}
                   >
                     <div className="flex gap-3">
+                      <div
+                        className="flex cursor-grab touch-none items-center text-muted-foreground active:cursor-grabbing"
+                        aria-label={`Déplacer ${gift.title}`}
+                        title="Glisser pour réorganiser"
+                      >
+                        <GripVertical className="h-5 w-5" aria-hidden="true" />
+                      </div>
                       <img
                         src={gift.imageUrl}
                         alt=""
@@ -849,6 +909,30 @@ function RegistryDetail() {
                         {fullyReserved ? "Masqué (réservé)" : "Visible"}
                       </Badge>
                       <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={giftIndex === 0 || reorderItems.isPending}
+                          onClick={() => moveGift(gift.id, orderedGiftRows[giftIndex - 1]!.id)}
+                          aria-label={`Monter ${gift.title}`}
+                          title="Monter"
+                        >
+                          <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={
+                            giftIndex === orderedGiftRows.length - 1 || reorderItems.isPending
+                          }
+                          onClick={() =>
+                            moveGift(gift.id, orderedGiftRows[giftIndex + 1]!.id, "after")
+                          }
+                          aria-label={`Descendre ${gift.title}`}
+                          title="Descendre"
+                        >
+                          <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                        </Button>
                         {shopUrl ? (
                           <Button asChild variant="outline" size="sm">
                             <a

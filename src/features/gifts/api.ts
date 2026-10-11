@@ -82,6 +82,12 @@ export const giftApi = {
   },
   remove: (listId: string, giftId: string) =>
     apiRequest<void>(`/lists/${listId}/gifts/${giftId}`, { method: "DELETE", csrf: true }),
+  reorder: (listId: string, giftIds: string[]) =>
+    apiRequest<void>(`/lists/${listId}/gifts/order`, {
+      method: "PUT",
+      csrf: true,
+      body: JSON.stringify({ giftIds }),
+    }),
   attachUserMedia: (listId: string, giftId: string, storedObjectKey: string) =>
     apiRequest(`/lists/${listId}/gifts/${giftId}/media`, {
       method: "POST",

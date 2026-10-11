@@ -309,7 +309,7 @@ export class ListsService {
         accessCodeHash: true,
         gifts: {
           where: { deletedAt: null, hiddenByModerator: false },
-          orderBy: [{ priority: "desc" }, { position: "asc" }, { createdAt: "asc" }],
+          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
           select: {
             id: true,
             publicToken: true,

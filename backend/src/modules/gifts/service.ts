@@ -63,7 +63,7 @@ export class GiftsService {
         merchant: true,
         productIdentity: true,
       },
-      orderBy: [{ priority: "desc" }, { position: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     });
     return gifts.map((gift) => ({
       ...gift,
