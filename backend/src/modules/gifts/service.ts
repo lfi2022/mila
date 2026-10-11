@@ -71,12 +71,22 @@ export class GiftsService {
         const parentImage = gift.images.find(
           (image) => image.sourceType === "USER_UPLOADED" && image.storedObjectKey,
         );
+        const fallbackImage = selectProductImage(gift.images, gift.genericImageCategory);
+        let imageUrl = fallbackImage;
+        if (parentImage?.storedObjectKey && this.storage) {
+          try {
+            imageUrl = await this.storage.signedDownload(
+              "product-image",
+              parentImage.storedObjectKey,
+            );
+          } catch {
+            // A storage issue must never prevent a parent from opening their gift list.
+            imageUrl = fallbackImage;
+          }
+        }
         return {
           ...gift,
-          imageUrl:
-            parentImage?.storedObjectKey && this.storage
-              ? await this.storage.signedDownload("product-image", parentImage.storedObjectKey)
-              : selectProductImage(gift.images, gift.genericImageCategory),
+          imageUrl,
         };
       }),
     );
