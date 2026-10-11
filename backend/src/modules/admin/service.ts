@@ -220,6 +220,48 @@ export class AdminService {
       orderBy: { createdAt: "desc" },
     });
   }
+  async connections(skip: number, take: number) {
+    const now = new Date();
+    const activeSince = new Date(now.valueOf() - 2 * 60_000);
+    const [activeCount, sessions] = await Promise.all([
+      this.prisma.session.count({
+        where: { revokedAt: null, expiresAt: { gt: now }, lastSeenAt: { gte: activeSince } },
+      }),
+      this.prisma.session.findMany({
+        skip,
+        take,
+        select: {
+          id: true,
+          userAgent: true,
+          createdAt: true,
+          lastSeenAt: true,
+          expiresAt: true,
+          revokedAt: true,
+          user: { select: { id: true, displayName: true, email: true } },
+        },
+        orderBy: { lastSeenAt: "desc" },
+      }),
+    ]);
+    return {
+      activeCount,
+      connections: sessions.map((session) => ({
+        id: session.id,
+        user: session.user,
+        device: describeDevice(session.userAgent),
+        createdAt: session.createdAt,
+        lastSeenAt: session.lastSeenAt,
+        expiresAt: session.expiresAt,
+        revokedAt: session.revokedAt,
+        status: session.revokedAt
+          ? "REVOKED"
+          : session.expiresAt <= now
+            ? "EXPIRED"
+            : session.lastSeenAt >= activeSince
+              ? "ONLINE"
+              : "IDLE",
+      })),
+    };
+  }
   async reports(skip: number, take: number) {
     return this.prisma.report.findMany({ skip, take, orderBy: { createdAt: "desc" } });
   }
@@ -478,4 +520,32 @@ function ledgerByType(
   return rows
     .filter((row) => row.type === type)
     .map((row) => ({ currency: row.currency, amountMinor: money(row._sum.amountMinor) }));
+}
+
+function describeDevice(userAgent: string | null): string {
+  if (!userAgent) return "Appareil inconnu";
+  const browser = /Edg\//.test(userAgent)
+    ? "Microsoft Edge"
+    : /Firefox\//.test(userAgent)
+      ? "Firefox"
+      : /CriOS\//.test(userAgent)
+        ? "Chrome"
+        : /Chrome\//.test(userAgent)
+          ? "Chrome"
+          : /Safari\//.test(userAgent)
+            ? "Safari"
+            : "Navigateur inconnu";
+  const platform = /iPhone|iPad|iPod/.test(userAgent)
+    ? "iPhone/iPad"
+    : /Android/.test(userAgent)
+      ? "Android"
+      : /Windows/.test(userAgent)
+        ? "Windows"
+        : /Mac OS X/.test(userAgent)
+          ? "macOS"
+          : /Linux/.test(userAgent)
+            ? "Linux"
+            : "Système inconnu";
+  const formFactor = /Mobi|Android|iPhone|iPad|iPod/.test(userAgent) ? "Mobile" : "Ordinateur";
+  return `${browser} · ${formFactor} · ${platform}`;
 }

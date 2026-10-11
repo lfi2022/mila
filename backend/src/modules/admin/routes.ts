@@ -57,6 +57,13 @@ export function adminRoutes(
       const value = page(request);
       return jsonSafe({ users: await service.users(value.skip, value.take) });
     });
+    app.get("/admin/connections", async (request) => {
+      const user = await staff(request);
+      if (!user.roles.includes("SUPER_ADMIN"))
+        throw new AppError(403, "SUPER_ADMIN_REQUIRED", "Super administrator access required");
+      const value = page(request);
+      return jsonSafe(await service.connections(value.skip, value.take));
+    });
     app.get("/admin/reports", async (request) => {
       await staff(request);
       const value = page(request);

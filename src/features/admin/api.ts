@@ -58,6 +58,16 @@ type AuditEntry = {
   metadata: unknown;
   createdAt: string;
 };
+export type AdminConnection = {
+  id: string;
+  user: { id: string; displayName: string | null; email: string };
+  device: string;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  status: "ONLINE" | "IDLE" | "EXPIRED" | "REVOKED";
+};
 export type Merchant = {
   id: string;
   name: string;
@@ -109,6 +119,10 @@ export const adminListUsers = async () => {
     roles: user.roles.map((role: { role: string }) => role.role),
   }));
 };
+export const adminListConnections = () =>
+  apiRequest<{ activeCount: number; connections: AdminConnection[] }>(
+    "/admin/connections?limit=200",
+  );
 export const adminListReports = async () => {
   const { reports } = await apiRequest<{ reports: AdminReport[] }>("/admin/reports?limit=200");
   return reports.map((report) => ({

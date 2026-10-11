@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import {
   adminListAuditLog,
+  adminListConnections,
   adminCreatePartner,
   adminCreatePartnerCampaign,
   adminListLists,
@@ -102,7 +103,10 @@ function AdminPage() {
   }
 
   return (
-    <AdminContent isAdmin={user.roles.some((role) => ["ADMIN", "SUPER_ADMIN"].includes(role))} />
+    <AdminContent
+      isAdmin={user.roles.some((role) => ["ADMIN", "SUPER_ADMIN"].includes(role))}
+      isSuperAdmin={user.roles.includes("SUPER_ADMIN")}
+    />
   );
 }
 
@@ -115,11 +119,17 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AdminContent({ isAdmin }: { isAdmin: boolean }) {
+function AdminContent({ isAdmin, isSuperAdmin }: { isAdmin: boolean; isSuperAdmin: boolean }) {
   const queryClient = useQueryClient();
   const statsQuery = useQuery({ queryKey: ["admin-stats"], queryFn: getAdminStats });
   const listsQuery = useQuery({ queryKey: ["admin-lists"], queryFn: adminListLists });
   const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: adminListUsers });
+  const connectionsQuery = useQuery({
+    queryKey: ["admin-connections"],
+    queryFn: adminListConnections,
+    enabled: isSuperAdmin,
+    refetchInterval: 15_000,
+  });
   const merchantsQuery = useQuery({ queryKey: ["admin-merchants"], queryFn: adminListMerchants });
   const partnersQuery = useQuery({ queryKey: ["admin-partners"], queryFn: adminListPartners });
   const reportsQuery = useQuery({ queryKey: ["admin-reports"], queryFn: adminListReports });
@@ -159,6 +169,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
     for (const key of [
       "admin-stats",
       "admin-lists",
+      "admin-connections",
       "admin-merchants",
       "admin-reports",
       "admin-risks",
@@ -262,6 +273,7 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
             <TabsTrigger value="lists">Listes</TabsTrigger>
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+            {isSuperAdmin ? <TabsTrigger value="connections">Connexions</TabsTrigger> : null}
             <TabsTrigger value="merchants">Marchands</TabsTrigger>
             <TabsTrigger value="media">Médias</TabsTrigger>
             <TabsTrigger value="partners">Partenaires</TabsTrigger>
@@ -418,6 +430,74 @@ function AdminContent({ isAdmin }: { isAdmin: boolean }) {
               personnelles.
             </p>
           </TabsContent>
+
+          {isSuperAdmin ? (
+            <TabsContent value="connections" className="mt-6 space-y-6">
+              <div className="surface-card p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg">Connexions et appareils</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Activité actualisée toutes les 15 secondes. Une session est considérée en
+                      ligne pendant deux minutes après sa dernière activité.
+                    </p>
+                  </div>
+                  <Badge>{connectionsQuery.data?.activeCount ?? 0} en ligne</Badge>
+                </div>
+                <Table className="mt-5">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Utilisateur</TableHead>
+                      <TableHead>Appareil</TableHead>
+                      <TableHead>Dernière activité</TableHead>
+                      <TableHead>État</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(connectionsQuery.data?.connections ?? []).map((connection) => (
+                      <TableRow key={connection.id}>
+                        <TableCell>
+                          <p>{connection.user.displayName ?? "Sans nom"}</p>
+                          <p className="text-xs text-muted-foreground">{connection.user.email}</p>
+                        </TableCell>
+                        <TableCell>{connection.device}</TableCell>
+                        <TableCell>
+                          {new Date(connection.lastSeenAt).toLocaleString("fr-BE", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={connection.status === "ONLINE" ? "default" : "secondary"}>
+                            {connection.status === "ONLINE"
+                              ? "En ligne"
+                              : connection.status === "IDLE"
+                                ? "Inactive"
+                                : connection.status === "EXPIRED"
+                                  ? "Expirée"
+                                  : "Révoquée"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {!connectionsQuery.isLoading &&
+                    connectionsQuery.data?.connections.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-muted-foreground">
+                          Aucune session enregistrée.
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                  </TableBody>
+                </Table>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Le navigateur ne transmet pas le nom personnel ou matériel de l’appareil. Mila
+                affiche donc le navigateur, le type d’appareil et le système d’exploitation
+                détectés.
+              </p>
+            </TabsContent>
+          ) : null}
 
           <TabsContent value="merchants" className="mt-6 space-y-8">
             <Table>
